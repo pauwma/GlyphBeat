@@ -1,6 +1,5 @@
 package com.pauwma.glyphbeat.animation
 
-import com.pauwma.glyphbeat.AnimationTheme
 import com.pauwma.glyphbeat.sound.AudioData
 import com.pauwma.glyphbeat.sound.AudioReactiveTheme
 import com.pauwma.glyphbeat.GlyphMatrixRenderer

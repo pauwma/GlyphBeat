@@ -11,10 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.pauwma.glyphbeat.AnimationTheme
-import com.pauwma.glyphbeat.GlyphMatrixRenderer
+import com.pauwma.glyphbeat.animation.AnimationTheme
 import com.pauwma.glyphbeat.animation.styles.FrameTransitionSequence
 import com.pauwma.glyphbeat.animation.styles.ThemeTemplate
 import kotlinx.coroutines.delay

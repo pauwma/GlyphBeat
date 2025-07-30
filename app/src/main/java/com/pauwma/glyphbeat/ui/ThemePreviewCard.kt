@@ -15,10 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pauwma.glyphbeat.AnimationTheme
+import com.pauwma.glyphbeat.animation.AnimationTheme
 
 /**
  * Theme preview card component with Nothing brand styling.

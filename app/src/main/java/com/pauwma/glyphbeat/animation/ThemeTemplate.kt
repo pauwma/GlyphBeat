@@ -1,6 +1,6 @@
 package com.pauwma.glyphbeat.animation.styles
 
-import com.pauwma.glyphbeat.AnimationTheme
+import com.pauwma.glyphbeat.animation.AnimationTheme
 
 /**
  * Represents a single frame transition with repetition and timing control.

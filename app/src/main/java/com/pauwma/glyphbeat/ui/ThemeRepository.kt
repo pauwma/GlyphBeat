@@ -4,11 +4,11 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
-import com.pauwma.glyphbeat.AnimationTheme
+import com.pauwma.glyphbeat.animation.AnimationTheme
 import com.pauwma.glyphbeat.animation.styles.VinylTheme
 import com.pauwma.glyphbeat.animation.styles.DancingDuckTheme
+import com.pauwma.glyphbeat.animation.styles.MinimalTheme
 import com.pauwma.glyphbeat.animation.styles.PulseTheme
-import com.pauwma.glyphbeat.animation.styles.ThemeTemplate
 import com.pauwma.glyphbeat.animation.styles.WaveTheme
 
 /**
@@ -37,7 +37,8 @@ class ThemeRepository private constructor(private val context: Context) {
     // Available themes list
     val availableThemes = listOf(
         VinylTheme(),
-        DancingDuckTheme()
+        DancingDuckTheme(),
+        MinimalTheme()
     )
     
     // Current selected theme index state
@@ -128,6 +129,7 @@ fun AnimationTheme.getShortDescription(): String {
     return when (this.getThemeName()) {
         "Vinyl" -> "Detailed vinyl record"
         "Dancing Duck" -> "Classic duck animation"
+        "Minimal" -> "Static minimal pattern"
         else -> "Animation theme"
     }
 }

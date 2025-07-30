@@ -3,7 +3,7 @@ package com.pauwma.glyphbeat
 import android.content.Context
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
-import com.pauwma.glyphbeat.AnimationTheme
+import com.pauwma.glyphbeat.animation.AnimationTheme
 import com.pauwma.glyphbeat.animation.styles.ThemeTemplate
 import com.pauwma.glyphbeat.animation.styles.FrameTransitionSequence
 import com.pauwma.glyphbeat.sound.AudioAnalyzer
@@ -47,6 +47,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private var isPlaying = false
     private var hasActiveMedia = false
     private var currentPlayerState = PlayerState.OFFLINE
+    private var pendingStateUpdate = false // Flag to handle immediate state changes
     
     // Frame transition support
     private var frameTransitionSequence: FrameTransitionSequence? = null
@@ -63,6 +64,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private lateinit var mediaHelper: MediaControlHelper
     private lateinit var themeRepository: ThemeRepository
     private lateinit var audioAnalyzer: AudioAnalyzer
+    private var matrixManager: GlyphMatrixManager? = null
     
     private var currentTheme: AnimationTheme? = null
     private var currentAudioData: AudioData = AudioData(0.0, 0.0, 0.0, 0.0, false)
@@ -109,6 +111,9 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     ) {
         Log.d(LOG_TAG, "MediaPlayerToyService connected - starting enhanced animation loop")
         
+        // Store reference to matrix manager for immediate updates
+        this.matrixManager = glyphMatrixManager
+        
         // Initialize components
         mediaHelper = MediaControlHelper(context)
         themeRepository = ThemeRepository.getInstance(context)
@@ -137,6 +142,12 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 // Determine current player state and animation behavior
                 val (shouldAnimate, newPlayerState) = determinePlayerState()
                 updatePlayerState(newPlayerState)
+                
+                // Skip frame generation if we just handled an immediate state update
+                if (pendingStateUpdate) {
+                    pendingStateUpdate = false
+                    continue
+                }
                 
                 // Generate frame based on current state
                 val pixelArray = generateFrame(shouldAnimate, currentPlayerState)
@@ -173,7 +184,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 // Dynamic delay based on state and animation
                 val finalDelay = when {
                     shouldAnimate -> audioReactiveSpeed
-                    hasActiveMedia -> 50L // Quick updates when media available but paused
+                    hasActiveMedia -> 10L // Very fast updates when media available but paused for immediate response
                     else -> 100L // Slower updates when offline
                 }
                 
@@ -274,10 +285,25 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         if (currentPlayerState != newState) {
             Log.d(LOG_TAG, "Player state changed: ${currentPlayerState} -> $newState")
             
-            // When transitioning from PLAYING to PAUSED, save the current frame
+            // When transitioning from PLAYING to PAUSED, save the current frame and trigger immediate update
             if (currentPlayerState == PlayerState.PLAYING && newState == PlayerState.PAUSED) {
                 pausedFrameIndex = currentFrameIndex
-                Log.d(LOG_TAG, "Animation paused at frame $pausedFrameIndex")
+                Log.d(LOG_TAG, "Animation paused at frame $pausedFrameIndex - triggering immediate frame update")
+                
+                // Set flag to skip next regular frame generation
+                pendingStateUpdate = true
+                
+                // Trigger immediate frame update for pause state with higher priority
+                uiScope.launch {
+                    try {
+                        val pauseFrame = generateFrame(shouldAnimate = false, playerState = newState)
+                        matrixManager?.setMatrixFrame(pauseFrame)
+                        Log.v(LOG_TAG, "Immediate pause frame displayed")
+                    } catch (e: Exception) {
+                        Log.w(LOG_TAG, "Failed to set immediate pause frame: ${e.message}")
+                        pendingStateUpdate = false // Reset flag on error
+                    }
+                }
             }
             // When transitioning from PAUSED to PLAYING, resume from the paused frame
             else if (currentPlayerState == PlayerState.PAUSED && newState == PlayerState.PLAYING) {

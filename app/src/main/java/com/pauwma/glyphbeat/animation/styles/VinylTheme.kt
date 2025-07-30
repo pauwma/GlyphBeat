@@ -23,7 +23,7 @@ class VinylTheme() : ThemeTemplate() {
     // ANIMATION PROPERTIES
     // =================================================================================
     
-    override val animationSpeedValue: Long = 150L // Fast spinning like a real record
+    override val animationSpeedValue: Long = 100L // Fast spinning like a real record
     override val brightnessValue: Int = 255
     override val loopMode: String = "normal"
     override val complexity: String = "Medium"
