@@ -58,7 +58,7 @@
                 android:resource="@string/toy_name_vinyl_player" />
             <meta-data
                 android:name="com.nothing.glyph.toy.image"
-                android:resource="@drawable/glyph_beat_toy_icon" />
+                android:resource="@drawable/glyph_beat_thumbnail" />
             <meta-data
                 android:name="com.nothing.glyph.toy.summary"
                 android:resource="@string/toy_summary_vinyl_player" />
