@@ -49,6 +49,11 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private var hasActiveMedia = false
     private var currentPlayerState = PlayerState.PAUSED
     
+    // State prediction tracking for instant UI updates
+    private var predictedPlayerState: PlayerState? = null
+    private var predictionTimestamp = 0L
+    private val predictionTimeoutMs = 1000L // 1 second timeout for predictions
+    
     // Frame transition support
     private var frameTransitionSequence: FrameTransitionSequence? = null
     private var isUsingTransitions = false
@@ -158,28 +163,51 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     else -> PlayerState.PAUSED
                 }
                 
-                // Check for state changes and respond immediately
-                val stateChanged = newPlayerState != currentPlayerState
-                val playingChanged = currentlyPlaying != isPlaying
+                // Handle prediction validation and state changes
+                val hasPrediction = predictedPlayerState != null && !isPredictionTimedOut()
                 
-                if (stateChanged || playingChanged) {
-                    val previousState = currentPlayerState
-                    
-                    // Update state immediately
-                    currentPlayerState = newPlayerState
-                    isPlaying = currentlyPlaying
-                    hasActiveMedia = mediaAvailable
-                    
-                    // Handle pause/resume frame logic
-                    if (previousState == PlayerState.PLAYING && newPlayerState == PlayerState.PAUSED) {
-                        pausedFrameIndex = currentFrameIndex
-                        Log.d(LOG_TAG, "Animation paused at frame $pausedFrameIndex")
-                    } else if (previousState == PlayerState.PAUSED && newPlayerState == PlayerState.PLAYING) {
-                        currentFrameIndex = pausedFrameIndex
-                        Log.d(LOG_TAG, "Animation resumed from frame $currentFrameIndex")
+                if (hasPrediction) {
+                    // Validate prediction against actual state
+                    if (newPlayerState == predictedPlayerState) {
+                        Log.d(LOG_TAG, "Prediction validated: ${predictedPlayerState} matches actual state")
+                        // Prediction was correct, clear it
+                        predictedPlayerState = null
+                        predictionTimestamp = 0L
+                    } else if (isPredictionTimedOut()) {
+                        Log.w(LOG_TAG, "Prediction timed out, correcting state: predicted=${predictedPlayerState}, actual=$newPlayerState")
+                        // Prediction timed out, correct the state
+                        predictedPlayerState = null
+                        predictionTimestamp = 0L
+                        // Force update with actual state
+                        currentPlayerState = newPlayerState
+                        isPlaying = currentlyPlaying
+                        hasActiveMedia = mediaAvailable
                     }
+                    // If prediction is active and not timed out, don't override the predicted state yet
+                } else {
+                    // No active prediction, check for normal state changes
+                    val stateChanged = newPlayerState != currentPlayerState
+                    val playingChanged = currentlyPlaying != isPlaying
                     
-                    Log.d(LOG_TAG, "State change detected: $previousState -> $newPlayerState (playing: $currentlyPlaying)")
+                    if (stateChanged || playingChanged) {
+                        val previousState = currentPlayerState
+                        
+                        // Update state immediately
+                        currentPlayerState = newPlayerState
+                        isPlaying = currentlyPlaying
+                        hasActiveMedia = mediaAvailable
+                        
+                        // Handle pause/resume frame logic (only when not predicted)
+                        if (previousState == PlayerState.PLAYING && newPlayerState == PlayerState.PAUSED) {
+                            pausedFrameIndex = currentFrameIndex
+                            Log.d(LOG_TAG, "Animation paused at frame $pausedFrameIndex")
+                        } else if (previousState == PlayerState.PAUSED && newPlayerState == PlayerState.PLAYING) {
+                            currentFrameIndex = pausedFrameIndex
+                            Log.d(LOG_TAG, "Animation resumed from frame $currentFrameIndex")
+                        }
+                        
+                        Log.d(LOG_TAG, "State change detected: $previousState -> $newPlayerState (playing: $currentlyPlaying)")
+                    }
                 }
                 
                 // Throttled audio analysis 
@@ -190,11 +218,12 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     lastAudioAnalysisTime = currentTime
                 }
                 
-                // Determine animation behavior based on current state
-                val shouldAnimate = currentPlayerState == PlayerState.PLAYING
+                // Determine animation behavior based on effective state (includes predictions)
+                val effectiveState = getEffectivePlayerState()
+                val shouldAnimate = effectiveState == PlayerState.PLAYING
                 
-                // Generate frame based on current state
-                val pixelArray = generateFrame(shouldAnimate, currentPlayerState)
+                // Generate frame based on effective state
+                val pixelArray = generateFrame(shouldAnimate, effectiveState)
 
                 uiScope.launch(Dispatchers.Main.immediate) {
                     glyphMatrixManager.setMatrixFrame(pixelArray)
@@ -260,17 +289,37 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     }
 
     override fun onTouchPointLongPress() {
-        // Long press to toggle play/pause (main toy function)
-        Log.d(LOG_TAG, "Long press detected - toggling media playback")
+        // Long press to toggle play/pause with instant visual feedback
+        Log.d(LOG_TAG, "Long press detected - toggling media playback with instant feedback")
         try {
+            // Predict the new state immediately for instant UI feedback
+            val predictedState = predictNextPlayerState()
+            if (predictedState != null) {
+                Log.d(LOG_TAG, "Predicting state change: ${currentPlayerState} -> $predictedState")
+                
+                // Apply instant state change
+                applyInstantStateChange(predictedState)
+                
+                // Force immediate frame update
+                val pixelArray = generateFrame(predictedState == PlayerState.PLAYING, predictedState)
+                uiScope.launch(Dispatchers.Main.immediate) {
+                    matrixManager?.setMatrixFrame(pixelArray)
+                }
+            }
+            
+            // Send the actual media command
             val success = mediaHelper.togglePlayPause()
             if (success) {
-                Log.d(LOG_TAG, "Media toggle command sent")
+                Log.d(LOG_TAG, "Media toggle command sent after instant UI update")
             } else {
-                Log.w(LOG_TAG, "Failed to toggle media playback - no active media controller")
+                Log.w(LOG_TAG, "Failed to toggle media playback - reverting prediction")
+                // Revert prediction if command failed
+                revertPrediction()
             }
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Media control error: ${e.message}")
+            // Revert prediction on any error
+            revertPrediction()
         }
     }
 
@@ -409,6 +458,86 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             theme.generateAudioReactiveFrame(currentFrameIndex, currentAudioData)
         } else {
             theme.generateFrame(currentFrameIndex)
+        }
+    }
+
+    /**
+     * Predict the next player state based on current state for instant UI feedback
+     */
+    private fun predictNextPlayerState(): PlayerState? {
+        return when (currentPlayerState) {
+            PlayerState.PLAYING -> PlayerState.PAUSED
+            PlayerState.PAUSED -> PlayerState.PLAYING
+            PlayerState.OFFLINE -> null // Can't toggle when offline
+            PlayerState.LOADING -> null // Don't predict during loading
+            PlayerState.ERROR -> null // Don't predict during error
+        }
+    }
+    
+    /**
+     * Apply instant state change for immediate UI feedback
+     */
+    private fun applyInstantStateChange(newState: PlayerState) {
+        predictedPlayerState = newState
+        predictionTimestamp = System.currentTimeMillis()
+        
+        // Handle pause/resume frame logic for prediction
+        if (currentPlayerState == PlayerState.PLAYING && newState == PlayerState.PAUSED) {
+            pausedFrameIndex = currentFrameIndex
+            Log.d(LOG_TAG, "Predicted animation pause at frame $pausedFrameIndex")
+        } else if (currentPlayerState == PlayerState.PAUSED && newState == PlayerState.PLAYING) {
+            currentFrameIndex = pausedFrameIndex
+            Log.d(LOG_TAG, "Predicted animation resume from frame $currentFrameIndex")
+        }
+        
+        // Update current state for immediate effect (will be validated later)
+        currentPlayerState = newState
+        isPlaying = newState == PlayerState.PLAYING
+    }
+    
+    /**
+     * Revert prediction if media command failed
+     */
+    private fun revertPrediction() {
+        if (predictedPlayerState != null) {
+            Log.d(LOG_TAG, "Reverting prediction, restoring previous state")
+            
+            // Revert to previous state based on prediction
+            currentPlayerState = when (predictedPlayerState) {
+                PlayerState.PLAYING -> PlayerState.PAUSED
+                PlayerState.PAUSED -> PlayerState.PLAYING
+                else -> currentPlayerState
+            }
+            isPlaying = currentPlayerState == PlayerState.PLAYING
+            
+            // Clear prediction
+            predictedPlayerState = null
+            predictionTimestamp = 0L
+            
+            // Force frame update with reverted state
+            val pixelArray = generateFrame(isPlaying, currentPlayerState)
+            uiScope.launch(Dispatchers.Main.immediate) {
+                matrixManager?.setMatrixFrame(pixelArray)
+            }
+        }
+    }
+    
+    /**
+     * Check if current prediction has timed out
+     */
+    private fun isPredictionTimedOut(): Boolean {
+        return predictedPlayerState != null && 
+               (System.currentTimeMillis() - predictionTimestamp > predictionTimeoutMs)
+    }
+    
+    /**
+     * Get the effective player state (predicted state if active, otherwise current state)
+     */
+    private fun getEffectivePlayerState(): PlayerState {
+        return if (predictedPlayerState != null && !isPredictionTimedOut()) {
+            predictedPlayerState!!
+        } else {
+            currentPlayerState
         }
     }
 
