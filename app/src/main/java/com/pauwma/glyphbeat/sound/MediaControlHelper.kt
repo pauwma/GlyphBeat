@@ -15,8 +15,14 @@ import android.media.session.PlaybackState
 import android.util.Log
 import com.pauwma.glyphbeat.sound.MediaNotificationListenerService
 import kotlin.math.pow
+import java.util.concurrent.CopyOnWriteArrayList
 
 class MediaControlHelper(private val context: Context) {
+    
+    // State change callback interface
+    interface StateChangeCallback {
+        fun onPlaybackStateChanged(isPlaying: Boolean, hasActiveMedia: Boolean)
+    }
     
     private val mediaSessionManager: MediaSessionManager by lazy {
         context.getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
@@ -27,10 +33,53 @@ class MediaControlHelper(private val context: Context) {
     }
     
     private var activeController: MediaController? = null
+    private var activeControllerCallback: MediaController.Callback? = null
+    private val stateChangeCallbacks = CopyOnWriteArrayList<StateChangeCallback>()
+    
     private var lastLoggedSessionCount = -1
     private var lastLoggedActivePackage: String? = null
     private var lastLoggedActiveState: Int? = null
     private var lastLoggedSessions = mutableMapOf<String, Int>()
+    
+    // Cached state to avoid unnecessary callbacks
+    private var cachedIsPlaying = false
+    private var cachedHasActiveMedia = false
+    
+    /**
+     * Register a callback to receive immediate state change notifications
+     */
+    fun registerStateChangeCallback(callback: StateChangeCallback) {
+        stateChangeCallbacks.add(callback)
+        Log.d(LOG_TAG, "State change callback registered, total callbacks: ${stateChangeCallbacks.size}")
+    }
+    
+    /**
+     * Unregister a state change callback
+     */
+    fun unregisterStateChangeCallback(callback: StateChangeCallback) {
+        stateChangeCallbacks.remove(callback)
+        Log.d(LOG_TAG, "State change callback unregistered, remaining callbacks: ${stateChangeCallbacks.size}")
+    }
+    
+    /**
+     * Notify all registered callbacks of state changes
+     */
+    private fun notifyStateChange(isPlaying: Boolean, hasActiveMedia: Boolean) {
+        if (isPlaying != cachedIsPlaying || hasActiveMedia != cachedHasActiveMedia) {
+            cachedIsPlaying = isPlaying
+            cachedHasActiveMedia = hasActiveMedia
+            
+            Log.d(LOG_TAG, "State changed - playing: $isPlaying, hasMedia: $hasActiveMedia, notifying ${stateChangeCallbacks.size} callbacks")
+            
+            stateChangeCallbacks.forEach { callback ->
+                try {
+                    callback.onPlaybackStateChanged(isPlaying, hasActiveMedia)
+                } catch (e: Exception) {
+                    Log.w(LOG_TAG, "Error in state change callback: ${e.message}")
+                }
+            }
+        }
+    }
     
     fun getActiveMediaController(): MediaController? {
         try {
@@ -78,12 +127,28 @@ class MediaControlHelper(private val context: Context) {
             val currentPackage = activeController?.packageName
             val currentState = activeController?.playbackState?.state
             
+            // Check if controller changed before updating logged values
+            val controllerChanged = currentPackage != lastLoggedActivePackage
+            
             // Only log active controller when package or state changes
-            if (currentPackage != lastLoggedActivePackage || currentState != lastLoggedActiveState) {
+            if (controllerChanged || currentState != lastLoggedActiveState) {
                 Log.d(LOG_TAG, "Active controller: $currentPackage, state: $currentState")
                 lastLoggedActivePackage = currentPackage
                 lastLoggedActiveState = currentState
+                
+                // Register callback on new controller if it changed
+                if (controllerChanged) {
+                    Log.d(LOG_TAG, "Controller changed, registering new callback for: $currentPackage")
+                    registerCallbackOnActiveController()
+                } else {
+                    Log.v(LOG_TAG, "Controller unchanged: $currentPackage")
+                }
             }
+            
+            // Notify state changes based on current controller state
+            val isPlaying = currentState == PlaybackState.STATE_PLAYING
+            val hasActiveMedia = activeController != null
+            notifyStateChange(isPlaying, hasActiveMedia)
             
             return activeController
         } catch (e: SecurityException) {
@@ -96,6 +161,60 @@ class MediaControlHelper(private val context: Context) {
             Log.e(LOG_TAG, "Error getting media sessions: ${e.message}", e)
             return null
         }
+    }
+    
+    /**
+     * Register callback on the currently active media controller
+     */
+    private fun registerCallbackOnActiveController() {
+        // Unregister previous callback if exists
+        activeControllerCallback?.let { callback ->
+            try {
+                // Note: We can't easily unregister without keeping the original controller reference
+                Log.v(LOG_TAG, "Previous callback will be cleaned up automatically")
+            } catch (e: Exception) {
+                Log.w(LOG_TAG, "Error cleaning up previous callback: ${e.message}")
+            }
+        }
+        
+        // Register new callback if we have an active controller
+        activeController?.let { controller ->
+            try {
+                val callback = object : MediaController.Callback() {
+                    override fun onPlaybackStateChanged(state: PlaybackState?) {
+                        val isPlaying = state?.state == PlaybackState.STATE_PLAYING
+                        val hasActiveMedia = activeController != null
+                        Log.v(LOG_TAG, "MediaController callback - state changed to: ${state?.state}, playing: $isPlaying")
+                        notifyStateChange(isPlaying, hasActiveMedia)
+                    }
+                    
+                    override fun onMetadataChanged(metadata: MediaMetadata?) {
+                        // Track changes in media metadata which might affect active media status
+                        val hasActiveMedia = activeController != null && metadata != null
+                        Log.v(LOG_TAG, "MediaController callback - metadata changed, hasActiveMedia: $hasActiveMedia")
+                        notifyStateChange(cachedIsPlaying, hasActiveMedia)
+                    }
+                }
+                
+                controller.registerCallback(callback)
+                activeControllerCallback = callback
+                Log.d(LOG_TAG, "Registered callback on controller: ${controller.packageName}")
+                
+            } catch (e: Exception) {
+                Log.w(LOG_TAG, "Failed to register callback on controller: ${e.message}")
+                activeControllerCallback = null
+            }
+        }
+    }
+    
+    /**
+     * Clean up resources and callbacks
+     */
+    fun cleanup() {
+        stateChangeCallbacks.clear()
+        activeControllerCallback = null
+        activeController = null
+        Log.d(LOG_TAG, "MediaControlHelper cleaned up")
     }
     
     fun isPlaying(): Boolean {

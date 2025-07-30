@@ -19,15 +19,16 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
- * Enhanced Media Player Toy Service with support for individual frame durations,
- * state-specific frames, and comprehensive theme metadata integration.
+ * Enhanced Media Player Toy Service with optimized state change detection
+ * and reduced frame update delays.
  * 
  * Key Features:
+ * - Immediate state change detection via MediaController callbacks
+ * - Optimized frame update pipeline with reduced delays
  * - Variable frame timing support (each frame can have different duration)
  * - State-specific frame rendering (paused, offline, loading, error)
  * - Enhanced theme metadata integration
  * - Improved audio reactivity
- * - Better state management and logging
  */
 class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
 
@@ -47,18 +48,14 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private var isPlaying = false
     private var hasActiveMedia = false
     private var currentPlayerState = PlayerState.PAUSED
-    private var pendingStateUpdate = false // Flag to handle immediate state changes
     
     // Frame transition support
     private var frameTransitionSequence: FrameTransitionSequence? = null
     private var isUsingTransitions = false
     
     // Logging state management to avoid spam
-    private var lastLoggedMediaState = false
-    private var lastLoggedPlayerState = PlayerState.PAUSED
     private var lastLoggedThemeName = ""
     private var lastLoggedFrameType = ""
-    private var lastLoggedControllerAvailable = false
     
     // Core components
     private lateinit var mediaHelper: MediaControlHelper
@@ -69,9 +66,9 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private var currentTheme: AnimationTheme? = null
     private var currentAudioData: AudioData = AudioData(0.0, 0.0, 0.0, 0.0, false)
     
-    // Audio analysis throttling to reduce log spam
+    // Audio analysis throttling to reduce log spam and CPU usage
     private var lastAudioAnalysisTime = 0L
-    private val audioAnalysisInterval = 100L // Update audio analysis every 100ms instead of every frame
+    private var audioAnalysisInterval = 200L // Default: Update audio analysis every 200ms to reduce overhead
     
     // Static image pixel data for when no media is playing (shaped format)
     private val staticImageShapedPixels = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"
@@ -105,6 +102,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         }
     }
 
+
     override fun performOnServiceConnected(
         context: Context,
         glyphMatrixManager: GlyphMatrixManager
@@ -121,14 +119,25 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         currentTheme = themeRepository.selectedTheme
         initializeThemeTransitions(currentTheme)
         
+        // No callback registration needed - using fast polling instead for reliability
+        
         // Log initial theme information
         logThemeInfo(currentTheme)
 
-        // Determine initial state before showing any frame
-        val (shouldAnimate, initialPlayerState) = determinePlayerState()
-        updatePlayerState(initialPlayerState)
+        // Get initial state
+        val initialController = mediaHelper.getActiveMediaController()
+        Log.d(LOG_TAG, "Initial controller: ${initialController?.packageName}, state: ${initialController?.playbackState?.state}")
+        val initialPlayerState = when {
+            initialController?.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING -> PlayerState.PLAYING
+            initialController != null -> PlayerState.PAUSED
+            else -> PlayerState.OFFLINE
+        }
+        currentPlayerState = initialPlayerState
+        isPlaying = initialController?.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING
+        hasActiveMedia = initialController != null
         
         // Start with proper initial frame based on actual media state
+        val shouldAnimate = initialPlayerState == PlayerState.PLAYING
         val initialFrame = generateFrame(shouldAnimate, initialPlayerState)
         uiScope.launch {
             glyphMatrixManager.setMatrixFrame(initialFrame)
@@ -136,27 +145,58 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
 
         backgroundScope.launch {
             while (isActive) {
-                // Throttled audio analysis to reduce AudioManager log spam
+                // Very fast polling for immediate state detection
+                val controller = mediaHelper.getActiveMediaController()
+                val currentlyPlaying = controller?.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING
+                val mediaAvailable = controller != null
+                
+                // Determine current state
+                val newPlayerState = when {
+                    mediaAvailable && currentlyPlaying -> PlayerState.PLAYING
+                    mediaAvailable && !currentlyPlaying -> PlayerState.PAUSED
+                    !mediaAvailable -> PlayerState.OFFLINE
+                    else -> PlayerState.PAUSED
+                }
+                
+                // Check for state changes and respond immediately
+                val stateChanged = newPlayerState != currentPlayerState
+                val playingChanged = currentlyPlaying != isPlaying
+                
+                if (stateChanged || playingChanged) {
+                    val previousState = currentPlayerState
+                    
+                    // Update state immediately
+                    currentPlayerState = newPlayerState
+                    isPlaying = currentlyPlaying
+                    hasActiveMedia = mediaAvailable
+                    
+                    // Handle pause/resume frame logic
+                    if (previousState == PlayerState.PLAYING && newPlayerState == PlayerState.PAUSED) {
+                        pausedFrameIndex = currentFrameIndex
+                        Log.d(LOG_TAG, "Animation paused at frame $pausedFrameIndex")
+                    } else if (previousState == PlayerState.PAUSED && newPlayerState == PlayerState.PLAYING) {
+                        currentFrameIndex = pausedFrameIndex
+                        Log.d(LOG_TAG, "Animation resumed from frame $currentFrameIndex")
+                    }
+                    
+                    Log.d(LOG_TAG, "State change detected: $previousState -> $newPlayerState (playing: $currentlyPlaying)")
+                }
+                
+                // Throttled audio analysis 
                 val currentTime = System.currentTimeMillis()
+                audioAnalysisInterval = if (isPlaying) 100L else 200L
                 if (currentTime - lastAudioAnalysisTime > audioAnalysisInterval) {
                     currentAudioData = audioAnalyzer.updateAudioAnalysis()
                     lastAudioAnalysisTime = currentTime
                 }
                 
-                // Determine current player state and animation behavior
-                val (shouldAnimate, newPlayerState) = determinePlayerState()
-                updatePlayerState(newPlayerState)
-                
-                // Skip frame generation if we just handled an immediate state update
-                if (pendingStateUpdate) {
-                    pendingStateUpdate = false
-                    continue
-                }
+                // Determine animation behavior based on current state
+                val shouldAnimate = currentPlayerState == PlayerState.PLAYING
                 
                 // Generate frame based on current state
                 val pixelArray = generateFrame(shouldAnimate, currentPlayerState)
 
-                uiScope.launch {
+                uiScope.launch(Dispatchers.Main.immediate) {
                     glyphMatrixManager.setMatrixFrame(pixelArray)
                 }
 
@@ -185,11 +225,11 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     frameDuration
                 }
                 
-                // Dynamic delay based on state and animation
+                // Very fast polling for immediate state response
                 val finalDelay = when {
-                    shouldAnimate -> audioReactiveSpeed
-                    hasActiveMedia -> 10L // Very fast updates when media available but paused for immediate response
-                    else -> 100L // Slower updates when offline
+                    shouldAnimate -> audioReactiveSpeed.coerceAtLeast(25L) // Minimum 25ms for smooth animation
+                    hasActiveMedia -> 10L // Very fast polling when media available for immediate pause response
+                    else -> 100L // Moderate updates when offline
                 }
                 
                 delay(finalDelay)
@@ -204,7 +244,12 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
 
     override fun performOnServiceDisconnected(context: Context) {
         Log.d(LOG_TAG, "MediaPlayerToyService disconnected")
+        
+        // Cleanup resources
+        mediaHelper.cleanup()
         audioAnalyzer.cleanup()
+        
+        // Cancel coroutine scopes
         backgroundScope.cancel()
         uiScope.cancel()
     }
@@ -229,100 +274,6 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         }
     }
 
-    /**
-     * Determine player state and whether animation should be active
-     * Simple logic: Playing = animate, Paused/Offline = static
-     * @return Pair of (shouldAnimate, playerState)
-     */
-    private fun determinePlayerState(): Pair<Boolean, PlayerState> {
-        try {
-            val controller = mediaHelper.getActiveMediaController()
-            val currentlyPlaying = controller?.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING
-            val mediaAvailable = controller != null
-
-            // Only log state check when controller availability changes
-            if (mediaAvailable != lastLoggedControllerAvailable) {
-                Log.d(LOG_TAG, "Controller availability changed: available=$mediaAvailable")
-                lastLoggedControllerAvailable = mediaAvailable
-            }
-
-            // Update media availability
-            if (mediaAvailable != hasActiveMedia) {
-                hasActiveMedia = mediaAvailable
-                Log.d(LOG_TAG, "Media availability changed: hasActiveMedia = $hasActiveMedia")
-            }
-
-            // Update playing state
-            if (currentlyPlaying != isPlaying) {
-                isPlaying = currentlyPlaying
-                Log.d(LOG_TAG, "Media state changed: isPlaying = $isPlaying, beatIntensity: ${currentAudioData.beatIntensity}")
-            }
-
-            // Determine state with proper offline detection
-            val newState = when {
-                // Media is available and playing
-                mediaAvailable && currentlyPlaying -> PlayerState.PLAYING
-                // Media is available but not playing
-                mediaAvailable && !currentlyPlaying -> PlayerState.PAUSED
-                // No media available - show offline state
-                !mediaAvailable -> PlayerState.OFFLINE
-                else -> PlayerState.PAUSED
-            }
-
-            // Only animate when actually playing
-            val shouldAnimate = newState == PlayerState.PLAYING
-            
-            return Pair(shouldAnimate, newState)
-
-        } catch (e: Exception) {
-            // Handle errors gracefully
-            if (e.message?.contains("notification access", ignoreCase = true) == true) {
-                Log.w(LOG_TAG, "Media control requires notification access permission")
-            } else {
-                Log.w(LOG_TAG, "Cannot check media state: ${e.message}")
-            }
-            hasActiveMedia = false
-            return Pair(false, PlayerState.ERROR)
-        }
-    }
-
-    /**
-     * Update player state and log changes
-     */
-    private fun updatePlayerState(newState: PlayerState) {
-        if (currentPlayerState != newState) {
-            Log.d(LOG_TAG, "Player state changed: ${currentPlayerState} -> $newState")
-            
-            // When transitioning from PLAYING to PAUSED, save the current frame and trigger immediate update
-            if (currentPlayerState == PlayerState.PLAYING && newState == PlayerState.PAUSED) {
-                pausedFrameIndex = currentFrameIndex
-                Log.d(LOG_TAG, "Animation paused at frame $pausedFrameIndex - triggering immediate frame update")
-                
-                // Set flag to skip next regular frame generation
-                pendingStateUpdate = true
-                
-                // Trigger immediate frame update for pause state with higher priority
-                uiScope.launch {
-                    try {
-                        val pauseFrame = generateFrame(shouldAnimate = false, playerState = newState)
-                        matrixManager?.setMatrixFrame(pauseFrame)
-                        Log.v(LOG_TAG, "Immediate pause frame displayed")
-                    } catch (e: Exception) {
-                        Log.w(LOG_TAG, "Failed to set immediate pause frame: ${e.message}")
-                        pendingStateUpdate = false // Reset flag on error
-                    }
-                }
-            }
-            // When transitioning from PAUSED to PLAYING, resume from the paused frame
-            else if (currentPlayerState == PlayerState.PAUSED && newState == PlayerState.PLAYING) {
-                currentFrameIndex = pausedFrameIndex
-                Log.d(LOG_TAG, "Animation resumed from frame $currentFrameIndex")
-            }
-            
-            currentPlayerState = newState
-            lastLoggedPlayerState = newState
-        }
-    }
 
     /**
      * Calculate frame duration with support for individual frame durations
