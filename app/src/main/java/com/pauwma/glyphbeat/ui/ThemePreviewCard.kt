@@ -34,7 +34,7 @@ fun ThemePreviewCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onSelect() }
-            .padding(8.dp),
+            .padding(4.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -61,22 +61,23 @@ fun ThemePreviewCard(
                 )
                 .clip(RoundedCornerShape(12.dp))
                 .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Glyph Matrix Preview
             GlyphMatrixPreview(
                 theme = theme,
                 isSelected = isSelected,
-                previewSize = 100
+                previewSize = 120
             )
+            
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Theme Name
             Text(
                 text = theme.getThemeName(),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                    fontSize = 16.sp
+                    fontSize = 18.sp
                 ),
                 color = if (isSelected) 
                     MaterialTheme.colorScheme.primary 
@@ -85,6 +86,8 @@ fun ThemePreviewCard(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+            
+            Spacer(modifier = Modifier.height(4.dp))
             
             // Theme Description
             Text(
@@ -116,7 +119,7 @@ fun CompactThemePreviewCard(
     Card(
         modifier = modifier
             .clickable { onSelect() }
-            .padding(4.dp),
+            .padding(2.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),

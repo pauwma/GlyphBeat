@@ -218,15 +218,9 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate() {
     
     override fun generateFrame(frameIndex: Int): IntArray {
         validateFrameIndex(frameIndex)
-        
-        // For preview purposes, if there's no active media, show the circular preview pattern
-        val trackInfo = mediaHelper.getTrackInfo()
-        if (trackInfo == null || trackInfo.albumArt == null) {
-            // No media or no album art - show circular preview pattern
-            return previewFrame
-        }
-        
-        // Active media with album art - return current album art frame (dynamic content)
+
+        // Always return the current album art frame to match what's displayed on the matrix
+        // This ensures UI preview matches the actual display
         return getCurrentAlbumArtFrame()
     }
     

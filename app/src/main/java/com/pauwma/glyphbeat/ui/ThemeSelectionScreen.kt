@@ -91,8 +91,8 @@ fun ThemeSelectionScreen(
                     top = 0.dp,
                     bottom = 16.dp
                 ),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(themeRepository.availableThemes) { theme ->
                     val themeIndex = themeRepository.availableThemes.indexOf(theme)
@@ -159,8 +159,8 @@ fun CompactThemeSelectionScreen(
                     horizontal = 12.dp,
                     vertical = 8.dp
                 ),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(themeRepository.availableThemes) { theme ->
                     val themeIndex = themeRepository.availableThemes.indexOf(theme)

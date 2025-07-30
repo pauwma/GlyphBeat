@@ -12,11 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.pauwma.glyphbeat.animation.AnimationTheme
 import com.pauwma.glyphbeat.animation.styles.CoverArtTheme
 import com.pauwma.glyphbeat.animation.styles.FrameTransitionSequence
 import com.pauwma.glyphbeat.animation.styles.ThemeTemplate
+import com.pauwma.glyphbeat.sound.MediaControlHelper
 import kotlinx.coroutines.delay
 import kotlin.math.min
 
@@ -31,8 +33,10 @@ fun GlyphMatrixPreview(
     modifier: Modifier = Modifier,
     previewSize: Int = 120 // Size in dp for the preview
 ) {
+    val context = LocalContext.current
     var currentFrame by remember { mutableIntStateOf(0) }
     var transitionSequence by remember { mutableStateOf<FrameTransitionSequence?>(null) }
+    var mediaTrigger by remember { mutableIntStateOf(0) }
     
     // Initialize transition sequence if theme uses frame transitions
     LaunchedEffect(theme) {
@@ -40,6 +44,28 @@ fun GlyphMatrixPreview(
             theme.createTransitionSequence()
         } else {
             null
+        }
+    }
+    
+    // Monitor media changes for CoverArtTheme
+    LaunchedEffect(theme) {
+        if (theme is CoverArtTheme) {
+            val mediaHelper = MediaControlHelper(context)
+            var lastTrackTitle: String? = null
+            
+            while (true) {
+                val trackInfo = mediaHelper.getTrackInfo()
+                val currentTrackTitle = trackInfo?.title
+                
+                if (currentTrackTitle != lastTrackTitle) {
+                    // Media changed, clear cache and trigger recomposition
+                    theme.clearCache()
+                    mediaTrigger++
+                    lastTrackTitle = currentTrackTitle
+                }
+                
+                delay(2000) // Check every 2 seconds
+            }
         }
     }
     
@@ -67,7 +93,7 @@ fun GlyphMatrixPreview(
         }
     }
     
-    val frameData = remember(theme, currentFrame) {
+    val frameData = remember(theme, currentFrame, mediaTrigger) {
         theme.generateFrame(currentFrame)
     }
     
@@ -90,8 +116,8 @@ fun GlyphMatrixPreview(
             
             // Use larger grid for CoverArtTheme, normal size for others
             val gridSize = if (theme is CoverArtTheme) {
-                // Make the grid larger so square content touches circle edges and corners are hidden
-                containerSize * 1.414f // √2 to make square touch circle edges
+                // Make the grid match the circle size exactly
+                containerSize
             } else {
                 // Normal sizing for other themes
                 containerSize
@@ -111,12 +137,24 @@ fun GlyphMatrixPreview(
                     val pixelIndex = row * 25 + col
                     val brightness = if (pixelIndex < frameData.size) frameData[pixelIndex] else 0
                     
-                    // Convert brightness to color
-                    val color = when {
-                        brightness == 0 -> Color.Transparent
-                        brightness < 100 -> Color.Gray.copy(alpha = 0.3f)
-                        brightness < 200 -> Color.Gray.copy(alpha = 0.7f)
-                        else -> Color.White
+                    // Convert brightness to color - use exact matrix-like mapping for CoverArtTheme
+                    val color = if (theme is CoverArtTheme) {
+                        // Direct linear brightness mapping to match matrix exactly
+                        if (brightness == 0) {
+                            Color.Transparent
+                        } else {
+                            // Linear mapping: brightness 0-255 -> alpha 0.0-1.0
+                            val alpha = (brightness / 255f).coerceIn(0f, 1f)
+                            Color.White.copy(alpha = alpha)
+                        }
+                    } else {
+                        // Original mapping for other themes
+                        when {
+                            brightness == 0 -> Color.Transparent
+                            brightness < 100 -> Color.Gray.copy(alpha = 0.3f)
+                            brightness < 200 -> Color.Gray.copy(alpha = 0.7f)
+                            else -> Color.White
+                        }
                     }
                     
                     if (brightness > 0) {
