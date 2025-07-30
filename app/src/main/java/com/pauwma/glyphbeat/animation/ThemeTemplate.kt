@@ -3,6 +3,131 @@ package com.pauwma.glyphbeat.animation.styles
 import com.pauwma.glyphbeat.AnimationTheme
 
 /**
+ * Represents a single frame transition with repetition and timing control.
+ * 
+ * @param fromFrameIndex Source frame index (0-based)
+ * @param toFrameIndex Target frame index (0-based)
+ * @param repetitions Number of times to repeat this transition (must be > 0)
+ * @param transitionDuration Duration in milliseconds between frame changes (50-2000ms)
+ */
+data class FrameTransition(
+    val fromFrameIndex: Int,
+    val toFrameIndex: Int,
+    val repetitions: Int,
+    val transitionDuration: Long
+) {
+    init {
+        require(repetitions > 0) { "Repetitions must be greater than 0, got $repetitions" }
+        require(transitionDuration in 50L..2000L) { "Transition duration must be between 50ms and 2000ms, got ${transitionDuration}ms" }
+        require(fromFrameIndex >= 0) { "From frame index must be >= 0, got $fromFrameIndex" }
+        require(toFrameIndex >= 0) { "To frame index must be >= 0, got $toFrameIndex" }
+    }
+}
+
+/**
+ * Manages a sequence of frame transitions for advanced animation patterns.
+ * 
+ * Example usage:
+ * ```
+ * val transitions = listOf(
+ *     FrameTransition(0, 1, 10, 100L), // F1→F2 repeated 10 times at 100ms
+ *     FrameTransition(0, 2, 5, 200L)   // F1→F3 repeated 5 times at 200ms
+ * )
+ * ```
+ */
+class FrameTransitionSequence(
+    private val transitions: List<FrameTransition>,
+    private val maxFrameCount: Int
+) {
+    private var currentTransitionIndex = 0
+    private var currentRepetition = 0
+    private var isShowingFromFrame = true // true = from frame, false = to frame
+    
+    init {
+        require(transitions.isNotEmpty()) { "Transition sequence cannot be empty" }
+        
+        // Validate all frame indices are within bounds
+        transitions.forEach { transition ->
+            require(transition.fromFrameIndex < maxFrameCount) {
+                "From frame index ${transition.fromFrameIndex} is out of bounds (max: ${maxFrameCount - 1})"
+            }
+            require(transition.toFrameIndex < maxFrameCount) {
+                "To frame index ${transition.toFrameIndex} is out of bounds (max: ${maxFrameCount - 1})"
+            }
+        }
+    }
+    
+    /**
+     * Get the current frame index to display.
+     */
+    fun getCurrentFrameIndex(): Int {
+        val currentTransition = transitions[currentTransitionIndex]
+        return if (isShowingFromFrame) {
+            currentTransition.fromFrameIndex
+        } else {
+            currentTransition.toFrameIndex
+        }
+    }
+    
+    /**
+     * Get the duration for the current frame.
+     */
+    fun getCurrentDuration(): Long {
+        return transitions[currentTransitionIndex].transitionDuration
+    }
+    
+    /**
+     * Advance to the next frame in the transition sequence.
+     * Returns true if sequence continues, false if it should loop back to start.
+     */
+    fun advance(): Boolean {
+        val currentTransition = transitions[currentTransitionIndex]
+        
+        // Toggle between from and to frame
+        if (isShowingFromFrame) {
+            isShowingFromFrame = false
+        } else {
+            isShowingFromFrame = true
+            currentRepetition++
+            
+            // Check if we've completed all repetitions for this transition
+            if (currentRepetition >= currentTransition.repetitions) {
+                currentRepetition = 0
+                currentTransitionIndex++
+                
+                // Check if we've completed all transitions
+                if (currentTransitionIndex >= transitions.size) {
+                    currentTransitionIndex = 0
+                    return false // Indicates loop completion
+                }
+            }
+        }
+        
+        return true
+    }
+    
+    /**
+     * Reset the sequence to the beginning.
+     */
+    fun reset() {
+        currentTransitionIndex = 0
+        currentRepetition = 0
+        isShowingFromFrame = true
+    }
+    
+    /**
+     * Get information about the current state for debugging.
+     */
+    fun getDebugInfo(): String {
+        val currentTransition = transitions[currentTransitionIndex]
+        return "Transition ${currentTransitionIndex + 1}/${transitions.size}: " +
+                "F${currentTransition.fromFrameIndex}→F${currentTransition.toFrameIndex} " +
+                "(${currentRepetition + 1}/${currentTransition.repetitions}) " +
+                "showing ${if (isShowingFromFrame) "from" else "to"} frame"
+    }
+}
+
+/**
  * ANIMATION THEME TEMPLATE - PRE-GENERATED FRAMES WITH INDIVIDUAL FRAME DURATIONS
  * 
  * This template shows how to create themes using pre-generated frame data,
@@ -142,6 +267,48 @@ open class ThemeTemplate() : AnimationTheme() {
         100L,  // Frame 2: Dim cross (quick transition)
         400L   // Frame 3: Off (longer pause before repeat)
     )
+    
+    /**
+     * Frame transitions for advanced animation patterns (NEW FEATURE).
+     * 
+     * BEHAVIOR OPTIONS:
+     * =================
+     * 1. SET TO NULL: Use standard frame-by-frame animation (default behavior)
+     *    override val frameTransitions: List<FrameTransition>? = null
+     *    → Cycles through frames normally: F0→F1→F2→F3→F0...
+     * 
+     * 2. SPECIFY TRANSITIONS: Define custom frame sequences with repetitions
+     *    override val frameTransitions: List<FrameTransition>? = listOf(
+     *        FrameTransition(0, 1, 10, 100L), // F0→F1 repeated 10 times at 100ms
+     *        FrameTransition(0, 2, 5, 200L)   // F0→F2 repeated 5 times at 200ms
+     *    )
+     *    → Custom sequence: F0→F1 (10x) → F0→F2 (5x) → repeat
+     * 
+     * VALIDATION:
+     * - All frame indices must be valid (< frames.size)
+     * - Repetitions must be > 0
+     * - Transition durations must be 50-2000ms
+     * - When frameTransitions is used, frameDurations is ignored
+     * 
+     * EXAMPLES:
+     * =========
+     * // Simple alternation
+     * listOf(FrameTransition(0, 1, 5, 150L)) // F0→F1 5 times, then repeat
+     * 
+     * // Complex pattern
+     * listOf(
+     *     FrameTransition(0, 1, 3, 100L), // Fast F0→F1 transitions
+     *     FrameTransition(1, 2, 2, 300L), // Slower F1→F2 transitions  
+     *     FrameTransition(2, 0, 1, 500L)  // Single slow F2→F0 return
+     * )
+     * 
+     * // Multi-directional dancing
+     * listOf(
+     *     FrameTransition(0, 1, 10, 120L), // Duck dancing F0→F1
+     *     FrameTransition(0, 2, 10, 120L)  // Duck dancing F0→F2
+     * )
+     */
+    protected open val frameTransitions: List<FrameTransition>? = null
     
     /**
      * Default brightness level for the entire theme.
@@ -485,6 +652,28 @@ open class ThemeTemplate() : AnimationTheme() {
             }
         }
 
+        // Validate frame transitions if provided
+        frameTransitions?.let { transitions ->
+            require(transitions.isNotEmpty()) {
+                "Frame transitions list cannot be empty when not null"
+            }
+            
+            transitions.forEachIndexed { index, transition ->
+                require(transition.fromFrameIndex < frames.size) {
+                    "Transition $index: from frame index ${transition.fromFrameIndex} is out of bounds (max: ${frames.size - 1})"
+                }
+                require(transition.toFrameIndex < frames.size) {
+                    "Transition $index: to frame index ${transition.toFrameIndex} is out of bounds (max: ${frames.size - 1})"
+                }
+            }
+            
+            // Warn if both frameTransitions and frameDurations are defined
+            if (frameDurations != null) {
+                // Log warning that frameDurations will be ignored
+                // Note: We can't log here as Log may not be available, but validation passes
+            }
+        }
+
         // Validate loop mode
         require(loopMode in arrayOf("normal", "reverse", "ping-pong")) {
             "Loop mode must be 'normal', 'reverse', or 'ping-pong', got '$loopMode'"
@@ -595,6 +784,31 @@ open class ThemeTemplate() : AnimationTheme() {
     fun hasIndividualFrameDurations(): Boolean {
         ensureValidated()
         return frameDurations != null
+    }
+
+    // Frame Transition Support (NEW FEATURE)
+    /**
+     * Check if this theme uses frame transitions instead of standard animation.
+     * @return true if frameTransitions is defined, false if using standard frame cycling
+     */
+    fun hasFrameTransitions(): Boolean {
+        ensureValidated()
+        return this.frameTransitions != null
+    }
+    
+    
+    /**
+     * Create a FrameTransitionSequence for this theme.
+     * Only call this if hasFrameTransitions() returns true.
+     * @return FrameTransitionSequence configured for this theme
+     * @throws IllegalStateException if theme doesn't use frame transitions
+     */
+    fun createTransitionSequence(): FrameTransitionSequence {
+        ensureValidated()
+        val transitions = this.frameTransitions ?: throw IllegalStateException(
+            "Theme ${getThemeName()} does not use frame transitions"
+        )
+        return FrameTransitionSequence(transitions, getFrameCount())
     }
 
     // Note: All getter methods are automatically generated from the properties above

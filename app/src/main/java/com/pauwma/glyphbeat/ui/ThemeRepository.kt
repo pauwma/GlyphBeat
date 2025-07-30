@@ -38,9 +38,6 @@ class ThemeRepository private constructor(private val context: Context) {
     val availableThemes = listOf(
         VinylTheme(),
         DancingDuckTheme()
-        //ThemeTemplate(),
-        //PulseTheme(),
-        //WaveTheme()
     )
     
     // Current selected theme index state
@@ -130,8 +127,7 @@ class ThemeRepository private constructor(private val context: Context) {
 fun AnimationTheme.getShortDescription(): String {
     return when (this.getThemeName()) {
         "Vinyl" -> "Detailed vinyl record"
-        "Pulse" -> "Beat-responsive pulses"
-        "Wave" -> "Audio spectrum waves"
+        "Dancing Duck" -> "Classic duck animation"
         else -> "Animation theme"
     }
 }

@@ -5,6 +5,7 @@ import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
 import com.pauwma.glyphbeat.AnimationTheme
 import com.pauwma.glyphbeat.animation.styles.ThemeTemplate
+import com.pauwma.glyphbeat.animation.styles.FrameTransitionSequence
 import com.pauwma.glyphbeat.sound.AudioAnalyzer
 import com.pauwma.glyphbeat.sound.AudioData
 import com.pauwma.glyphbeat.sound.AudioReactiveTheme
@@ -46,6 +47,10 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private var isPlaying = false
     private var hasActiveMedia = false
     private var currentPlayerState = PlayerState.OFFLINE
+    
+    // Frame transition support
+    private var frameTransitionSequence: FrameTransitionSequence? = null
+    private var isUsingTransitions = false
     
     // Logging state management to avoid spam
     private var lastLoggedMediaState = false
@@ -109,6 +114,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         themeRepository = ThemeRepository.getInstance(context)
         audioAnalyzer = AudioAnalyzer(context)
         currentTheme = themeRepository.selectedTheme
+        initializeThemeTransitions(currentTheme)
         
         // Log initial theme information
         logThemeInfo(currentTheme)
@@ -143,6 +149,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 val selectedTheme = themeRepository.selectedTheme
                 if (currentTheme?.getThemeName() != selectedTheme.getThemeName()) {
                     currentTheme = selectedTheme
+                    initializeThemeTransitions(selectedTheme)
                     logThemeInfo(currentTheme)
                     Log.d(LOG_TAG, "Theme changed to: ${currentTheme?.getThemeName()}")
                 }
@@ -291,9 +298,14 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         
         return when (theme) {
             is ThemeTemplate -> {
-                if (theme.hasIndividualFrameDurations()) {
+                if (isUsingTransitions) {
+                    // Use transition sequence duration
+                    frameTransitionSequence?.getCurrentDuration() ?: theme.getAnimationSpeed()
+                } else if (theme.hasIndividualFrameDurations()) {
+                    // Use individual frame durations
                     theme.getFrameDuration(currentFrameIndex)
                 } else {
+                    // Use global animation speed
                     theme.getAnimationSpeed()
                 }
             }
@@ -305,21 +317,52 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
      * Advance frame index with consistent progression for audio-reactive themes
      */
     private fun advanceFrameIndex() {
-        val frameCount = currentTheme?.getFrameCount() ?: 1
-        
-        // For audio-reactive themes, maintain consistent frame progression
-        // Frame skipping should be handled within the theme's audio-reactive logic, not here
-        if (currentTheme is AudioReactiveTheme && currentAudioData.isPlaying) {
-            // Always advance by 1 for audio-reactive themes to maintain sync
-            currentFrameIndex = (currentFrameIndex + 1) % frameCount
+        if (isUsingTransitions) {
+            // Use frame transitions
+            frameTransitionSequence?.advance()
+            // Update currentFrameIndex to match the transition sequence
+            currentFrameIndex = frameTransitionSequence?.getCurrentFrameIndex() ?: 0
+        } else {
+            // Use standard frame progression
+            val frameCount = currentTheme?.getFrameCount() ?: 1
             
-            // Only log beats occasionally to reduce spam
-            if (currentAudioData.beatIntensity > 0.5 && currentFrameIndex % 4 == 0) {
-                Log.v(LOG_TAG, "Beat! Frame: $currentFrameIndex/$frameCount, intensity: ${String.format("%.2f", currentAudioData.beatIntensity)}, bass: ${String.format("%.2f", currentAudioData.bassLevel)}")
+            // For audio-reactive themes, maintain consistent frame progression
+            // Frame skipping should be handled within the theme's audio-reactive logic, not here
+            if (currentTheme is AudioReactiveTheme && currentAudioData.isPlaying) {
+                // Always advance by 1 for audio-reactive themes to maintain sync
+                currentFrameIndex = (currentFrameIndex + 1) % frameCount
+                
+                // Only log beats occasionally to reduce spam
+                if (currentAudioData.beatIntensity > 0.5 && currentFrameIndex % 4 == 0) {
+                    Log.v(LOG_TAG, "Beat! Frame: $currentFrameIndex/$frameCount, intensity: ${String.format("%.2f", currentAudioData.beatIntensity)}, bass: ${String.format("%.2f", currentAudioData.bassLevel)}")
+                }
+            } else {
+                // For non-audio-reactive themes, use normal progression (no beat skipping)
+                currentFrameIndex = (currentFrameIndex + 1) % frameCount
+            }
+        }
+    }
+    
+    /**
+     * Initialize frame transitions for the given theme.
+     */
+    private fun initializeThemeTransitions(theme: AnimationTheme?) {
+        if (theme is ThemeTemplate && theme.hasFrameTransitions()) {
+            try {
+                frameTransitionSequence = theme.createTransitionSequence()
+                isUsingTransitions = true
+                currentFrameIndex = frameTransitionSequence?.getCurrentFrameIndex() ?: 0
+                Log.d(LOG_TAG, "Initialized frame transitions for theme: ${theme.getThemeName()}")
+                Log.v(LOG_TAG, "Transition debug: ${frameTransitionSequence?.getDebugInfo()}")
+            } catch (e: Exception) {
+                Log.w(LOG_TAG, "Failed to initialize transitions for theme ${theme.getThemeName()}: ${e.message}")
+                frameTransitionSequence = null
+                isUsingTransitions = false
             }
         } else {
-            // For non-audio-reactive themes, use normal progression (no beat skipping)
-            currentFrameIndex = (currentFrameIndex + 1) % frameCount
+            frameTransitionSequence = null
+            isUsingTransitions = false
+            currentFrameIndex = 0
         }
     }
 

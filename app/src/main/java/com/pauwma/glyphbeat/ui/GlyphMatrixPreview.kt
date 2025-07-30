@@ -15,6 +15,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.pauwma.glyphbeat.AnimationTheme
 import com.pauwma.glyphbeat.GlyphMatrixRenderer
+import com.pauwma.glyphbeat.animation.styles.FrameTransitionSequence
+import com.pauwma.glyphbeat.animation.styles.ThemeTemplate
 import kotlinx.coroutines.delay
 import kotlin.math.min
 
@@ -30,13 +32,35 @@ fun GlyphMatrixPreview(
     previewSize: Int = 120 // Size in dp for the preview
 ) {
     var currentFrame by remember { mutableIntStateOf(0) }
+    var transitionSequence by remember { mutableStateOf<FrameTransitionSequence?>(null) }
+    
+    // Initialize transition sequence if theme uses frame transitions
+    LaunchedEffect(theme) {
+        transitionSequence = if (theme is ThemeTemplate && theme.hasFrameTransitions()) {
+            theme.createTransitionSequence()
+        } else {
+            null
+        }
+    }
     
     // Animation logic - only animate if selected
-    LaunchedEffect(isSelected, theme) {
+    LaunchedEffect(isSelected, theme, transitionSequence) {
         if (isSelected) {
-            while (true) {
-                delay(theme.getAnimationSpeed())
-                currentFrame = (currentFrame + 1) % theme.getFrameCount()
+            val sequence = transitionSequence
+            if (sequence != null) {
+                // Use frame transitions animation
+                sequence.reset()
+                while (true) {
+                    currentFrame = sequence.getCurrentFrameIndex()
+                    delay(sequence.getCurrentDuration())
+                    sequence.advance()
+                }
+            } else {
+                // Use standard frame-by-frame animation
+                while (true) {
+                    delay(theme.getAnimationSpeed())
+                    currentFrame = (currentFrame + 1) % theme.getFrameCount()
+                }
             }
         } else {
             currentFrame = 0 // Show first frame for unselected themes
