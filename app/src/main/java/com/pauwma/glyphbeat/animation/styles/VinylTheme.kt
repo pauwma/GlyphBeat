@@ -23,22 +23,13 @@ class VinylTheme() : ThemeTemplate() {
     // ANIMATION PROPERTIES
     // =================================================================================
     
-    override val animationSpeedValue: Long = 50L // Fast spinning like a real record
+    override val animationSpeedValue: Long = 150L // Fast spinning like a real record
     override val brightnessValue: Int = 255
     override val loopMode: String = "normal"
     override val complexity: String = "Medium"
     
-    // Individual frame durations for realistic vinyl spinning
-    override val frameDurations: LongArray? = longArrayOf(
-        50L,  // Frame 0: Fast spin
-        50L,  // Frame 1: Fast spin  
-        50L,  // Frame 2: Fast spin
-        50L,  // Frame 3: Fast spin
-        50L,  // Frame 4: Fast spin
-        50L,  // Frame 5: Fast spin
-        50L,  // Frame 6: Fast spin
-        50L   // Frame 7: Fast spin
-    )
+    // Use equal frame durations based on animationSpeedValue
+    override val frameDurations: LongArray? = null
     
     // =================================================================================
     // BEHAVIOR SETTINGS
@@ -90,7 +81,7 @@ class VinylTheme() : ThemeTemplate() {
     // STATE-SPECIFIC FRAMES - Using appropriate frames for different states
     // =================================================================================
     
-    override val pausedFrame: IntArray by lazy { frames[2].clone() } // Use frame 2 as paused state
+    override val pausedFrame: IntArray = IntArray(0) // No custom paused frame - use smooth pause
     override val offlineFrame: IntArray = IntArray(625) { 0 } // Empty frame when offline
     override val loadingFrame: IntArray by lazy { frames[0].clone() } // Use first frame for loading
     override val errorFrame: IntArray = IntArray(625) { 0 } // Empty frame for errors

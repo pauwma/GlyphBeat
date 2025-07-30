@@ -42,6 +42,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private val backgroundScope = CoroutineScope(Dispatchers.IO)
     private val uiScope = CoroutineScope(Dispatchers.Main)
     private var currentFrameIndex = 0 // Current frame in the animation
+    private var pausedFrameIndex = 0 // Frame index when paused (for smooth resume)
     private var isPlaying = false
     private var hasActiveMedia = false
     private var currentPlayerState = PlayerState.OFFLINE
@@ -265,6 +266,18 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private fun updatePlayerState(newState: PlayerState) {
         if (currentPlayerState != newState) {
             Log.d(LOG_TAG, "Player state changed: ${currentPlayerState} -> $newState")
+            
+            // When transitioning from PLAYING to PAUSED, save the current frame
+            if (currentPlayerState == PlayerState.PLAYING && newState == PlayerState.PAUSED) {
+                pausedFrameIndex = currentFrameIndex
+                Log.d(LOG_TAG, "Animation paused at frame $pausedFrameIndex")
+            }
+            // When transitioning from PAUSED to PLAYING, resume from the paused frame
+            else if (currentPlayerState == PlayerState.PAUSED && newState == PlayerState.PLAYING) {
+                currentFrameIndex = pausedFrameIndex
+                Log.d(LOG_TAG, "Animation resumed from frame $currentFrameIndex")
+            }
+            
             currentPlayerState = newState
             lastLoggedPlayerState = newState
         }
@@ -333,7 +346,16 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             }
             
             val stateFrame = when (playerState) {
-                PlayerState.PAUSED -> theme.pausedFrame
+                PlayerState.PAUSED -> {
+                    // Use theme's custom paused frame if available and not empty, 
+                    // otherwise use smooth pause (freeze on current animation frame)
+                    if (theme.pausedFrame.isNotEmpty()) {
+                        theme.pausedFrame
+                    } else {
+                        // No custom paused frame - freeze on the frame where animation was paused
+                        theme.generateFrame(pausedFrameIndex)
+                    }
+                }
                 PlayerState.OFFLINE -> theme.offlineFrame
                 PlayerState.LOADING -> theme.loadingFrame
                 PlayerState.ERROR -> theme.errorFrame

@@ -113,11 +113,28 @@ open class ThemeTemplate() : AnimationTheme() {
     
     /**
      * Individual frame durations in milliseconds (NEW FEATURE).
-     * Each element corresponds to one frame's display time.
-     * Set to null to use global animationSpeed for all frames.
      * 
-     * Example: Frame 0 displays for 250ms, Frame 1 for 150ms, etc.
-     * This allows for sophisticated timing like slow builds and quick flashes.
+     * BEHAVIOR OPTIONS:
+     * =================
+     * 1. SET TO NULL: All frames use equal durations based on animationSpeedValue
+     *    override val frameDurations: LongArray? = null
+     *    → All frames display for animationSpeedValue milliseconds (e.g., 150ms each)
+     * 
+     * 2. SPECIFY INDIVIDUAL DURATIONS: Each frame can have its own display time
+     *    override val frameDurations: LongArray? = longArrayOf(250L, 150L, 100L, 400L)
+     *    → Frame 0: 250ms, Frame 1: 150ms, Frame 2: 100ms, Frame 3: 400ms
+     * 
+     * 3. MIXED TIMING: Create dramatic effects with varying speeds
+     *    override val frameDurations: LongArray? = longArrayOf(50L, 1000L, 75L, 500L)
+     *    → Fast flash, long pause, quick transition, medium hold
+     * 
+     * VALIDATION:
+     * - Array size must match frames.size if not null
+     * - Each duration must be between 50ms and 2000ms
+     * - Use null for simple equal timing based on animationSpeedValue
+     * 
+     * This allows for sophisticated timing like slow builds, quick flashes, 
+     * dramatic pauses, or uniform animation speeds.
      */
     protected open val frameDurations: LongArray? = longArrayOf(
         250L,  // Frame 0: Bright cross (longer display for emphasis)
@@ -337,8 +354,41 @@ open class ThemeTemplate() : AnimationTheme() {
 
     /**
      * Frame displayed when media is paused.
-     * Uses the medium brightness cross (frame 1) to indicate paused state.
-     * Set to intArrayOf() to use the last played frame instead.
+     * 
+     * PAUSED FRAME BEHAVIOR OPTIONS:
+     * ==============================
+     * 
+     * 1. CUSTOM PAUSED FRAME (Static Visual Indicator):
+     *    open val pausedFrame: IntArray by lazy { frames[1].clone() }
+     *    → Shows a specific frame (e.g., dimmed version) to visually indicate paused state
+     *    → Good for themes that want a clear "paused" visual indicator
+     *    → Example: Dimmed turntable, paused icon, different color scheme
+     * 
+     * 2. SMOOTH PAUSE (Freeze Current Frame):
+     *    open val pausedFrame: IntArray = intArrayOf()
+     *    → Uses empty array to enable smooth pause behavior
+     *    → Freezes on whatever animation frame was playing when paused
+     *    → Resumes from the exact same frame for seamless continuation
+     *    → Good for themes where visual continuity is more important than pause indication
+     * 
+     * IMPLEMENTATION DETAILS:
+     * =======================
+     * - MediaPlayerToyService checks if pausedFrame.isNotEmpty()
+     * - If NOT empty: Shows the custom pausedFrame
+     * - If empty: Freezes on current animation frame and resumes smoothly
+     * - The pausedFrameIndex is preserved during pause/resume transitions for smooth behavior
+     * 
+     * EXAMPLES:
+     * =========
+     * // Custom paused frame (shows dim cross when paused)
+     * open val pausedFrame: IntArray by lazy { frames[2].clone() } // Dim version
+     * 
+     * // Smooth pause (freezes on current frame, no visual jump)
+     * open val pausedFrame: IntArray = intArrayOf() // Empty = smooth pause
+     * 
+     * Choose based on your theme's needs:
+     * - Vinyl record: Smooth pause (looks natural when stopped mid-spin)
+     * - Status indicator: Custom pause frame (shows clear "paused" state)
      */
     open val pausedFrame: IntArray by lazy { frames[1].clone() } // Medium brightness cross
 
@@ -570,24 +620,29 @@ open class ThemeTemplate() : AnimationTheme() {
  * INDIVIDUAL FRAME DURATIONS USAGE:
  * ==================================
  *
- * // Option 1: Use global animation speed for all frames
- * private val frameDurations: LongArray? = null
+ * // Option 1: Equal timing - All frames use animationSpeedValue duration
+ * override val frameDurations: LongArray? = null
+ * // → If animationSpeedValue = 150L, all frames display for 150ms each
  *
- * // Option 2: Specify individual durations for each frame
- * private val frameDurations: LongArray? = longArrayOf(
+ * // Option 2: Individual timing - Each frame has custom duration
+ * override val frameDurations: LongArray? = longArrayOf(
  *     500L,  // Frame 0: Half second (slow build-up)
  *     100L,  // Frame 1: Quick flash
  *     200L,  // Frame 2: Normal speed
  *     800L   // Frame 3: Long pause before repeat
  * )
  *
- * // Option 3: Mix of fast and slow frames for dramatic effect
- * private val frameDurations: LongArray? = longArrayOf(
- *     50L,   // Very fast
- *     1000L, // Very slow
- *     75L,   // Quick
- *     500L   // Medium
+ * // Option 3: Dramatic timing - Mix fast and slow for artistic effect
+ * override val frameDurations: LongArray? = longArrayOf(
+ *     50L,   // Very fast flash
+ *     1000L, // Long dramatic pause
+ *     75L,   // Quick transition
+ *     500L   // Medium hold
  * )
+ *
+ * // Option 4: Uniform fast timing - All frames same speed (alternative to null)
+ * override val frameDurations: LongArray? = longArrayOf(80L, 80L, 80L, 80L)
+ * // → Same as setting animationSpeedValue = 80L and frameDurations = null
  *
  * TESTING YOUR THEME:
  * ===================
@@ -619,4 +674,26 @@ open class ThemeTemplate() : AnimationTheme() {
  * ✅ Do follow the existing code style and naming conventions
  * ✅ Do use individual frame durations for sophisticated timing effects
  * ✅ Do validate frame duration arrays match frame count
+ * ✅ Do choose appropriate pausedFrame behavior (custom vs smooth pause)
+ *
+ * PAUSED FRAME BEHAVIOR EXAMPLES:
+ * ===============================
+ *
+ * // Example 1: Custom paused frame for clear pause indication
+ * class StatusTheme : ThemeTemplate() {
+ *     override val pausedFrame: IntArray by lazy { 
+ *         frames[1].clone()  // Show specific "paused" visual
+ *     }
+ * }
+ *
+ * // Example 2: Smooth pause for continuous animations
+ * class VinylTheme : ThemeTemplate() {
+ *     override val pausedFrame: IntArray = intArrayOf()  // Empty = smooth pause
+ * }
+ *
+ * // Example 3: Conditional paused frame based on theme type
+ * class AdaptiveTheme : ThemeTemplate() {
+ *     override val pausedFrame: IntArray = 
+ *         if (isStatusIndicator) frames[2].clone() else intArrayOf()
+ * }
  */
