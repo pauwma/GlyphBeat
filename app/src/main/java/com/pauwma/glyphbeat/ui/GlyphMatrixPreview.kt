@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -13,6 +14,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.pauwma.glyphbeat.animation.AnimationTheme
+import com.pauwma.glyphbeat.animation.styles.CoverArtTheme
 import com.pauwma.glyphbeat.animation.styles.FrameTransitionSequence
 import com.pauwma.glyphbeat.animation.styles.ThemeTemplate
 import kotlinx.coroutines.delay
@@ -72,25 +74,36 @@ fun GlyphMatrixPreview(
     Box(
         modifier = modifier
             .size(previewSize.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surface)
             .border(
                 width = if (isSelected) 2.dp else 1.dp,
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                shape = RoundedCornerShape(8.dp)
+                shape = CircleShape
             )
-            .padding(8.dp)
+            .padding(if (theme is CoverArtTheme) 2.dp else 8.dp)
     ) {
         Canvas(
             modifier = Modifier.fillMaxSize()
         ) {
-            val dotSize = min(size.width, size.height) / 25f // 25x25 grid
+            val containerSize = min(size.width, size.height)
+            
+            // Use larger grid for CoverArtTheme, normal size for others
+            val gridSize = if (theme is CoverArtTheme) {
+                // Make the grid larger so square content touches circle edges and corners are hidden
+                containerSize * 1.414f // √2 to make square touch circle edges
+            } else {
+                // Normal sizing for other themes
+                containerSize
+            }
+            
+            val dotSize = gridSize / 25f // 25x25 grid
             val spacing = dotSize * 0.2f // Small spacing between dots
             val actualDotSize = dotSize * 0.8f
             
             // Calculate starting position to center the grid
-            val startX = (size.width - (25 * dotSize)) / 2f
-            val startY = (size.height - (25 * dotSize)) / 2f
+            val startX = (size.width - gridSize) / 2f
+            val startY = (size.height - gridSize) / 2f
             
             // Draw each pixel as a small circle/dot
             for (row in 0 until 25) {

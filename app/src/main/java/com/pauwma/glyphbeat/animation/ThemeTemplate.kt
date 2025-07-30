@@ -513,7 +513,7 @@ open class ThemeTemplate() : AnimationTheme() {
      * Preview frame for UI display (typically first frame).
      * This uses the first animation frame as the preview.
      */
-    protected open val previewFrame: IntArray by lazy { frames[0].clone() }
+    open val previewFrame: IntArray by lazy { frames[0].clone() }
 
     // =================================================================================
     // STATE-SPECIFIC FRAMES - Define frames for different application states

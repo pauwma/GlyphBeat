@@ -2,6 +2,11 @@ package com.pauwma.glyphbeat.sound
 
 import android.content.ComponentName
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
 import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaController
@@ -9,6 +14,7 @@ import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.util.Log
 import com.pauwma.glyphbeat.sound.MediaNotificationListenerService
+import kotlin.math.pow
 
 class MediaControlHelper(private val context: Context) {
     
@@ -220,11 +226,13 @@ class MediaControlHelper(private val context: Context) {
         val metadata = controller.metadata ?: return null
         
         return try {
+            val albumArt = extractAlbumArt(metadata)
             TrackInfo(
                 title = metadata.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "Unknown",
                 artist = metadata.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: "Unknown",
                 album = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM) ?: "Unknown",
-                appName = controller.packageName ?: "Unknown"
+                appName = controller.packageName ?: "Unknown",
+                albumArt = albumArt
             )
         } catch (e: Exception) {
             Log.e(LOG_TAG, "Error getting track info", e)
@@ -232,11 +240,187 @@ class MediaControlHelper(private val context: Context) {
         }
     }
     
+    /**
+     * Extract album art from media metadata.
+     * @param metadata MediaMetadata object containing track information
+     * @return Bitmap of album art or null if not available
+     */
+    private fun extractAlbumArt(metadata: MediaMetadata): Bitmap? {
+        return try {
+            // Try to get album art from metadata
+            val bitmap = metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
+                ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_ART)
+                ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
+            
+            bitmap?.let { originalBitmap ->
+                // Downsample to 25x25 for the Glyph Matrix
+                resizeBitmapToMatrix(originalBitmap)
+            }
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error extracting album art: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Resize bitmap to 25x25 pixels for the Glyph Matrix display.
+     * @param originalBitmap Source bitmap to resize
+     * @return 25x25 bitmap or null if processing fails
+     */
+    private fun resizeBitmapToMatrix(originalBitmap: Bitmap): Bitmap? {
+        return try {
+            // Create a 25x25 bitmap with the same config as original, defaulting to ARGB_8888
+            val config = originalBitmap.config ?: Bitmap.Config.ARGB_8888
+            val resized = Bitmap.createScaledBitmap(originalBitmap, 25, 25, true)
+            
+            Log.v(LOG_TAG, "Album art resized from ${originalBitmap.width}x${originalBitmap.height} to 25x25")
+            resized
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error resizing album art: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Convert a 25x25 bitmap to a matrix intensity array for the Glyph Matrix.
+     * @param bitmap 25x25 bitmap to convert
+     * @param brightnessMultiplier Multiplier for brightness (0.0-1.0), default 1.0
+     * @param enhanceContrast Whether to apply contrast enhancement, default true
+     * @return IntArray of 625 elements with intensity values (0-255)
+     */
+    fun bitmapToMatrixArray(bitmap: Bitmap?, brightnessMultiplier: Double = 1.0, enhanceContrast: Boolean = true): IntArray {
+        if (bitmap == null || bitmap.width != 25 || bitmap.height != 25) {
+            Log.w(LOG_TAG, "Invalid bitmap for matrix conversion, using fallback pattern")
+            return createFallbackPattern()
+        }
+        
+        return try {
+            val rawArray = IntArray(625) // 25x25 = 625
+            
+            // First pass: Convert to grayscale and store raw luminance values
+            for (row in 0 until 25) {
+                for (col in 0 until 25) {
+                    val pixel = bitmap.getPixel(col, row)
+                    
+                    // Extract RGB components
+                    val red = (pixel shr 16) and 0xFF
+                    val green = (pixel shr 8) and 0xFF
+                    val blue = pixel and 0xFF
+                    
+                    // Convert to grayscale using luminance formula
+                    val luminance = (0.299 * red + 0.587 * green + 0.114 * blue).toInt()
+                    
+                    // Store raw luminance value
+                    rawArray[row * 25 + col] = luminance
+                }
+            }
+            
+            // Apply contrast enhancement if requested
+            val processedArray = if (enhanceContrast) {
+                enhanceContrast(rawArray)
+            } else {
+                rawArray
+            }
+            
+            // Apply brightness multiplier and clamp to 0-255
+            val finalArray = processedArray.map { luminance ->
+                (luminance * brightnessMultiplier).toInt().coerceIn(0, 255)
+            }.toIntArray()
+            
+            Log.v(LOG_TAG, "Bitmap converted to matrix array (contrast: $enhanceContrast, brightness: $brightnessMultiplier)")
+            finalArray
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error converting bitmap to matrix array: ${e.message}")
+            createFallbackPattern()
+        }
+    }
+    
+    /**
+     * Enhance contrast using histogram stretching and S-curve enhancement.
+     * @param luminanceArray Array of luminance values (0-255)
+     * @return Enhanced array with improved contrast
+     */
+    private fun enhanceContrast(luminanceArray: IntArray): IntArray {
+        if (luminanceArray.isEmpty()) return luminanceArray
+        
+        // Find min and max values for histogram stretching
+        val minLum = luminanceArray.minOrNull() ?: 0
+        val maxLum = luminanceArray.maxOrNull() ?: 255
+        
+        // Avoid division by zero
+        val range = (maxLum - minLum).coerceAtLeast(1)
+        
+        return luminanceArray.map { lum ->
+            // Step 1: Histogram stretching - expand dynamic range
+            val stretched = ((lum - minLum) * 255.0 / range).toInt().coerceIn(0, 255)
+            
+            // Step 2: Apply S-curve for more dramatic contrast
+            // Maps 0->0, 128->128, 255->255, but creates steeper curve in between
+            val normalized = stretched / 255.0
+            val sCurve = applySCurve(normalized, 1.5) // Contrast factor of 1.5
+            
+            // Step 3: Final enhancement - push extreme values further apart
+            val enhanced = when {
+                sCurve < 0.3 -> sCurve * 0.7 // Darken shadows more
+                sCurve > 0.7 -> 0.3 + (sCurve - 0.7) * 2.33 // Brighten highlights more  
+                else -> 0.3 + (sCurve - 0.3) * 1.0 // Keep midtones relatively unchanged
+            }
+            
+            (enhanced * 255).toInt().coerceIn(0, 255)
+        }.toIntArray()
+    }
+    
+    /**
+     * Apply S-curve transformation for contrast enhancement.
+     * @param x Normalized input value (0.0-1.0)
+     * @param contrast Contrast factor (1.0 = no change, >1.0 = more contrast)
+     * @return Enhanced value (0.0-1.0)
+     */
+    private fun applySCurve(x: Double, contrast: Double): Double {
+        return if (x < 0.5) {
+            (2 * x).pow(contrast) / 2
+        } else {
+            1 - (2 * (1 - x)).pow(contrast) / 2
+        }
+    }
+    
+    /**
+     * Create a fallback pattern when no album art is available.
+     * Shows a simple music note pattern.
+     * @return IntArray of 625 elements representing a music note
+     */
+    private fun createFallbackPattern(): IntArray {
+        // Simple fallback pattern - music note shape
+        val pattern = IntArray(625) { 0 } // Start with all pixels off
+        
+        // Create a simple music note pattern in the center
+        val notePixels = listOf(
+            // Vertical line (stem)
+            12 to 5, 12 to 6, 12 to 7, 12 to 8, 12 to 9, 12 to 10, 12 to 11, 12 to 12, 12 to 13, 12 to 14,
+            // Note head (oval)
+            10 to 15, 11 to 15, 12 to 15, 13 to 15, 14 to 15,
+            10 to 16, 14 to 16,
+            10 to 17, 11 to 17, 12 to 17, 13 to 17, 14 to 17,
+            // Flag
+            13 to 5, 14 to 6, 15 to 7, 16 to 8, 15 to 9, 14 to 10
+        )
+        
+        // Set music note pixels to medium brightness
+        notePixels.forEach { (col, row) ->
+            if (row in 0 until 25 && col in 0 until 25) {
+                pattern[row * 25 + col] = 180 // Medium brightness
+            }
+        }
+        
+        return pattern
+    }
+    
     data class TrackInfo(
         val title: String,
         val artist: String,
         val album: String,
-        val appName: String
+        val appName: String,
+        val albumArt: Bitmap? = null
     )
     
     private companion object {

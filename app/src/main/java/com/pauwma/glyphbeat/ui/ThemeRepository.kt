@@ -10,6 +10,7 @@ import com.pauwma.glyphbeat.animation.styles.DancingDuckTheme
 import com.pauwma.glyphbeat.animation.styles.MinimalTheme
 import com.pauwma.glyphbeat.animation.styles.PulseTheme
 import com.pauwma.glyphbeat.animation.styles.WaveTheme
+import com.pauwma.glyphbeat.animation.styles.CoverArtTheme
 
 /**
  * Repository for managing animation themes and their selection state.
@@ -38,7 +39,8 @@ class ThemeRepository private constructor(private val context: Context) {
     val availableThemes = listOf(
         VinylTheme(),
         DancingDuckTheme(),
-        MinimalTheme()
+        MinimalTheme(),
+        CoverArtTheme(context)
     )
     
     // Current selected theme index state

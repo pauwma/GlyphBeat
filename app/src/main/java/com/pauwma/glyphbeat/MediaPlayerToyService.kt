@@ -258,23 +258,14 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 Log.d(LOG_TAG, "Media state changed: isPlaying = $isPlaying, beatIntensity: ${currentAudioData.beatIntensity}")
             }
 
-            // Determine state with improved logic to prevent unwanted OFFLINE transitions
+            // Determine state with proper offline detection
             val newState = when {
                 // Media is available and playing
                 mediaAvailable && currentlyPlaying -> PlayerState.PLAYING
                 // Media is available but not playing
                 mediaAvailable && !currentlyPlaying -> PlayerState.PAUSED
-                // No media available - be conservative about showing offline state
-                !mediaAvailable -> {
-                    // If we're just starting up or were already offline, stay offline
-                    if (currentPlayerState == PlayerState.OFFLINE) {
-                        PlayerState.OFFLINE
-                    } else {
-                        // If we had media before, assume it's temporarily unavailable and show paused state
-                        // This prevents offline frame flashes during media transitions
-                        PlayerState.PAUSED
-                    }
-                }
+                // No media available - show offline state
+                !mediaAvailable -> PlayerState.OFFLINE
                 else -> PlayerState.PAUSED
             }
 
