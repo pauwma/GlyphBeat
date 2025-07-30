@@ -1,0 +1,79 @@
+# Android
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Android Studio
+*.iws
+/.idea/shelf
+/.idea/dictionaries
+/.idea/runConfigurations
+/.idea/gradle.xml
+/.idea/misc.xml
+/.idea/compiler.xml
+/.idea/copyright/
+/.idea/encodings.xml
+/.idea/scopes/
+/.idea/vcs.xml
+/.idea/jsLibraryMappings.xml
+
+# Keystore files
+*.jks
+*.keystore
+release/
+
+# Signing files
+app/keystore.properties
+keystore.properties
+
+# APK files
+*.apk
+*.aab
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Claude Code related files
+.claude/settings.local.json
+.claude/chat_history/
+.claude/temp/
+.claude/.DS_Store
+CLAUDE.md
+
+# Backup files
+*.bak
+*.tmp
+*~
+
+# Sensitive configuration
+secrets.properties
+google-services.json
+firebase_app_id_file.json
+
+# Gradle Wrapper
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ
+out/
+.idea_modules/

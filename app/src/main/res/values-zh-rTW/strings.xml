@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nothing Android SDK Demo</string>
+    <string name="toy_name_basic">基礎範例</string>
+    <string name="toy_summary_basic">顯示一個基本的圖像在動態燈陣</string>
+    <string name="toy_name_animation">動畫範例</string>
+    <string name="toy_summary_animation">在動態燈陣上的動畫範例</string>
+    <string name="toy_name_glyph_button">Glyph 按鈕範例</string>
+    <string name="toy_summary_glyph_button">當按下 Glyph 按鈕時啟用 Glyph 動態燈陣</string>
+</resources>
