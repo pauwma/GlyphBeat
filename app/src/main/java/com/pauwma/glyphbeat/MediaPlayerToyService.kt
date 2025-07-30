@@ -46,7 +46,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private var pausedFrameIndex = 0 // Frame index when paused (for smooth resume)
     private var isPlaying = false
     private var hasActiveMedia = false
-    private var currentPlayerState = PlayerState.OFFLINE
+    private var currentPlayerState = PlayerState.PAUSED
     private var pendingStateUpdate = false // Flag to handle immediate state changes
     
     // Frame transition support
@@ -55,7 +55,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     
     // Logging state management to avoid spam
     private var lastLoggedMediaState = false
-    private var lastLoggedPlayerState = PlayerState.OFFLINE
+    private var lastLoggedPlayerState = PlayerState.PAUSED
     private var lastLoggedThemeName = ""
     private var lastLoggedFrameType = ""
     private var lastLoggedControllerAvailable = false
@@ -124,8 +124,12 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // Log initial theme information
         logThemeInfo(currentTheme)
 
-        // Start with a clean frame immediately
-        val initialFrame = generateFrame()
+        // Determine initial state before showing any frame
+        val (shouldAnimate, initialPlayerState) = determinePlayerState()
+        updatePlayerState(initialPlayerState)
+        
+        // Start with proper initial frame based on actual media state
+        val initialFrame = generateFrame(shouldAnimate, initialPlayerState)
         uiScope.launch {
             glyphMatrixManager.setMatrixFrame(initialFrame)
         }
@@ -254,10 +258,23 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 Log.d(LOG_TAG, "Media state changed: isPlaying = $isPlaying, beatIntensity: ${currentAudioData.beatIntensity}")
             }
 
-            // Determine state with better logic
+            // Determine state with improved logic to prevent unwanted OFFLINE transitions
             val newState = when {
-                !mediaAvailable -> PlayerState.OFFLINE
-                currentlyPlaying -> PlayerState.PLAYING
+                // Media is available and playing
+                mediaAvailable && currentlyPlaying -> PlayerState.PLAYING
+                // Media is available but not playing
+                mediaAvailable && !currentlyPlaying -> PlayerState.PAUSED
+                // No media available - be conservative about showing offline state
+                !mediaAvailable -> {
+                    // If we're just starting up or were already offline, stay offline
+                    if (currentPlayerState == PlayerState.OFFLINE) {
+                        PlayerState.OFFLINE
+                    } else {
+                        // If we had media before, assume it's temporarily unavailable and show paused state
+                        // This prevents offline frame flashes during media transitions
+                        PlayerState.PAUSED
+                    }
+                }
                 else -> PlayerState.PAUSED
             }
 
