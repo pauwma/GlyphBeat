@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.media.AudioManager
 import android.media.MediaMetadata
@@ -401,25 +402,65 @@ class MediaControlHelper(private val context: Context) {
     }
     
     /**
+     * Rotate a bitmap by the specified angle around its center.
+     * Ensures the output remains 25x25 and properly centered.
+     * @param bitmap Source bitmap to rotate (should be 25x25)
+     * @param rotationAngle Rotation angle in degrees (0-360)
+     * @return Rotated bitmap or original bitmap if rotation fails
+     */
+    private fun rotateBitmap(bitmap: Bitmap, rotationAngle: Float): Bitmap {
+        if (rotationAngle == 0f) return bitmap
+        
+        return try {
+            // Create a matrix for rotation around center
+            val matrix = Matrix()
+            matrix.postRotate(rotationAngle, bitmap.width / 2f, bitmap.height / 2f)
+            
+            // Create rotated bitmap with same dimensions to preserve centering
+            val rotatedBitmap = Bitmap.createBitmap(
+                bitmap.width, bitmap.height, bitmap.config ?: Bitmap.Config.ARGB_8888
+            )
+            
+            // Draw the rotated bitmap onto the new canvas
+            val canvas = Canvas(rotatedBitmap)
+            canvas.drawBitmap(bitmap, matrix, null)
+            
+            Log.v(LOG_TAG, "Bitmap rotated by ${rotationAngle}° (centered)")
+            rotatedBitmap
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error rotating bitmap by ${rotationAngle}°: ${e.message}")
+            bitmap // Return original bitmap on error
+        }
+    }
+    
+    /**
      * Convert a 25x25 bitmap to a matrix intensity array for the Glyph Matrix.
      * @param bitmap 25x25 bitmap to convert
      * @param brightnessMultiplier Multiplier for brightness (0.0-1.0), default 1.0
      * @param enhanceContrast Whether to apply contrast enhancement, default true
+     * @param rotationAngle Rotation angle in degrees (0-360), default 0.0 (no rotation)
      * @return IntArray of 625 elements with intensity values (0-255)
      */
-    fun bitmapToMatrixArray(bitmap: Bitmap?, brightnessMultiplier: Double = 1.0, enhanceContrast: Boolean = true): IntArray {
+    fun bitmapToMatrixArray(bitmap: Bitmap?, brightnessMultiplier: Double = 1.0, enhanceContrast: Boolean = true, rotationAngle: Float = 0f): IntArray {
         if (bitmap == null || bitmap.width != 25 || bitmap.height != 25) {
             Log.w(LOG_TAG, "Invalid bitmap for matrix conversion, using fallback pattern")
             return createFallbackPattern()
         }
         
         return try {
+            // Apply rotation if specified
+            val processedBitmap = if (rotationAngle != 0f) {
+                rotateBitmap(bitmap, rotationAngle)
+            } else {
+                bitmap
+            }
+            
             val rawArray = IntArray(625) // 25x25 = 625
             
             // First pass: Convert to grayscale and store raw luminance values
             for (row in 0 until 25) {
                 for (col in 0 until 25) {
-                    val pixel = bitmap.getPixel(col, row)
+                    val pixel = processedBitmap.getPixel(col, row)
                     
                     // Extract RGB components
                     val red = (pixel shr 16) and 0xFF
