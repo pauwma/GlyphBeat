@@ -1,11 +1,18 @@
 package com.pauwma.glyphbeat.animation.styles
 
+import com.pauwma.glyphbeat.ui.settings.*
+
 /**
  * Custom vinyl record theme with predefined 8-frame animation.
  * Uses specific pixel data to create a detailed vinyl record spinning animation.
- * Now extends ThemeTemplate for enhanced features.
+ * Now extends ThemeTemplate for enhanced features and supports customizable settings.
  */
-class VinylTheme() : ThemeTemplate() {
+class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
+    
+    // Settings-driven properties with default values
+    private var currentAnimationSpeed: Long = getAnimationSpeed()
+    private var currentBrightness: Int = 255
+    private var currentVinylSize: String = "large"
     
     // =================================================================================
     // THEME METADATA - Custom vinyl record theme information
@@ -78,13 +85,36 @@ class VinylTheme() : ThemeTemplate() {
     // framesCount and previewFrame are automatically calculated from frames array via lazy initialization
     
     // =================================================================================
-    // STATE-SPECIFIC FRAMES - Using appropriate frames for different states
+    // STATE-SPECIFIC FRAMES - Using appropriate frames for different states with brightness support
     // =================================================================================
     
-    override val pausedFrame: IntArray = IntArray(0) // No custom paused frame - use smooth pause
-    override val offlineFrame: IntArray = intArrayOf(255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,120,255,0,0,0,205,165,0,0,0,0,0,0,0,0,0,120,0,255,0,0,255,205,0,0,0,0,0,0,0,0,0,0,120,0,120,255,255,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,120,0,120,0,255,255,0,255,0,0,0,205,165,0,0,0,0,0,0,120,120,0,120,0,0,255,255,0,0,205,0,0,255,0,0,0,0,0,0,0,120,0,0,120,0,0,0,0,255,255,0,205,0,0,205,0,0,0,0,0,0,0,120,0,120,120,0,0,0,0,0,255,255,0,0,165,0,0,165,0,0,0,0,200,200,120,0,120,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,200,200,120,0,120,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,200,120,0,120,200,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,200,120,0,120,200,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,120,0,120,200,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,120,0,120,200,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,120,0,120,0,0,0,0,0,0,165,0,0,165,0,0,255,255,0,0,0,0,0,0,120,0,120,0,0,0,0,0,0,0,205,0,0,205,0,255,255,0,0,0,0,0,0,120,0,120,0,0,0,0,0,0,255,0,0,205,0,0,255,255,0,0,0,0,0,120,0,120,0,0,0,0,165,205,0,0,0,255,0,255,255,0,0,0,0,0,120,0,120,0,0,0,0,0,0,0,0,255,0,0,255,255,0,0,0,120,0,120,0,0,0,0,0,0,0,205,255,0,0,255,255,0,120,0,120,0,0,0,0,0,0,165,205,0,0,0,255,120,0,120,0,0,0,0,0,0,0,0,0,0,255,255,120,255,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255) // Empty frame when offline
-    override val loadingFrame: IntArray by lazy { frames[0].clone() } // Use first frame for loading
-    override val errorFrame: IntArray = IntArray(625) { 0 } // Empty frame for errors
+    // Base frames for state-specific displays (without brightness applied)
+    private val basePausedFrame = frames[0] // Use first frame as paused state
+    private val baseOfflineFrame = intArrayOf(255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,120,255,0,0,0,205,165,0,0,0,0,0,0,0,0,0,120,0,255,0,0,255,205,0,0,0,0,0,0,0,0,0,0,120,0,120,255,255,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,120,0,120,0,255,255,0,255,0,0,0,205,165,0,0,0,0,0,0,120,120,0,120,0,0,255,255,0,0,205,0,0,255,0,0,0,0,0,0,0,120,0,0,120,0,0,0,0,255,255,0,205,0,0,205,0,0,0,0,0,0,0,120,0,120,120,0,0,0,0,0,255,255,0,0,165,0,0,165,0,0,0,0,200,200,120,0,120,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,200,200,120,0,120,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,200,120,0,120,200,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,200,120,0,120,200,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,120,0,120,200,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,120,0,120,200,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,120,0,120,0,0,0,0,0,0,165,0,0,165,0,0,255,255,0,0,0,0,0,0,120,0,120,0,0,0,0,0,0,0,205,0,0,205,0,255,255,0,0,0,0,0,0,120,0,120,0,0,0,0,0,0,255,0,0,205,0,0,255,255,0,0,0,0,0,120,0,120,0,0,0,0,165,205,0,0,0,255,0,255,255,0,0,0,0,0,120,0,120,0,0,0,0,0,0,0,0,255,0,0,255,255,0,0,0,120,0,120,0,0,0,0,0,0,0,205,255,0,0,255,255,0,120,0,120,0,0,0,0,0,0,165,205,0,0,0,255,120,0,120,0,0,0,0,0,0,0,0,0,0,255,255,120,255,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255)
+    
+    // Empty pausedFrame for smooth stop functionality (freezes at current animation frame)
+    override val pausedFrame: IntArray = IntArray(0)
+    
+    override val offlineFrame: IntArray
+        get() = applyBrightnessToFrame(baseOfflineFrame)
+    
+    override val loadingFrame: IntArray
+        get() = applyBrightnessToFrame(frames[0])
+    
+    override val errorFrame: IntArray = IntArray(625) { 0 } // Error frame stays black
+    
+    /**
+     * Apply current brightness setting to any frame array
+     */
+    private fun applyBrightnessToFrame(baseFrame: IntArray): IntArray {
+        return baseFrame.map { originalValue ->
+            if (originalValue > 0) {
+                ((originalValue * currentBrightness) / 255).coerceIn(0, 255)
+            } else {
+                0
+            }
+        }.toIntArray()
+    }
     
     // Validation is handled by parent ThemeTemplate class
     
@@ -94,12 +124,77 @@ class VinylTheme() : ThemeTemplate() {
     
     override fun getFrameCount(): Int = framesCount
     
+    override fun getThemeName(): String = titleTheme
+    override fun getAnimationSpeed(): Long = currentAnimationSpeed
+    override fun getBrightness(): Int = currentBrightness
+    override fun getDescription(): String = descriptionTheme
+    
+    // =================================================================================
+    // THEME SETTINGS PROVIDER IMPLEMENTATION
+    // =================================================================================
+    
+    override fun getSettingsSchema(): ThemeSettings {
+        return ThemeSettingsBuilder(getSettingsId())
+            .addSliderSetting(
+                id = CommonSettingIds.ROTATION_SPEED,
+                displayName = "Rotation Speed",
+                description = "How fast the vinyl record spins",
+                defaultValue = 100L,
+                minValue = 50L,
+                maxValue = 300L,
+                stepSize = 10L,
+                unit = "ms",
+                category = SettingCategories.ANIMATION
+            )
+            .addSliderSetting(
+                id = CommonSettingIds.BRIGHTNESS,
+                displayName = "Brightness",
+                description = "Overall brightness of the vinyl",
+                defaultValue = 255,
+                minValue = 10,
+                maxValue = 255,
+                stepSize = 5,
+                unit = null,
+                category = SettingCategories.VISUAL
+            )
+            .addDropdownSetting(
+                id = "vinyl_size",
+                displayName = "Vinyl Size",
+                description = "Size of the vinyl record display",
+                defaultValue = "large",
+                optionsMap = mapOf(
+                    "small" to "Small",
+                    "large" to "Large"
+                ),
+                category = SettingCategories.VISUAL
+            )
+            .build()
+    }
+    
+    override fun applySettings(settings: ThemeSettings) {
+        // Apply rotation speed
+        currentAnimationSpeed = settings.getSliderValueLong(CommonSettingIds.ROTATION_SPEED, 100L)
+        
+        // Apply brightness with validation
+        val brightness = settings.getSliderValueInt(CommonSettingIds.BRIGHTNESS, 255)
+        currentBrightness = brightness.coerceIn(10, 255)
+        
+        // Apply vinyl size
+        currentVinylSize = settings.getDropdownValue("vinyl_size", "large")
+    }
+    
     override fun generateFrame(frameIndex: Int): IntArray {
         validateFrameIndex(frameIndex)
         
         // Convert shaped grid data to flat 25x25 array
         val shapedData = frames[frameIndex]
         val flatArray = createEmptyFrame()
+        
+        // Apply size-based scaling
+        val scale = when (currentVinylSize) {
+            "small" -> 0.8f
+            else -> 1.0f
+        }
         
         // The shaped data represents the circular matrix layout
         // We need to map it to the proper positions in a 25x25 grid
@@ -114,8 +209,16 @@ class VinylTheme() : ThemeTemplate() {
                 val centerY = 12.0
                 val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
                 
-                if (distance <= 12.5 && shapedIndex < shapedData.size) {
-                    flatArray[flatIndex] = shapedData[shapedIndex]
+                // Apply size scaling to the radius check
+                if (distance <= 12.5 * scale && shapedIndex < shapedData.size) {
+                    // Apply brightness adjustment
+                    val originalValue = shapedData[shapedIndex]
+                    val adjustedValue = if (originalValue > 0) {
+                        ((originalValue * currentBrightness) / 255).coerceIn(0, 255)
+                    } else {
+                        0
+                    }
+                    flatArray[flatIndex] = adjustedValue
                     shapedIndex++
                 }
             }
@@ -123,11 +226,6 @@ class VinylTheme() : ThemeTemplate() {
         
         return flatArray
     }
-    
-    override fun getThemeName(): String = titleTheme
-    override fun getAnimationSpeed(): Long = animationSpeedValue
-    override fun getBrightness(): Int = brightnessValue
-    override fun getDescription(): String = descriptionTheme
     
     // All theme metadata and utility methods are inherited from ThemeTemplate parent class
     // No need to redefine them here - they automatically use the private properties defined above

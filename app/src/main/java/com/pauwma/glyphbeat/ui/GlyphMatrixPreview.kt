@@ -20,6 +20,10 @@ import com.pauwma.glyphbeat.animation.styles.FrameTransitionSequence
 import com.pauwma.glyphbeat.animation.styles.ThemeTemplate
 import com.pauwma.glyphbeat.sound.MediaControlHelper
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import kotlin.math.min
 
 /**
@@ -47,49 +51,68 @@ fun GlyphMatrixPreview(
         }
     }
     
-    // Monitor media changes for CoverArtTheme
-    LaunchedEffect(theme) {
-        if (theme is CoverArtTheme) {
-            val mediaHelper = MediaControlHelper(context)
-            var lastTrackTitle: String? = null
-            
-            while (true) {
-                val trackInfo = mediaHelper.getTrackInfo()
-                val currentTrackTitle = trackInfo?.title
+    // Monitor media changes for CoverArtTheme - FIXED: Move to background thread and add proper cancellation
+    LaunchedEffect(theme, isSelected) {
+        if (theme is CoverArtTheme && isSelected) { // Only monitor when selected to reduce load
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val mediaHelper = MediaControlHelper(context)
+                var lastTrackTitle: String? = null
                 
-                if (currentTrackTitle != lastTrackTitle) {
-                    // Media changed, clear cache and trigger recomposition
-                    theme.clearCache()
-                    mediaTrigger++
-                    lastTrackTitle = currentTrackTitle
+                while (kotlinx.coroutines.currentCoroutineContext().isActive) { // Proper cancellation check
+                    try {
+                        val trackInfo = mediaHelper.getTrackInfo()
+                        val currentTrackTitle = trackInfo?.title
+                        
+                        if (currentTrackTitle != lastTrackTitle) {
+                            // Media changed, clear cache and trigger recomposition
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                theme.clearCache()
+                                mediaTrigger++
+                            }
+                            lastTrackTitle = currentTrackTitle
+                        }
+                        
+                        delay(5000) // Reduced frequency: Check every 5 seconds
+                    } catch (e: Exception) {
+                        // Break the loop on any error to prevent infinite loops
+                        break
+                    }
                 }
-                
-                delay(2000) // Check every 2 seconds
             }
         }
     }
     
-    // Animation logic - only animate if selected
+    // Animation logic - OPTIMIZED to prevent ANR
     LaunchedEffect(isSelected, theme, transitionSequence) {
         if (isSelected) {
-            val sequence = transitionSequence
-            if (sequence != null) {
-                // Use frame transitions animation
-                sequence.reset()
-                while (true) {
-                    currentFrame = sequence.getCurrentFrameIndex()
-                    delay(sequence.getCurrentDuration())
-                    sequence.advance()
-                }
-            } else {
-                // Use standard frame-by-frame animation
-                while (true) {
-                    delay(theme.getAnimationSpeed())
-                    currentFrame = (currentFrame + 1) % theme.getFrameCount()
+            // Only animate selected theme to reduce resource usage
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                while (kotlinx.coroutines.currentCoroutineContext().isActive) {
+                    val frameCount = theme.getFrameCount()
+                    if (frameCount <= 1) break // No animation needed
+                    
+                    // Calculate frame timing based on theme
+                    val transitions = transitionSequence
+                    val frameDuration = when {
+                        transitions != null -> transitions.getCurrentDuration()
+                        else -> theme.getAnimationSpeed().coerceAtLeast(100L) // Minimum 100ms for preview
+                    }
+                    
+                    delay(frameDuration)
+                    
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        if (transitions != null) {
+                            transitions.advance()
+                            currentFrame = transitions.getCurrentFrameIndex()
+                        } else {
+                            currentFrame = (currentFrame + 1) % frameCount
+                        }
+                    }
                 }
             }
         } else {
-            currentFrame = 0 // Show first frame for unselected themes
+            // Unselected themes show static first frame
+            currentFrame = 0
         }
     }
     

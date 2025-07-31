@@ -11,12 +11,15 @@ import com.pauwma.glyphbeat.sound.AudioData
 import com.pauwma.glyphbeat.sound.AudioReactiveTheme
 import com.pauwma.glyphbeat.sound.MediaControlHelper
 import com.pauwma.glyphbeat.ui.ThemeRepository
+import com.pauwma.glyphbeat.ui.settings.ThemeSettings
+import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 
 /**
  * Enhanced Media Player Toy Service with optimized state change detection
@@ -71,6 +74,12 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private var currentTheme: AnimationTheme? = null
     private var currentAudioData: AudioData = AudioData(0.0, 0.0, 0.0, 0.0, false)
     
+    // Settings management and caching
+    private var cachedThemeSettings: ThemeSettings? = null
+    private var lastSettingsCheckTime = 0L
+    private val settingsCheckInterval = 5000L // Check for settings changes every 5 seconds as fallback
+    private var isSettingsListenerActive = false
+    
     // Audio analysis throttling to reduce log spam and CPU usage
     private var lastAudioAnalysisTime = 0L
     private var audioAnalysisInterval = 200L // Default: Update audio analysis every 200ms to reduce overhead
@@ -123,6 +132,12 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         audioAnalyzer = AudioAnalyzer(context)
         currentTheme = themeRepository.selectedTheme
         initializeThemeTransitions(currentTheme)
+        
+        // Initialize theme settings
+        initializeThemeSettings(currentTheme)
+        
+        // Start settings monitoring for real-time updates
+        startSettingsMonitoring()
         
         // No callback registration needed - using fast polling instead for reliability
         
@@ -218,6 +233,9 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     lastAudioAnalysisTime = currentTime
                 }
                 
+                // Validate cached settings periodically (fallback mechanism) - DISABLED due to ANR risk
+                // validateCachedSettings() // Settings updates work via flow notifications
+                
                 // Determine animation behavior based on effective state (includes predictions)
                 val effectiveState = getEffectivePlayerState()
                 val shouldAnimate = effectiveState == PlayerState.PLAYING
@@ -234,6 +252,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 if (currentTheme?.getThemeName() != selectedTheme.getThemeName()) {
                     currentTheme = selectedTheme
                     initializeThemeTransitions(selectedTheme)
+                    initializeThemeSettings(selectedTheme) // Apply settings to new theme
                     logThemeInfo(currentTheme)
                     Log.d(LOG_TAG, "Theme changed to: ${currentTheme?.getThemeName()}")
                 }
@@ -277,6 +296,10 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // Cleanup resources
         mediaHelper.cleanup()
         audioAnalyzer.cleanup()
+        
+        // Clear settings cache and monitoring
+        cachedThemeSettings = null
+        isSettingsListenerActive = false
         
         // Cancel coroutine scopes
         backgroundScope.cancel()
@@ -584,6 +607,142 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         
         Log.i(LOG_TAG, "========================")
         lastLoggedThemeName = themeName
+    }
+
+    /**
+     * Initialize and apply theme settings for the given theme.
+     * This method loads saved settings and applies them to the theme instance.
+     */
+    private fun initializeThemeSettings(theme: AnimationTheme?) {
+        if (theme == null) {
+            Log.d(LOG_TAG, "No theme provided for settings initialization")
+            cachedThemeSettings = null
+            return
+        }
+        
+        try {
+            if (theme is ThemeSettingsProvider) {
+                val themeId = theme.getSettingsId()
+                val settings = themeRepository.getThemeSettings(themeId)
+                
+                if (settings != null) {
+                    // Apply the loaded settings to the theme
+                    theme.applySettings(settings)
+                    cachedThemeSettings = settings
+                    Log.d(LOG_TAG, "Applied cached settings to theme: $themeId")
+                    
+                    // Log key settings for debugging
+                    logThemeSettings(themeId, settings)
+                } else {
+                    Log.d(LOG_TAG, "No saved settings found for theme: $themeId, using defaults")
+                    cachedThemeSettings = null
+                }
+            } else {
+                Log.d(LOG_TAG, "Theme ${theme.getThemeName()} does not support settings")
+                cachedThemeSettings = null
+            }
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Failed to initialize settings for theme: ${theme.getThemeName()}", e)
+            cachedThemeSettings = null
+        }
+    }
+    
+    /**
+     * Start monitoring for settings changes using flow-based notifications.
+     * This enables real-time settings application without service restart.
+     */
+    private fun startSettingsMonitoring() {
+        if (isSettingsListenerActive) {
+            Log.d(LOG_TAG, "Settings monitoring already active")
+            return
+        }
+        
+        try {
+            backgroundScope.launch {
+                themeRepository.settingsChangedFlow.collect { (themeId, settings) ->
+                    try {
+                        Log.d(LOG_TAG, "Received settings change notification for theme: $themeId")
+                        
+                        // Check if this is for the current theme
+                        val currentThemeId = (currentTheme as? ThemeSettingsProvider)?.getSettingsId()
+                        if (currentThemeId == themeId) {
+                            // Apply settings immediately
+                            (currentTheme as? ThemeSettingsProvider)?.applySettings(settings)
+                            cachedThemeSettings = settings
+                            
+                            Log.i(LOG_TAG, "Applied real-time settings update to current theme: $themeId")
+                            logThemeSettings(themeId, settings)
+                        } else {
+                            Log.d(LOG_TAG, "Settings change is for different theme ($themeId), current is $currentThemeId")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(LOG_TAG, "Error applying real-time settings update: ${e.message}", e)
+                    }
+                }
+            }
+            isSettingsListenerActive = true
+            Log.d(LOG_TAG, "Started settings monitoring with flow-based notifications")
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Failed to start settings monitoring: ${e.message}", e)
+            isSettingsListenerActive = false
+        }
+    }
+    
+    /**
+     * Log theme settings for debugging purposes.
+     */
+    private fun logThemeSettings(themeId: String, settings: ThemeSettings) {
+        Log.v(LOG_TAG, "=== Theme Settings Debug ===")
+        Log.v(LOG_TAG, "Theme ID: $themeId")
+        Log.v(LOG_TAG, "Settings values: ${settings.userValues}")
+        
+        // Log common settings values if present
+        try {
+            val animSpeed = settings.userValues["animation_speed"] ?: settings.userValues["rotation_speed"]
+            val brightness = settings.userValues["brightness"]
+            val frameCount = settings.userValues["frame_count"]
+            
+            if (animSpeed != null) Log.v(LOG_TAG, "Animation Speed: $animSpeed")
+            if (brightness != null) Log.v(LOG_TAG, "Brightness: $brightness")
+            if (frameCount != null) Log.v(LOG_TAG, "Frame Count: $frameCount")
+        } catch (e: Exception) {
+            Log.v(LOG_TAG, "Could not log specific setting values: ${e.message}")
+        }
+        
+        Log.v(LOG_TAG, "===========================")
+    }
+    
+    /**
+     * Validate and refresh cached settings if needed.
+     * This serves as a fallback mechanism in case flow notifications fail.
+     */
+    private fun validateCachedSettings() {
+        val currentTime = System.currentTimeMillis()
+        
+        // Only check periodically to avoid performance impact
+        if (currentTime - lastSettingsCheckTime < settingsCheckInterval) {
+            return
+        }
+        
+        lastSettingsCheckTime = currentTime
+        
+        try {
+            val theme = currentTheme
+            if (theme is ThemeSettingsProvider) {
+                val themeId = theme.getSettingsId()
+                val latestSettings = themeRepository.getThemeSettings(themeId)
+                
+                // Compare with cached settings (simple check)
+                if (latestSettings != null && latestSettings != cachedThemeSettings) {
+                    Log.d(LOG_TAG, "Settings changed detected via fallback check for theme: $themeId")
+                    theme.applySettings(latestSettings)
+                    cachedThemeSettings = latestSettings
+                    logThemeSettings(themeId, latestSettings)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error during fallback settings validation: ${e.message}")
+        }
     }
 
     private companion object {

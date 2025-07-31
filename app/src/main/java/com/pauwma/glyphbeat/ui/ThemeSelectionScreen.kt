@@ -23,6 +23,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nothinglondon.sdkdemo.R
+import com.pauwma.glyphbeat.animation.AnimationTheme
+import com.pauwma.glyphbeat.ui.settings.ThemeSettingsSheet
+import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
 
 /**
  * Theme selection screen with Nothing brand styling.
@@ -39,6 +42,54 @@ fun ThemeSelectionScreen(
     val themeRepository = remember { ThemeRepository.getInstance(context) }
     val selectedThemeIndex by themeRepository.selectedThemeIndex
     val customFont = FontFamily(Font(R.font.ntype82regular))
+    
+    // Settings sheet state
+    var selectedThemeForSettings by remember { mutableStateOf<AnimationTheme?>(null) }
+    var showSettingsSheet by remember { mutableStateOf(false) }
+    
+    // Trigger to refresh theme cards when settings change
+    var settingsChangeTrigger by remember { mutableIntStateOf(0) }
+    
+    // Load and apply existing settings to all themes when screen opens
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            themeRepository.availableThemes.forEach { theme ->
+                if (theme is ThemeSettingsProvider) {
+                    try {
+                        val existingSettings = themeRepository.getThemeSettings(theme.getSettingsId())
+                        if (existingSettings != null) {
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                theme.applySettings(existingSettings)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Ignore errors for individual themes
+                    }
+                }
+            }
+        }
+    }
+    
+    // Apply settings to newly selected theme
+    LaunchedEffect(selectedThemeIndex) {
+        if (selectedThemeIndex in themeRepository.availableThemes.indices) {
+            val selectedTheme = themeRepository.availableThemes[selectedThemeIndex]
+            if (selectedTheme is ThemeSettingsProvider) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        val existingSettings = themeRepository.getThemeSettings(selectedTheme.getSettingsId())
+                        if (existingSettings != null) {
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                selectedTheme.applySettings(existingSettings)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Ignore errors
+                    }
+                }
+            }
+        }
+    }
     
     Box(
         modifier = modifier
@@ -98,17 +149,38 @@ fun ThemeSelectionScreen(
                     val themeIndex = themeRepository.availableThemes.indexOf(theme)
                     val isSelected = themeRepository.isThemeSelected(themeIndex)
                     
-                    ThemePreviewCard(
-                        theme = theme,
-                        isSelected = isSelected,
-                        onSelect = {
-                            themeRepository.selectTheme(themeIndex)
-                        }
-                    )
+                    key("${theme.getThemeName()}_$settingsChangeTrigger") {
+                        ThemePreviewCard(
+                            theme = theme,
+                            isSelected = isSelected,
+                            onSelect = {
+                                themeRepository.selectTheme(themeIndex)
+                            },
+                            onOpenSettings = {
+                                selectedThemeForSettings = theme
+                                showSettingsSheet = true
+                            }
+                        )
+                    }
                 }
             }
         }
         
+        // Theme Settings Sheet
+        selectedThemeForSettings?.let { theme ->
+            ThemeSettingsSheet(
+                theme = theme,
+                isVisible = showSettingsSheet,
+                onDismiss = {
+                    showSettingsSheet = false
+                    selectedThemeForSettings = null
+                },
+                onSettingsChanged = {
+                    // Trigger refresh of theme cards to update custom settings indicators
+                    settingsChangeTrigger++
+                }
+            )
+        }
     }
 }
 

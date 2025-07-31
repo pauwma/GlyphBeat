@@ -1,6 +1,7 @@
 package com.pauwma.glyphbeat.animation.styles
 
 import com.pauwma.glyphbeat.animation.AnimationTheme
+import com.pauwma.glyphbeat.ui.settings.*
 
 /**
  * Represents a single frame transition with repetition and timing control.
@@ -176,8 +177,20 @@ class FrameTransitionSequence(
  * making themes completely self-contained and easy to configure.
  * 
  * All methods become simple getters that return predefined values.
+ * 
+ * OPTIONAL FEATURE: Theme Settings Support
+ * ========================================
+ * This base class provides a default implementation of ThemeSettingsProvider that offers
+ * common settings like animation speed and brightness. Child themes can:
+ * 1. Use the default settings by implementing ThemeSettingsProvider and calling super methods
+ * 2. Override to provide custom settings
+ * 3. Not implement ThemeSettingsProvider at all for themes without settings
  */
 open class ThemeTemplate() : AnimationTheme() {
+    
+    // Settings support - themes can override these to be settings-driven
+    protected open var settingsAnimationSpeed: Long? = null
+    protected open var settingsBrightness: Int? = null
     
     // =================================================================================
     // THEME METADATA - Edit these values for your custom theme
@@ -750,12 +763,14 @@ open class ThemeTemplate() : AnimationTheme() {
     
     open override fun getAnimationSpeed(): Long {
         ensureValidated()
-        return animationSpeedValue
+        // Use settings value if available, otherwise use default
+        return settingsAnimationSpeed ?: animationSpeedValue
     }
     
     open override fun getBrightness(): Int {
         ensureValidated()
-        return brightnessValue
+        // Use settings value if available, otherwise use default
+        return settingsBrightness ?: brightnessValue
     }
     
     open override fun getDescription(): String {
@@ -813,6 +828,128 @@ open class ThemeTemplate() : AnimationTheme() {
 
     // Note: All getter methods are automatically generated from the properties above
     // No need to define explicit getters - they cause JVM signature clashes
+}
+
+/**
+ * Base implementation of ThemeSettingsProvider that provides common settings.
+ * Child themes can extend this to get default settings support.
+ * 
+ * Example usage:
+ * ```
+ * class MyTheme : ThemeTemplate(), ThemeSettingsProvider by DefaultThemeSettingsProvider() {
+ *     // Your theme implementation
+ * }
+ * ```
+ * 
+ * Or for more control:
+ * ```
+ * class MyTheme : ThemeTemplate(), ThemeSettingsProvider {
+ *     private val defaultSettings = DefaultThemeSettingsProvider(this)
+ *     
+ *     override fun getSettingsSchema(): ThemeSettings {
+ *         return defaultSettings.getSettingsSchema()
+ *             .toBuilder() // Add custom settings
+ *             .addSliderSetting(...) 
+ *             .build()
+ *     }
+ *     
+ *     override fun applySettings(settings: ThemeSettings) {
+ *         defaultSettings.applySettings(settings)
+ *         // Apply custom settings
+ *     }
+ * }
+ * ```
+ */
+class DefaultThemeSettingsProvider(
+    private val theme: ThemeTemplate? = null
+) : ThemeSettingsProvider {
+    
+    override fun getThemeName(): String {
+        return theme?.getThemeName() ?: "Theme"
+    }
+    
+    override fun getSettingsSchema(): ThemeSettings {
+        return ThemeSettingsBuilder(getSettingsId())
+            .addSliderSetting(
+                id = CommonSettingIds.ANIMATION_SPEED,
+                displayName = "Animation Speed",
+                description = "Speed of frame transitions",
+                defaultValue = theme?.getAnimationSpeed() ?: 150L,
+                minValue = 50L,
+                maxValue = 1000L,
+                stepSize = 50L,
+                unit = "ms",
+                category = SettingCategories.ANIMATION
+            )
+            .addSliderSetting(
+                id = CommonSettingIds.BRIGHTNESS,
+                displayName = "Brightness",
+                description = "Overall brightness level",
+                defaultValue = theme?.getBrightness() ?: 255,
+                minValue = 50,
+                maxValue = 255,
+                stepSize = 5,
+                unit = null,
+                category = SettingCategories.VISUAL
+            )
+            .build()
+    }
+    
+    override fun applySettings(settings: ThemeSettings) {
+        // If the theme implements ThemeSettingsProvider itself, delegate to it
+        if (theme is ThemeSettingsProvider) {
+            theme.applySettings(settings)
+        } else {
+            // For themes that don't implement ThemeSettingsProvider,
+            // we can't apply settings safely
+            // This is a fallback case that shouldn't normally be reached
+        }
+    }
+}
+
+/**
+ * Extension function to convert ThemeSettings to a builder for modification.
+ * Useful when extending default settings with custom ones.
+ */
+fun ThemeSettings.toBuilder(): ThemeSettingsBuilder {
+    val builder = ThemeSettingsBuilder(themeId)
+    
+    // Copy all existing settings
+    settings.forEach { (id, setting) ->
+        when (setting) {
+            is SliderSetting -> builder.addSliderSetting(
+                id = setting.id,
+                displayName = setting.displayName,
+                description = setting.description,
+                defaultValue = setting.defaultValue,
+                minValue = setting.minValue,
+                maxValue = setting.maxValue,
+                stepSize = setting.stepSize,
+                unit = setting.unit,
+                category = setting.category,
+                showValue = setting.showValue
+            )
+            is ToggleSetting -> builder.addToggleSetting(
+                id = setting.id,
+                displayName = setting.displayName,
+                description = setting.description,
+                defaultValue = setting.defaultValue,
+                category = setting.category,
+                enabledLabel = setting.enabledLabel,
+                disabledLabel = setting.disabledLabel
+            )
+            is DropdownSetting -> builder.addDropdownSetting(
+                id = setting.id,
+                displayName = setting.displayName,
+                description = setting.description,
+                defaultValue = setting.defaultValue,
+                options = setting.options,
+                category = setting.category
+            )
+        }
+    }
+    
+    return builder
 }
 
 /**
