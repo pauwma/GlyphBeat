@@ -260,6 +260,67 @@ fun SettingsScreen(
         }
 
 
+        // Bug Report Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF2A2A2A)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Bug Report & Support",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = customFont
+                    ),
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    text = "Found a bug or need help? Send me a message and we'll get back to you.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Button(
+                    onClick = {
+                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:")
+                            putExtra(Intent.EXTRA_EMAIL, arrayOf("pauwma+glyphbeatsupport@proton.me"))
+                            putExtra(Intent.EXTRA_SUBJECT, "GlyphBeat Bug Report")
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "Hi,\n\nI found an issue with GlyphBeat:\n\n" +
+                                "Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}\n" +
+                                "Android Version: ${android.os.Build.VERSION.RELEASE}\n" +
+                                "App Version: 1.0.0\n\n" +
+                                "Description of the issue:\n\n\n" +
+                                "Steps to reproduce:\n1. \n2. \n3. \n\n" +
+                                "Expected behavior:\n\n\n" +
+                                "Actual behavior:\n\n"
+                            )
+                        }
+                        try {
+                            context.startActivity(emailIntent)
+                        } catch (e: Exception) {
+                            // Fallback if no email app is available
+                            val fallbackIntent = Intent(Intent.ACTION_VIEW).apply {
+                                data = Uri.parse("https://github.com/pauwma/GlyphBeat/issues")
+                            }
+                            context.startActivity(fallbackIntent)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Contact")
+                }
+            }
+        }
+
         // App Information Card
         Card(
             modifier = Modifier
@@ -282,7 +343,7 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "GlyphBeat - Animation themes for Nothing Glyph Matrix",
+                    text = "GlyphBeat - Animated Media Player Toy for Glyph Matrix",
                     style = MaterialTheme.typography.bodySmall
                 )
 
