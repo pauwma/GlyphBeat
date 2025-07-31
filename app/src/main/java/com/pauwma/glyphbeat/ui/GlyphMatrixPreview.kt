@@ -95,7 +95,7 @@ fun GlyphMatrixPreview(
                     val transitions = transitionSequence
                     val frameDuration = when {
                         transitions != null -> transitions.getCurrentDuration()
-                        else -> theme.getAnimationSpeed().coerceAtLeast(100L) // Minimum 100ms for preview
+                        else -> theme.getAnimationSpeed().coerceAtLeast(50L) // Minimum 50ms to match VinylTheme's minimum
                     }
                     
                     delay(frameDuration)
@@ -117,7 +117,49 @@ fun GlyphMatrixPreview(
     }
     
     val frameData = remember(theme, currentFrame, mediaTrigger) {
-        theme.generateFrame(currentFrame)
+        try {
+            // For VinylTheme, ensure consistent circular shape regardless of size setting
+            if (theme is com.pauwma.glyphbeat.animation.styles.VinylTheme) {
+                val currentVinylSizeField = theme.javaClass.getDeclaredField("currentVinylSize").apply { isAccessible = true }
+                val currentVinylSize = currentVinylSizeField.get(theme) as String
+                
+                if (currentVinylSize == "small") {
+                    // Get the small frame data but apply the same circular mapping as large
+                    val smallFramesField = theme.javaClass.getDeclaredField("smallFrames").apply { isAccessible = true }
+                    val smallFrames = smallFramesField.get(theme) as Array<IntArray>
+                    val shapedData = smallFrames[currentFrame]
+                    
+                    // Apply the same circular mapping logic as used for large size
+                    val flatArray = IntArray(625) { 0 }
+                    var shapedIndex = 0
+                    
+                    for (row in 0 until 25) {
+                        for (col in 0 until 25) {
+                            val flatIndex = row * 25 + col
+                            
+                            // Check if this pixel is within the circular matrix shape
+                            val centerX = 12.0
+                            val centerY = 12.0
+                            val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
+                            
+                            if (distance <= 12.5 && shapedIndex < shapedData.size) {
+                                flatArray[flatIndex] = shapedData[shapedIndex]
+                                shapedIndex++
+                            }
+                        }
+                    }
+                    flatArray
+                } else {
+                    // Use normal generation for large size
+                    theme.generateFrame(currentFrame)
+                }
+            } else {
+                theme.generateFrame(currentFrame)
+            }
+        } catch (e: Exception) {
+            // Fallback to empty frame if generation fails
+            IntArray(625) { 0 }
+        }
     }
     
     Box(
@@ -130,33 +172,38 @@ fun GlyphMatrixPreview(
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 shape = CircleShape
             )
-            .padding(if (theme is CoverArtTheme) 2.dp else 8.dp)
+            .padding(8.dp)
     ) {
         Canvas(
             modifier = Modifier.fillMaxSize()
         ) {
             val containerSize = min(size.width, size.height)
             
-            // Use larger grid for CoverArtTheme, normal size for others
-            val gridSize = if (theme is CoverArtTheme) {
-                // Make the grid match the circle size exactly
-                containerSize
-            } else {
-                // Normal sizing for other themes
-                containerSize
-            }
+            // Consistent grid sizing for all themes - always use the full container
+            val gridSize = containerSize
             
+            // Simple consistent sizing for all preview sizes
             val dotSize = gridSize / 25f // 25x25 grid
-            val spacing = dotSize * 0.2f // Small spacing between dots
-            val actualDotSize = dotSize * 0.8f
+            val actualDotSize = dotSize * 0.8f // 80% of grid cell for dot, 20% for spacing
             
             // Calculate starting position to center the grid
             val startX = (size.width - gridSize) / 2f
             val startY = (size.height - gridSize) / 2f
             
-            // Draw each pixel as a small circle/dot
+            // Glyph Matrix shape definition - number of active pixels per row
+            val glyphShape = intArrayOf(
+                7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
+                25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
+                19, 17, 15, 11, 7
+            )
+            
+            // Draw each pixel as a small circle/dot, but only for active matrix positions
             for (row in 0 until 25) {
-                for (col in 0 until 25) {
+                val pixelsInRow = glyphShape[row]
+                val startColForRow = (25 - pixelsInRow) / 2
+                
+                for (colInRow in 0 until pixelsInRow) {
+                    val col = startColForRow + colInRow
                     val pixelIndex = row * 25 + col
                     val brightness = if (pixelIndex < frameData.size) frameData[pixelIndex] else 0
                     
@@ -180,16 +227,23 @@ fun GlyphMatrixPreview(
                         }
                     }
                     
-                    if (brightness > 0) {
-                        val x = startX + col * dotSize + actualDotSize / 2f
-                        val y = startY + row * dotSize + actualDotSize / 2f
-                        
-                        drawCircle(
-                            color = color,
-                            radius = actualDotSize / 2f,
-                            center = Offset(x, y)
-                        )
+                    // Always draw the dot to show the matrix shape, but use different opacity for inactive pixels
+                    val finalColor = if (brightness > 0) {
+                        color
+                    } else {
+                        // Show inactive matrix positions with very low opacity
+                        Color.Gray.copy(alpha = 0.05f)
                     }
+                    
+                    // Simple consistent positioning
+                    val x = startX + col * dotSize + dotSize / 2f
+                    val y = startY + row * dotSize + dotSize / 2f
+                    
+                    drawCircle(
+                        color = finalColor,
+                        radius = actualDotSize / 2f,
+                        center = Offset(x, y)
+                    )
                 }
             }
         }
