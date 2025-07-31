@@ -51,9 +51,9 @@ class ThemeRepository private constructor(private val context: Context) {
     val availableThemes: List<AnimationTheme> = listOf(
         VinylTheme(),
         DancingDuckTheme(),
-        ShapeTheme(),
+        CoverArtTheme(context),
         MinimalTheme(),
-        CoverArtTheme(context)
+        ShapeTheme()
     )
     
     // Current selected theme index state

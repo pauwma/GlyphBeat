@@ -44,7 +44,7 @@
             </intent-filter>
         </service>
 
-        <!-- Media Player Demo Service -->
+        <!-- Media Player Service -->
         <service
             android:name="com.pauwma.glyphbeat.MediaPlayerToyService"
             android:exported="true"
