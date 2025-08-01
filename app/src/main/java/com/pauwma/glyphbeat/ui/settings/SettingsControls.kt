@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nothinglondon.sdkdemo.R
+import com.pauwma.glyphbeat.R
 import kotlin.math.roundToInt
 
 /**

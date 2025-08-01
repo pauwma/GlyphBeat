@@ -11,6 +11,8 @@ import com.pauwma.glyphbeat.animation.styles.DancingDuckTheme
 import com.pauwma.glyphbeat.animation.styles.ShapeTheme
 import com.pauwma.glyphbeat.animation.styles.CoverArtTheme
 import com.pauwma.glyphbeat.animation.styles.MinimalTheme
+import com.pauwma.glyphbeat.animation.styles.PulseVisualizerTheme
+import com.pauwma.glyphbeat.animation.styles.WaveformTheme
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsPersistence
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
@@ -53,7 +55,10 @@ class ThemeRepository private constructor(private val context: Context) {
         DancingDuckTheme(),
         CoverArtTheme(context),
         MinimalTheme(),
-        ShapeTheme()
+        ShapeTheme(),
+        PulseVisualizerTheme(),
+        WaveformTheme()
+
     )
     
     // Current selected theme index state
@@ -407,6 +412,8 @@ class ThemeRepository private constructor(private val context: Context) {
 fun AnimationTheme.getShortDescription(): String {
     return when (this.getThemeName()) {
         "Vinyl" -> "Detailed vinyl record"
+        "Pulse Visualizer" -> "Minimalist circle visualizer"
+        "Waveform" -> "Audio waveform display"
         "Dancing Duck" -> "Classic duck animation"
         "Minimal" -> "Static minimal pattern"
         else -> "Animation theme"

@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nothinglondon.sdkdemo.R
+import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.animation.AnimationTheme
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsSheet
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider

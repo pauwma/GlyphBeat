@@ -81,6 +81,29 @@ class PulseTheme(
         }
     }
     
+    // Custom offline frame - minimalist circle logo
+    private val offlineFrame: IntArray by lazy {
+        val frame = createEmptyFrame()
+        
+        // Draw a simple static circle logo
+        GlyphMatrixRenderer.drawCircle(frame, 12, 12, 6, (brightness * 0.4).toInt())
+        GlyphMatrixRenderer.drawCircle(frame, 12, 12, 3, (brightness * 0.6).toInt())
+        GlyphMatrixRenderer.drawDot(frame, 12, 12, 1, brightness)
+        
+        frame
+    }
+    
+    // Paused state frame - dim pulsing circle
+    private val pausedFrame: IntArray by lazy {
+        val frame = createEmptyFrame()
+        
+        // Draw a gentle pulsing circle for paused state
+        GlyphMatrixRenderer.drawCircle(frame, 12, 12, 5, (brightness * 0.3).toInt())
+        GlyphMatrixRenderer.drawDot(frame, 12, 12, 1, (brightness * 0.5).toInt())
+        
+        frame
+    }
+    
     override fun getFrameCount(): Int = frameCount
     
     override fun generateFrame(frameIndex: Int): IntArray {

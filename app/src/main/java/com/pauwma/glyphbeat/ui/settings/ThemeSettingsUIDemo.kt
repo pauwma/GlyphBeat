@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nothinglondon.sdkdemo.R
+import com.pauwma.glyphbeat.R
 
 /**
  * Demo screen showcasing all the theme settings UI components.

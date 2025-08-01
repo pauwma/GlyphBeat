@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.core.app.NotificationManagerCompat
-import com.nothinglondon.sdkdemo.R
+import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.isNotificationAccessGranted
 import com.pauwma.glyphbeat.isMediaControlServiceWorking
 import com.pauwma.glyphbeat.openNotificationAccessSettings
