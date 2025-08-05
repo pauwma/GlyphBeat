@@ -5,6 +5,8 @@ import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 import android.content.Context
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
+import com.nothing.ketchum.GlyphMatrixFrame
+import com.nothing.ketchum.GlyphMatrixObject
 import com.pauwma.glyphbeat.services.GlyphMatrixService
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
@@ -59,6 +61,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private var predictedPlayerState: PlayerState? = null
     private var predictionTimestamp = 0L
     private val predictionTimeoutMs = 1000L // 1 second timeout for predictions
+    private var debugFrameCount = 0 // For debug logging
     
     // Frame transition support
     private var frameTransitionSequence: FrameTransitionSequence? = null
@@ -160,8 +163,11 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // Start with proper initial frame based on actual media state
         val shouldAnimate = initialPlayerState == PlayerState.PLAYING
         val initialFrame = generateFrame(shouldAnimate, initialPlayerState)
+        val themeBrightness = currentTheme?.getBrightness() ?: 255
         uiScope.launch {
-            glyphMatrixManager.setMatrixFrame(initialFrame)
+            // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+            val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, initialFrame, 255)
+            glyphMatrixManager.setMatrixFrame(matrixFrame.render())
         }
 
         backgroundScope.launch {
@@ -243,9 +249,24 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 
                 // Generate frame based on effective state
                 val pixelArray = generateFrame(shouldAnimate, effectiveState)
+                
+                // Get current theme brightness
+                val themeBrightness = currentTheme?.getBrightness() ?: 255
+                
+                // Debug: Log brightness info
+                debugFrameCount++
+                if (debugFrameCount % 300 == 0) { // Log every 300 frames to avoid spam
+                    val maxPixelValue = pixelArray.maxOrNull() ?: 0
+                    val nonZeroPixels = pixelArray.count { it > 0 }
+                    if (nonZeroPixels > 0) {
+                        Log.d(LOG_TAG, "Using GlyphMatrixObject API - Theme brightness: $themeBrightness, Max pixel value: $maxPixelValue, Non-zero pixels: $nonZeroPixels, Theme: ${currentTheme?.getThemeName()}")
+                    }
+                }
 
                 uiScope.launch(Dispatchers.Main.immediate) {
-                    glyphMatrixManager.setMatrixFrame(pixelArray)
+                    // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                    val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
+                    glyphMatrixManager.setMatrixFrame(matrixFrame.render())
                 }
 
                 // Check if theme was changed and update current theme
@@ -315,6 +336,17 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     override fun onTouchPointLongPress() {
         // Long press to toggle play/pause with instant visual feedback
         Log.d(LOG_TAG, "Long press detected - toggling media playback with instant feedback")
+        
+        // Debug: Test with raw 255 values
+        // To test maximum brightness capability:
+        // 1. Uncomment the next two lines
+        // 2. Build and run the app
+        // 3. Long press on the Glyph Matrix
+        // 4. Check if the center circle appears at full brightness
+        // 5. Check logcat for "Test frame - Max brightness: 255"
+        // testMaxBrightness()
+        // return
+        
         try {
             // Predict the new state immediately for instant UI feedback
             val predictedState = predictNextPlayerState()
@@ -326,8 +358,11 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 
                 // Force immediate frame update
                 val pixelArray = generateFrame(predictedState == PlayerState.PLAYING, predictedState)
+                val themeBrightness = currentTheme?.getBrightness() ?: 255
                 uiScope.launch(Dispatchers.Main.immediate) {
-                    matrixManager?.setMatrixFrame(pixelArray)
+                    // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                    val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
+                    matrixManager?.setMatrixFrame(matrixFrame.render())
                 }
             }
             
@@ -540,8 +575,11 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             
             // Force frame update with reverted state
             val pixelArray = generateFrame(isPlaying, currentPlayerState)
+            val themeBrightness = currentTheme?.getBrightness() ?: 255
             uiScope.launch(Dispatchers.Main.immediate) {
-                matrixManager?.setMatrixFrame(pixelArray)
+                // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
+                matrixManager?.setMatrixFrame(matrixFrame.render())
             }
         }
     }
@@ -743,6 +781,43 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             }
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Error during fallback settings validation: ${e.message}")
+        }
+    }
+
+    /**
+     * Debug method to test maximum brightness capability
+     */
+    private fun testMaxBrightness() {
+        Log.d(LOG_TAG, "Testing maximum brightness - sending all pixels at 255")
+        
+        // Create a test pattern with all pixels at 255
+        val testFrame = IntArray(625) { pixelIndex ->
+            // Create a test pattern: full brightness in the center, gradient outward
+            val row = pixelIndex / 25
+            val col = pixelIndex % 25
+            val centerX = 12
+            val centerY = 12
+            val distance = kotlin.math.sqrt(((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY)).toDouble())
+            
+            when {
+                distance <= 5 -> 255 // Center circle at max brightness
+                distance <= 8 -> 200 // Middle ring at 200
+                distance <= 11 -> 150 // Outer ring at 150
+                else -> 0 // Outside
+            }
+        }
+        
+        // Log the test pattern info
+        val maxBrightness = testFrame.maxOrNull() ?: 0
+        val brightPixels = testFrame.count { it == 255 }
+        Log.d(LOG_TAG, "Test frame - Max brightness: $maxBrightness, Pixels at 255: $brightPixels")
+        
+        // Send the test frame using GlyphMatrixObject API with max brightness
+        uiScope.launch {
+            // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+            val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, testFrame, 255)
+            glyphMatrixManager?.setMatrixFrame(matrixFrame.render())
+            Log.d(LOG_TAG, "Test frame sent using GlyphMatrixObject API with brightness=255")
         }
     }
 

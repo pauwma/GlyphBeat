@@ -48,29 +48,6 @@ fun ThemeSelectionScreen(
     var selectedThemeForSettings by remember { mutableStateOf<AnimationTheme?>(null) }
     var showSettingsSheet by remember { mutableStateOf(false) }
     
-    // Trigger to refresh theme cards when settings change
-    var settingsChangeTrigger by remember { mutableIntStateOf(0) }
-    
-    // Load and apply existing settings to all themes when screen opens
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            themeRepository.availableThemes.forEach { theme ->
-                if (theme is ThemeSettingsProvider) {
-                    try {
-                        val existingSettings = themeRepository.getThemeSettings(theme.getSettingsId())
-                        if (existingSettings != null) {
-                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                theme.applySettings(existingSettings)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        // Ignore errors for individual themes
-                    }
-                }
-            }
-        }
-    }
-    
     // Apply settings to newly selected theme
     LaunchedEffect(selectedThemeIndex) {
         if (selectedThemeIndex in themeRepository.availableThemes.indices) {
@@ -141,19 +118,17 @@ fun ThemeSelectionScreen(
                     val themeIndex = themeRepository.availableThemes.indexOf(theme)
                     val isSelected = themeRepository.isThemeSelected(themeIndex)
                     
-                    key("${theme.getThemeName()}_$settingsChangeTrigger") {
-                        ThemePreviewCard(
-                            theme = theme,
-                            isSelected = isSelected,
-                            onSelect = {
-                                themeRepository.selectTheme(themeIndex)
-                            },
-                            onOpenSettings = {
-                                selectedThemeForSettings = theme
-                                showSettingsSheet = true
-                            }
-                        )
-                    }
+                    ThemePreviewCard(
+                        theme = theme,
+                        isSelected = isSelected,
+                        onSelect = {
+                            themeRepository.selectTheme(themeIndex)
+                        },
+                        onOpenSettings = {
+                            selectedThemeForSettings = theme
+                            showSettingsSheet = true
+                        }
+                    )
                 }
             }
         }
@@ -168,8 +143,7 @@ fun ThemeSelectionScreen(
                     selectedThemeForSettings = null
                 },
                 onSettingsChanged = {
-                    // Trigger refresh of theme cards to update custom settings indicators
-                    settingsChangeTrigger++
+                    // Settings are applied to themes directly via the flow notifications
                 }
             )
         }

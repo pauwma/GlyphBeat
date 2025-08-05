@@ -87,13 +87,13 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
     
     // Dynamic state frames that apply current brightness
     override val pausedFrame: IntArray
-        get() = applyBrightnessToFrame(basePausedFrame)
+        get() = convertShapedToFlat(basePausedFrame)
     
     override val offlineFrame: IntArray
-        get() = applyBrightnessToFrame(baseOfflineFrame)
+        get() = convertShapedToFlat(baseOfflineFrame)
     
     override val loadingFrame: IntArray
-        get() = applyBrightnessToFrame(frames[0])
+        get() = generateFrame(0)
     
     override val errorFrame: IntArray = IntArray(625) { 0 } // Error frame stays black
     
@@ -101,13 +101,8 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
      * Apply current brightness setting to any frame array
      */
     private fun applyBrightnessToFrame(baseFrame: IntArray): IntArray {
-        return baseFrame.map { originalValue ->
-            if (originalValue > 0) {
-                ((originalValue * currentBrightness) / 255).coerceIn(0, 255)
-            } else {
-                0
-            }
-        }.toIntArray()
+        // Return original values - brightness is now handled by GlyphMatrixObject
+        return baseFrame.clone()
     }
     
     // Validation is handled by parent ThemeTemplate class
@@ -146,11 +141,11 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
                 id = "duck_brightness",
                 displayName = "Brightness",
                 description = "Brightness of the dancing duck",
-                defaultValue = 255,
-                minValue = 10,
-                maxValue = 255,
-                stepSize = 5,
-                unit = null,
+                defaultValue = 1.0f,
+                minValue = 0.1f,
+                maxValue = 1.0f,
+                stepSize = 0.1f,
+                unit = "x",
                 category = SettingCategories.VISUAL
             )
             .build()
@@ -163,9 +158,9 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
         // Apply animation pattern
         currentAnimationPattern = settings.getDropdownValue("animation_pattern", "normal")
         
-        // Apply brightness with validation
-        val brightness = settings.getSliderValueInt("duck_brightness", 255)
-        currentBrightness = brightness.coerceIn(10, 255)
+        // Apply brightness with validation (convert multiplier to 0-255 range)
+        val brightnessMultiplier = settings.getSliderValueFloat("duck_brightness", 1.0f)
+        currentBrightness = (brightnessMultiplier * 255).toInt().coerceIn(0, 255)
         
         // Update dancing speed based on pattern (since we don't have a separate speed setting)
         currentDancingSpeed = when (currentAnimationPattern) {
@@ -225,6 +220,13 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
         
         // Convert shaped grid data to flat 25x25 array with circular masking
         val shapedData = frames[frameIndex]
+        return convertShapedToFlat(shapedData)
+    }
+    
+    /**
+     * Converts shaped frame data (489 elements) to flat array format (625 elements)
+     */
+    private fun convertShapedToFlat(shapedData: IntArray): IntArray {
         val flatArray = createEmptyFrame()
         
         // The shaped data represents the circular matrix layout
@@ -242,14 +244,12 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
                 
                 if (distance <= 12.5) { // Within the circular shape
                     if (shapedIndex < shapedData.size) {
-                        // Apply brightness adjustment
-                        val originalValue = shapedData[shapedIndex]
-                        val adjustedValue = if (originalValue > 0) {
-                            ((originalValue * currentBrightness) / 255).coerceIn(0, 255)
-                        } else {
-                            0
-                        }
-                        flatArray[flatIndex] = adjustedValue
+                        // Apply brightness directly to pixel values using the unified model
+                        val basePixelValue = shapedData[shapedIndex]
+                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                            basePixelValue,
+                            currentBrightness
+                        )
                         shapedIndex++
                     }
                 }

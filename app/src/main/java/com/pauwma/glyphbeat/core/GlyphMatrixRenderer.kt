@@ -1,5 +1,10 @@
 package com.pauwma.glyphbeat.core
 
+import android.graphics.Bitmap
+import android.graphics.Color
+import com.nothing.ketchum.GlyphMatrixFrame
+import com.nothing.ketchum.GlyphMatrixObject
+
 /**
  * Utility class for transforming pixel data between different formats for the Glyph Matrix.
  * 
@@ -9,6 +14,8 @@ package com.pauwma.glyphbeat.core
  * This class converts between:
  * 1. Shaped grid format: 2D array where each row contains only the actual pixels for that row
  * 2. Flat array format: 1D array of 625 elements (25x25) expected by the SDK
+ * 
+ * Also provides methods for using the GlyphMatrixObject API for proper brightness control.
  */
 class GlyphMatrixRenderer {
     
@@ -470,6 +477,62 @@ class GlyphMatrixRenderer {
                     }
                 }
             }
+        }
+        
+        /**
+         * Converts an IntArray of pixel data to a Bitmap for use with GlyphMatrixObject.
+         * 
+         * @param pixelArray IntArray of 625 elements representing the 25x25 matrix
+         * @return Bitmap suitable for GlyphMatrixObject.setImageSource()
+         */
+        fun pixelArrayToBitmap(pixelArray: IntArray): Bitmap {
+            require(pixelArray.size == FLAT_ARRAY_SIZE) {
+                "Pixel array must have exactly $FLAT_ARRAY_SIZE elements"
+            }
+            
+            val bitmap = Bitmap.createBitmap(MAX_COLUMNS, TOTAL_ROWS, Bitmap.Config.ARGB_8888)
+            
+            for (y in 0 until TOTAL_ROWS) {
+                for (x in 0 until MAX_COLUMNS) {
+                    val index = y * MAX_COLUMNS + x
+                    val brightness = pixelArray[index]
+                    // Convert brightness (0-255) to grayscale color
+                    val color = if (brightness > 0) {
+                        Color.rgb(brightness, brightness, brightness)
+                    } else {
+                        Color.TRANSPARENT
+                    }
+                    bitmap.setPixel(x, y, color)
+                }
+            }
+            
+            return bitmap
+        }
+        
+        /**
+         * Creates a GlyphMatrixFrame with proper brightness control using the object API.
+         * 
+         * @param context Android context required for building the frame
+         * @param pixelArray IntArray of 625 elements representing the frame
+         * @param brightness Brightness level (0-255) to apply to the entire frame
+         * @return GlyphMatrixFrame ready to be sent to the matrix
+         */
+        fun createMatrixFrameWithBrightness(context: android.content.Context, pixelArray: IntArray, brightness: Int): GlyphMatrixFrame {
+            // Convert pixel array to bitmap
+            val bitmap = pixelArrayToBitmap(pixelArray)
+            
+            // Create GlyphMatrixObject with the specified brightness
+            val matrixObject = GlyphMatrixObject.Builder()
+                .setImageSource(bitmap)
+                .setBrightness(brightness.coerceIn(0, 255))
+                .setPosition(0, 0)
+                .build()
+            
+            // Create frame with the object
+            val frameBuilder = GlyphMatrixFrame.Builder()
+            frameBuilder.addTop(matrixObject)
+            
+            return frameBuilder.build(context)
         }
     }
 }

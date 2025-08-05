@@ -163,6 +163,25 @@ fun GlyphMatrixPreview(
         }
     }
     
+    // Get the theme's current brightness setting as state for smooth updates
+    var themeBrightness by remember { mutableIntStateOf(255) }
+    
+    // Update brightness whenever theme changes or on regular intervals for smooth updates
+    LaunchedEffect(theme, isSelected) {
+        while (currentCoroutineContext().isActive) {
+            try {
+                val newBrightness = theme.getBrightness()
+                if (themeBrightness != newBrightness) {
+                    themeBrightness = newBrightness
+                }
+            } catch (e: Exception) {
+                // Keep current brightness if unable to get
+            }
+            // Check for brightness changes every 100ms for smooth updates
+            delay(100)
+        }
+    }
+    
     Box(
         modifier = modifier
             .size(previewSize.dp)
@@ -206,30 +225,28 @@ fun GlyphMatrixPreview(
                 for (colInRow in 0 until pixelsInRow) {
                     val col = startColForRow + colInRow
                     val pixelIndex = row * 25 + col
-                    val brightness = if (pixelIndex < frameData.size) frameData[pixelIndex] else 0
+                    val pixelValue = if (pixelIndex < frameData.size) frameData[pixelIndex] else 0
                     
-                    // Convert brightness to color - use exact matrix-like mapping for CoverArtTheme
-                    val color = if (theme is CoverArtTheme) {
-                        // Direct linear brightness mapping to match matrix exactly
-                        if (brightness == 0) {
-                            Color.Transparent
-                        } else {
-                            // Linear mapping: brightness 0-255 -> alpha 0.0-1.0
-                            val alpha = (brightness / 255f).coerceIn(0f, 1f)
-                            Color.White.copy(alpha = alpha)
-                        }
+                    // Use the unified brightness model for pixel calculations
+                    val finalBrightness = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                        pixelValue,
+                        themeBrightness
+                    )
+                    
+                    // Convert brightness to color using the unified model's preview alpha calculation
+                    val color = if (finalBrightness == 0) {
+                        Color.Transparent
                     } else {
-                        // Original mapping for other themes
-                        when {
-                            brightness == 0 -> Color.Transparent
-                            brightness < 100 -> Color.Gray.copy(alpha = 0.3f)
-                            brightness < 200 -> Color.Gray.copy(alpha = 0.7f)
-                            else -> Color.White
-                        }
+                        // Use the unified model's preview alpha calculation for consistent appearance
+                        val alpha = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculatePreviewAlpha(
+                            pixelValue,
+                            themeBrightness
+                        )
+                        Color.White.copy(alpha = alpha.coerceIn(0f, 1f))
                     }
                     
                     // Always draw the dot to show the matrix shape, but use different opacity for inactive pixels
-                    val finalColor = if (brightness > 0) {
+                    val finalColor = if (pixelValue > 0) {
                         color
                     } else {
                         // Show inactive matrix positions with very low opacity

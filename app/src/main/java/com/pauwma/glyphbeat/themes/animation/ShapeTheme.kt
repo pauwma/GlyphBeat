@@ -110,8 +110,6 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
         val flatArray = createEmptyFrame()
         val centerX = 12.0
         val centerY = 12.0
-        val brightness = (currentBrightness * 0.3).toInt().coerceIn(0, 255)
-        
         // Simple border pattern for offline state
         for (row in 0 until 25) {
             for (col in 0 until 25) {
@@ -120,7 +118,11 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
                 
                 // Create simple border for offline
                 if (distance <= 12.5 && distance >= 10.5) {
-                    flatArray[flatIndex] = brightness
+                    // Apply brightness using unified model with reduced base value for offline
+                    flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                        77, // Reduced base value (255 * 0.3) for dimmer offline appearance
+                        currentBrightness
+                    )
                 }
             }
         }
@@ -176,7 +178,11 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
                     val isHorizontalLine = row >= 11 && row <= 13
                     
                     if (isVerticalLine || isHorizontalLine) {
-                        flatArray[flatIndex] = currentBrightness
+                        // Apply brightness using unified model with full base value (255)
+                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                            255, // Full brightness base value for the shape
+                            currentBrightness
+                        )
                     }
                 }
             }
@@ -201,7 +207,11 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
                         val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
                         
                         if (distance <= radius) {
-                            flatArray[flatIndex] = currentBrightness
+                            // Apply brightness using unified model with full base value (255)
+                            flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                                255, // Full brightness base value for the shape
+                                currentBrightness
+                            )
                         }
                     }
                 }
@@ -221,7 +231,11 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
                 val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
                 
                 if (distance <= radius && row in lineRows) {
-                    flatArray[flatIndex] = currentBrightness
+                    // Apply brightness using unified model with full base value (255)
+                    flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                        255, // Full brightness base value for the shape
+                        currentBrightness
+                    )
                 }
             }
         }
@@ -238,7 +252,11 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
                 
                 // Create border effect - only pixels near the edge
                 if (distance <= radius && distance >= radius - 2) {
-                    flatArray[flatIndex] = currentBrightness
+                    // Apply brightness using unified model with full base value (255)
+                    flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                        255, // Full brightness base value for the shape
+                        currentBrightness
+                    )
                 }
             }
         }
@@ -258,7 +276,11 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
                     val manhattanDistance = kotlin.math.abs(col - centerX) + kotlin.math.abs(row - centerY)
                     
                     if (manhattanDistance >= 6 && manhattanDistance <= 8) {
-                        flatArray[flatIndex] = currentBrightness
+                        // Apply brightness using unified model with full base value (255)
+                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                            255, // Full brightness base value for the shape
+                            currentBrightness
+                        )
                     }
                 }
             }
@@ -279,7 +301,11 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
                     val isGridLine = (row % 4 == 0) || (col % 4 == 0)
                     
                     if (isGridLine) {
-                        flatArray[flatIndex] = currentBrightness
+                        // Apply brightness using unified model with full base value (255)
+                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                            255, // Full brightness base value for the shape
+                            currentBrightness
+                        )
                     }
                 }
             }
@@ -320,11 +346,11 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
                 id = CommonSettingIds.BRIGHTNESS,
                 displayName = "Brightness",
                 description = "Adjust the brightness of the minimal pattern",
-                defaultValue = brightnessValue,
-                minValue = 25,
-                maxValue = 255,
-                stepSize = 5,
-                unit = null,
+                defaultValue = 1.0f,
+                minValue = 0.1f,
+                maxValue = 1.0f,
+                stepSize = 0.1f,
+                unit = "x",
                 category = SettingCategories.VISUAL,
                 showValue = true
             )
@@ -344,8 +370,9 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
     }
     
     override fun applySettings(settings: ThemeSettings) {
-        // Apply brightness setting
-        currentBrightness = settings.getSliderValueInt(CommonSettingIds.BRIGHTNESS, brightnessValue)
+        // Apply brightness setting (convert multiplier to 0-255 range)
+        val brightnessMultiplier = settings.getSliderValueFloat(CommonSettingIds.BRIGHTNESS, 1.0f)
+        currentBrightness = (brightnessMultiplier * 255).toInt().coerceIn(0, 255)
         
         // Apply paused opacity setting (convert percentage to float)
         val opacityPercent = settings.getSliderValueInt("paused_opacity", 50)

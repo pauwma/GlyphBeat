@@ -3,6 +3,9 @@ package com.pauwma.glyphbeat.services.trackcontrol
 import android.content.Context
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
+import com.nothing.ketchum.GlyphMatrixFrame
+import com.nothing.ketchum.GlyphMatrixObject
+import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 import com.pauwma.glyphbeat.services.GlyphMatrixService
 import com.pauwma.glyphbeat.sound.MediaControlHelper
 import com.pauwma.glyphbeat.themes.base.TrackControlTheme
@@ -168,8 +171,11 @@ class NextTrackToyService : GlyphMatrixService("NextTrack-Toy") {
             frameIndex = currentFrameIndex
         )
         
+        val brightness = theme.getBrightness()
+        
         uiScope.launch {
-            matrixManager?.setMatrixFrame(frame)
+            val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, frame, brightness)
+            matrixManager?.setMatrixFrame(matrixFrame.render())
         }
     }
     

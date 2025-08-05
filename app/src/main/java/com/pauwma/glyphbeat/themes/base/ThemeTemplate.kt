@@ -884,11 +884,11 @@ class DefaultThemeSettingsProvider(
                 id = CommonSettingIds.BRIGHTNESS,
                 displayName = "Brightness",
                 description = "Overall brightness level",
-                defaultValue = theme?.getBrightness() ?: 255,
-                minValue = 50,
-                maxValue = 255,
-                stepSize = 5,
-                unit = null,
+                defaultValue = (theme?.getBrightness() ?: 255) / 255.0f,
+                minValue = 0.1f,
+                maxValue = 1.0f,
+                stepSize = 0.1f,
+                unit = "x",
                 category = SettingCategories.VISUAL
             )
             .build()

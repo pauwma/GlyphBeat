@@ -93,13 +93,8 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
     override val frames: Array<IntArray>
         get() {
             val baseFrame = if (showBorder) mainFrameWithBorder else mainFrameNoBorder
-            val adjustedFrame = baseFrame.map { value ->
-                if (value > 0) {
-                    // Apply brightness scaling
-                    (value * currentBrightness / 255.0).toInt().coerceIn(0, 255)
-                } else 0
-            }.toIntArray()
-            return arrayOf(adjustedFrame)
+            // Return original values - brightness is now handled by GlyphMatrixObject
+            return arrayOf(baseFrame)
         }
 
     // =================================================================================
@@ -121,17 +116,22 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
     override val pausedFrame: IntArray 
         get() {
             val baseFrame = if (showBorder) pausedFrameWithBorder else pausedFrameNoBorder
-            return baseFrame.map { value ->
+            // Apply paused opacity to the base frame data before conversion
+            val dimmedFrame = baseFrame.map { value ->
                 if (value > 0) {
-                    // Apply both brightness and paused opacity to the hardcoded paused frame
-                    val adjustedValue = (value * currentBrightness / 255.0 * pausedOpacity).toInt()
-                    adjustedValue.coerceIn(0, 255)
+                    (value * pausedOpacity).toInt().coerceIn(0, 255)
                 } else 0
             }.toIntArray()
+            // Convert shaped to flat (brightness is applied in convertShapedToFlat)
+            return convertShapedToFlat(dimmedFrame)
         }
         
     override val offlineFrame: IntArray 
-        get() = if (showBorder) offlineFrameWithBorder else offlineFrameNoBorder
+        get() {
+            val baseFrame = if (showBorder) offlineFrameWithBorder else offlineFrameNoBorder
+            // Convert shaped to flat - brightness is handled by GlyphMatrixObject
+            return convertShapedToFlat(baseFrame)
+        }
 
 
     /**
@@ -139,7 +139,7 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
      * Uses the paused frame as a loading indicator.
      */
     override val loadingFrame: IntArray 
-        get() = pausedFrame.clone()
+        get() = pausedFrame
 
     /**
      * Frame displayed when there's an error state.
@@ -156,28 +156,40 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
 
         // Convert shaped grid data to flat 25x25 array
         val shapedData = frames[frameIndex]
+        return convertShapedToFlat(shapedData)
+    }
+    
+    /**
+     * Converts shaped frame data (489 elements) to flat array format (625 elements)
+     */
+    private fun convertShapedToFlat(shapedData: IntArray): IntArray {
         val flatArray = createEmptyFrame()
-
+        
         // The shaped data represents the circular matrix layout
         // We need to map it to the proper positions in a 25x25 grid
         var shapedIndex = 0
-
+        
         for (row in 0 until 25) {
             for (col in 0 until 25) {
                 val flatIndex = row * 25 + col
-
+                
                 // Check if this pixel is within the circular matrix shape
                 val centerX = 12.0
                 val centerY = 12.0
                 val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
+                
                 if (distance <= 12.5 && shapedIndex < shapedData.size) {
-                    flatArray[flatIndex] = shapedData[shapedIndex]
+                    // Apply brightness directly to pixel values using the unified model
+                    val basePixelValue = shapedData[shapedIndex]
+                    flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                        basePixelValue,
+                        currentBrightness
+                    )
                     shapedIndex++
                 }
             }
         }
-
+        
         return flatArray
     }
 
@@ -194,11 +206,11 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
                 id = "minimal_brightness",
                 displayName = "Brightness",
                 description = "Brightness multiplier for icons",
-                defaultValue = 255,
-                minValue = 10,
-                maxValue = 255,
-                stepSize = 5,
-                unit = null,
+                defaultValue = 1.0f,
+                minValue = 0.1f,
+                maxValue = 1.0f,
+                stepSize = 0.1f,
+                unit = "x",
                 category = SettingCategories.VISUAL
             )
             .addSliderSetting(
@@ -206,7 +218,7 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
                 displayName = "Paused Opacity",
                 description = "Opacity when media is paused",
                 defaultValue = 0.4f,
-                minValue = 0.2f,
+                minValue = 0.1f,
                 maxValue = 0.8f,
                 stepSize = 0.1f,
                 unit = null,
@@ -219,8 +231,9 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
         // Apply the border toggle setting
         showBorder = settings.getToggleValue("outside_border", false)
         
-        // Apply brightness setting
-        currentBrightness = settings.getSliderValueInt("minimal_brightness", brightnessValue)
+        // Apply brightness setting (convert multiplier to 0-255 range)
+        val brightnessMultiplier = settings.getSliderValueFloat("minimal_brightness", 1.0f)
+        currentBrightness = (brightnessMultiplier * 255).toInt().coerceIn(0, 255)
         
         // Apply paused opacity setting
         pausedOpacity = settings.getSliderValueFloat("paused_opacity", 0.4f)

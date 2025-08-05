@@ -134,7 +134,7 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
         )
     
     override val loadingFrame: IntArray
-        get() = applyBrightnessToFrame(frames[0])
+        get() = generateFrame(0)
     
     override val errorFrame: IntArray = IntArray(625) { 0 } // Error frame stays black
     
@@ -142,13 +142,45 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
      * Apply current brightness setting to any frame array
      */
     private fun applyBrightnessToFrame(baseFrame: IntArray): IntArray {
-        return baseFrame.map { originalValue ->
-            if (originalValue > 0) {
-                ((originalValue * currentBrightness) / 255).coerceIn(0, 255)
-            } else {
-                0
+        // Check if this is a shaped array (489 elements) or flat array (625 elements)
+        return if (baseFrame.size == 489) {
+            // Convert shaped to flat
+            convertShapedToFlat(baseFrame)
+        } else {
+            // Already flat, just return a copy
+            baseFrame.clone()
+        }
+    }
+    
+    /**
+     * Converts shaped frame data (489 elements) to flat array format (625 elements)
+     */
+    private fun convertShapedToFlat(shapedData: IntArray): IntArray {
+        val flatArray = createEmptyFrame()
+        var shapedIndex = 0
+        
+        for (row in 0 until 25) {
+            for (col in 0 until 25) {
+                val flatIndex = row * 25 + col
+                
+                // Check if this pixel is within the circular matrix shape
+                val centerX = 12.0
+                val centerY = 12.0
+                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
+                
+                if (distance <= 12.5 && shapedIndex < shapedData.size) {
+                    // Apply brightness directly to pixel values using the unified model
+                    val basePixelValue = shapedData[shapedIndex]
+                    flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                        basePixelValue,
+                        currentBrightness
+                    )
+                    shapedIndex++
+                }
             }
-        }.toIntArray()
+        }
+        
+        return flatArray
     }
     
     // Validation is handled by parent ThemeTemplate class
@@ -196,11 +228,11 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
                 id = CommonSettingIds.BRIGHTNESS,
                 displayName = "Brightness",
                 description = "Overall brightness of the vinyl",
-                defaultValue = 255,
-                minValue = 10,
-                maxValue = 255,
-                stepSize = 5,
-                unit = null,
+                defaultValue = 1.0f,
+                minValue = 0.1f,
+                maxValue = 1.0f,
+                stepSize = 0.1f,
+                unit = "x",
                 category = SettingCategories.VISUAL
             )
             .build()
@@ -210,9 +242,9 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
         // Apply rotation speed
         currentAnimationSpeed = settings.getSliderValueLong(CommonSettingIds.ROTATION_SPEED, 100L)
         
-        // Apply brightness with validation
-        val brightness = settings.getSliderValueInt(CommonSettingIds.BRIGHTNESS, 255)
-        currentBrightness = brightness.coerceIn(10, 255)
+        // Apply brightness with validation (convert multiplier to 0-255 range)
+        val brightnessMultiplier = settings.getSliderValueFloat(CommonSettingIds.BRIGHTNESS, 1.0f)
+        currentBrightness = (brightnessMultiplier * 255).toInt().coerceIn(0, 255)
         
         // Apply vinyl size
         currentVinylSize = settings.getDropdownValue("vinyl_size", "large")
@@ -241,14 +273,12 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
                     val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
                     
                     if (distance <= 12.5 && shapedIndex < shapedData.size) {
-                        // Apply brightness adjustment
-                        val originalValue = shapedData[shapedIndex]
-                        val adjustedValue = if (originalValue > 0) {
-                            ((originalValue * currentBrightness) / 255).coerceIn(0, 255)
-                        } else {
-                            0
-                        }
-                        flatArray[flatIndex] = adjustedValue
+                        // Apply brightness directly to pixel values using the unified model
+                        val basePixelValue = shapedData[shapedIndex]
+                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                            basePixelValue, 
+                            currentBrightness
+                        )
                         shapedIndex++
                     }
                 }
@@ -256,16 +286,18 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
             
             return flatArray
         } else {
-            // For Small size, use the pre-computed flat array frames
-            val frameData = smallFrames[frameIndex]
+            // For Small size, convert shaped array to flat array
+            val shapedData = smallFrames[frameIndex]
             
-            // Apply brightness adjustment to the frame
-            return frameData.map { originalValue ->
-                if (originalValue > 0) {
-                    ((originalValue * currentBrightness) / 255).coerceIn(0, 255)
-                } else {
-                    0
-                }
+            // smallFrames are 489-element shaped arrays, need to convert to 625-element flat
+            val convertedArray = convertShapedToFlat(shapedData)
+            
+            // Apply brightness to the converted array
+            return convertedArray.map { pixelValue ->
+                com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                    pixelValue,
+                    currentBrightness
+                )
             }.toIntArray()
         }
     }

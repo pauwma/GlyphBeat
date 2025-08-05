@@ -51,6 +51,10 @@ fun ThemePreviewCard(
                     val themeSettings = themeRepository.getThemeSettings((theme as ThemeSettingsProvider).getSettingsId())
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                         hasCustomSettings = themeSettings?.userValues?.isNotEmpty() == true
+                        // Apply settings to this theme instance for correct preview
+                        if (themeSettings != null) {
+                            (theme as ThemeSettingsProvider).applySettings(themeSettings)
+                        }
                     }
                 }
             } catch (e: Exception) {

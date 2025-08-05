@@ -18,7 +18,7 @@ import com.pauwma.glyphbeat.ui.settings.*
 class PulseRippleTheme : TrackControlTheme(), TrackControlThemeSettingsProvider {
     
     // Theme metadata
-    override fun getThemeName(): String = "Pulse Ripple"
+    override fun getThemeName(): String = "Pulse"
     override fun getDescription(): String = "Animated ripple effect with directional feedback"
     
     // Animation parameters
@@ -220,10 +220,11 @@ class PulseRippleTheme : TrackControlTheme(), TrackControlThemeSettingsProvider 
                     id = "brightness",
                     displayName = "Brightness",
                     description = "Overall brightness",
-                    defaultValue = 255,
-                    minValue = 50,
-                    maxValue = 255,
-                    stepSize = 5,
+                    defaultValue = 1.0f,
+                    minValue = 0.1f,
+                    maxValue = 1.0f,
+                    stepSize = 0.1f,
+                    unit = "x",
                     category = "Visual"
                 ),
                 "show_arrow" to ToggleSetting(
@@ -261,9 +262,10 @@ class PulseRippleTheme : TrackControlTheme(), TrackControlThemeSettingsProvider 
             rippleFrameCount = (it as? Number)?.toInt() ?: 12
         }
         
-        // Apply brightness
-        settings.getTypedValue("brightness", 255).let {
-            baseBrightness = (it as? Number)?.toInt() ?: 255
+        // Apply brightness (convert multiplier to 0-255 range)
+        settings.getTypedValue("brightness", 1.0f).let {
+            val multiplier = (it as? Number)?.toFloat() ?: 1.0f
+            baseBrightness = (multiplier * 255).toInt().coerceIn(0, 255)
             settingsBrightness = baseBrightness
         }
         

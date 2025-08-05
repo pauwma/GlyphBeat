@@ -18,7 +18,7 @@ import com.pauwma.glyphbeat.ui.settings.*
 class MinimalArrowTheme : TrackControlTheme(), TrackControlThemeSettingsProvider {
     
     // Theme metadata
-    override fun getThemeName(): String = "Minimal Arrows"
+    override fun getThemeName(): String = "Minimal"
     override fun getDescription(): String = "Simple arrow icons with opacity feedback"
     
     // Default theme parameters

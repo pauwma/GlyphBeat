@@ -77,3 +77,6 @@ firebase_app_id_file.json
 # IntelliJ
 out/
 .idea_modules/
+
+# Documentation
+NothingOfficialDocumentation.md
