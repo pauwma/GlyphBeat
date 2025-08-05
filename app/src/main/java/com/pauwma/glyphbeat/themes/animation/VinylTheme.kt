@@ -144,11 +144,22 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
     private fun applyBrightnessToFrame(baseFrame: IntArray): IntArray {
         // Check if this is a shaped array (489 elements) or flat array (625 elements)
         return if (baseFrame.size == 489) {
-            // Convert shaped to flat
-            convertShapedToFlat(baseFrame)
+            // Convert shaped to flat and apply brightness
+            val flatArray = convertShapedToFlat(baseFrame)
+            flatArray.map { pixelValue ->
+                com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                    pixelValue,
+                    currentBrightness
+                )
+            }.toIntArray()
         } else {
-            // Already flat, just return a copy
-            baseFrame.clone()
+            // Already flat, apply brightness to each pixel
+            baseFrame.map { pixelValue ->
+                com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                    pixelValue,
+                    currentBrightness
+                )
+            }.toIntArray()
         }
     }
     
@@ -169,12 +180,9 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
                 val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
                 
                 if (distance <= 12.5 && shapedIndex < shapedData.size) {
-                    // Apply brightness directly to pixel values using the unified model
-                    val basePixelValue = shapedData[shapedIndex]
-                    flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                        basePixelValue,
-                        currentBrightness
-                    )
+                    // Just copy the pixel value without applying brightness
+                    // Brightness will be applied consistently in generateFrame
+                    flatArray[flatIndex] = shapedData[shapedIndex]
                     shapedIndex++
                 }
             }
@@ -286,19 +294,33 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
             
             return flatArray
         } else {
-            // For Small size, convert shaped array to flat array
+            // For Small size, convert shaped array to flat array with brightness
             val shapedData = smallFrames[frameIndex]
+            val flatArray = createEmptyFrame()
+            var shapedIndex = 0
             
-            // smallFrames are 489-element shaped arrays, need to convert to 625-element flat
-            val convertedArray = convertShapedToFlat(shapedData)
+            for (row in 0 until 25) {
+                for (col in 0 until 25) {
+                    val flatIndex = row * 25 + col
+                    
+                    // Check if this pixel is within the circular matrix shape
+                    val centerX = 12.0
+                    val centerY = 12.0
+                    val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
+                    
+                    if (distance <= 12.5 && shapedIndex < shapedData.size) {
+                        // Apply brightness directly to pixel values using the unified model
+                        val basePixelValue = shapedData[shapedIndex]
+                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                            basePixelValue,
+                            currentBrightness
+                        )
+                        shapedIndex++
+                    }
+                }
+            }
             
-            // Apply brightness to the converted array
-            return convertedArray.map { pixelValue ->
-                com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                    pixelValue,
-                    currentBrightness
-                )
-            }.toIntArray()
+            return flatArray
         }
     }
     
