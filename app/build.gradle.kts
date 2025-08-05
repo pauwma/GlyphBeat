@@ -22,8 +22,8 @@ android {
         applicationId = "com.pauwma.glyphbeat"
         minSdk = 34
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -83,6 +83,9 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(files("libs/glyphsdk_0606.aar"))
+    
+    // Material Icons Extended
+    implementation("androidx.compose.material:material-icons-extended:1.5.4")
     
     // JSON serialization for theme settings
     implementation("com.google.code.gson:gson:2.10.1")

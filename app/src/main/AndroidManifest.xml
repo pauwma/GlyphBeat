@@ -36,7 +36,7 @@
 
         <!-- Notification Listener Service for media control -->
         <service
-            android:name="com.pauwma.glyphbeat.sound.MediaNotificationListenerService"
+            android:name="com.pauwma.glyphbeat.services.notification.MediaNotificationListenerService"
             android:exported="false"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
@@ -46,7 +46,7 @@
 
         <!-- Media Player Service -->
         <service
-            android:name="com.pauwma.glyphbeat.MediaPlayerToyService"
+            android:name="com.pauwma.glyphbeat.services.media.MediaPlayerToyService"
             android:exported="true"
             tools:ignore="ExportedService">
             <intent-filter>
@@ -62,6 +62,52 @@
             <meta-data
                 android:name="com.nothing.glyph.toy.summary"
                 android:resource="@string/toy_summary_media_player" />
+            <meta-data
+                android:name="com.nothing.glyph.toy.longpress"
+                android:value="1" />
+        </service>
+
+        <!-- Next Track Service -->
+        <service
+            android:name="com.pauwma.glyphbeat.services.trackcontrol.NextTrackToyService"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="com.nothing.glyph.TOY" />
+            </intent-filter>
+
+            <meta-data
+                android:name="com.nothing.glyph.toy.name"
+                android:resource="@string/toy_name_next_track" />
+            <meta-data
+                android:name="com.nothing.glyph.toy.image"
+                android:resource="@drawable/glyph_beat_thumbnail" />
+            <meta-data
+                android:name="com.nothing.glyph.toy.summary"
+                android:resource="@string/toy_summary_next_track" />
+            <meta-data
+                android:name="com.nothing.glyph.toy.longpress"
+                android:value="1" />
+        </service>
+
+        <!-- Previous Track Service -->
+        <service
+            android:name="com.pauwma.glyphbeat.services.trackcontrol.PreviousTrackToyService"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="com.nothing.glyph.TOY" />
+            </intent-filter>
+
+            <meta-data
+                android:name="com.nothing.glyph.toy.name"
+                android:resource="@string/toy_name_previous_track" />
+            <meta-data
+                android:name="com.nothing.glyph.toy.image"
+                android:resource="@drawable/glyph_beat_thumbnail" />
+            <meta-data
+                android:name="com.nothing.glyph.toy.summary"
+                android:resource="@string/toy_summary_previous_track" />
             <meta-data
                 android:name="com.nothing.glyph.toy.longpress"
                 android:value="1" />

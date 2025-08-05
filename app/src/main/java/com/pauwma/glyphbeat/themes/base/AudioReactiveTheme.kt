@@ -1,4 +1,6 @@
-package com.pauwma.glyphbeat.sound
+package com.pauwma.glyphbeat.themes.base
+
+import com.pauwma.glyphbeat.sound.AudioData
 
 /**
  * Interface for themes that can respond to real-time audio data

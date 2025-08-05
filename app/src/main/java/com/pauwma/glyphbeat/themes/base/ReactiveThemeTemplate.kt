@@ -1,8 +1,7 @@
-package com.pauwma.glyphbeat.animation
+package com.pauwma.glyphbeat.themes.base
 
 import com.pauwma.glyphbeat.sound.AudioData
-import com.pauwma.glyphbeat.sound.AudioReactiveTheme
-import com.pauwma.glyphbeat.GlyphMatrixRenderer
+import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 
 /**
  * AUDIO-REACTIVE THEME TEMPLATE

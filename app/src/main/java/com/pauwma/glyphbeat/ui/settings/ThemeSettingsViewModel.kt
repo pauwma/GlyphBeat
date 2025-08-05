@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pauwma.glyphbeat.animation.AnimationTheme
-import com.pauwma.glyphbeat.ui.ThemeRepository
+import com.pauwma.glyphbeat.themes.base.AnimationTheme
+import com.pauwma.glyphbeat.data.ThemeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -1,4 +1,4 @@
-package com.pauwma.glyphbeat
+package com.pauwma.glyphbeat.services
 
 import android.app.Service
 import android.content.ComponentName

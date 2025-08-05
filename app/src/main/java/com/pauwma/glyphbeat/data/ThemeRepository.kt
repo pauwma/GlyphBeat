@@ -1,18 +1,18 @@
-package com.pauwma.glyphbeat.ui
+package com.pauwma.glyphbeat.data
 
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.State
-import com.pauwma.glyphbeat.animation.AnimationTheme
-import com.pauwma.glyphbeat.animation.styles.VinylTheme
-import com.pauwma.glyphbeat.animation.styles.DancingDuckTheme
-import com.pauwma.glyphbeat.animation.styles.ShapeTheme
-import com.pauwma.glyphbeat.animation.styles.CoverArtTheme
-import com.pauwma.glyphbeat.animation.styles.MinimalTheme
-import com.pauwma.glyphbeat.animation.styles.PulseVisualizerTheme
-import com.pauwma.glyphbeat.animation.styles.WaveformTheme
+import com.pauwma.glyphbeat.themes.base.AnimationTheme
+import com.pauwma.glyphbeat.themes.animation.VinylTheme
+import com.pauwma.glyphbeat.themes.animation.DancingDuckTheme
+import com.pauwma.glyphbeat.themes.animation.ShapeTheme
+import com.pauwma.glyphbeat.themes.animation.CoverArtTheme
+import com.pauwma.glyphbeat.themes.animation.MinimalTheme
+import com.pauwma.glyphbeat.themes.animation.PulseVisualizerTheme
+import com.pauwma.glyphbeat.themes.animation.WaveformTheme
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsPersistence
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
@@ -50,7 +50,7 @@ class ThemeRepository private constructor(private val context: Context) {
     val settingsChangedFlow: SharedFlow<Pair<String, ThemeSettings>> = _settingsChangedFlow.asSharedFlow()
     
     // Available themes list
-    val availableThemes: List<AnimationTheme> = listOf(
+    val availableThemes: List<AnimationTheme> = listOf<AnimationTheme>(
         VinylTheme(),
         DancingDuckTheme(),
         CoverArtTheme(context),
@@ -58,7 +58,6 @@ class ThemeRepository private constructor(private val context: Context) {
         ShapeTheme(),
         PulseVisualizerTheme(),
         WaveformTheme()
-
     )
     
     // Current selected theme index state

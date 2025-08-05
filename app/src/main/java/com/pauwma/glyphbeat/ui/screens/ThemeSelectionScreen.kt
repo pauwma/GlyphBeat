@@ -1,4 +1,4 @@
-package com.pauwma.glyphbeat.ui
+package com.pauwma.glyphbeat.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -6,8 +6,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,9 +21,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pauwma.glyphbeat.R
-import com.pauwma.glyphbeat.animation.AnimationTheme
+import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsSheet
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
+import com.pauwma.glyphbeat.data.ThemeRepository
+import com.pauwma.glyphbeat.ui.ThemePreviewCard
+import com.pauwma.glyphbeat.ui.CompactThemePreviewCard
 
 /**
  * Theme selection screen with Nothing brand styling.
@@ -104,12 +105,11 @@ fun ThemeSelectionScreen(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    contentAlignment = Alignment.CenterStart
                 ) {
                     Text(
                         text = "Animation Themes",
@@ -119,14 +119,6 @@ fun ThemeSelectionScreen(
                         ),
                         color = MaterialTheme.colorScheme.onBackground
                     )
-                    
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
                 }
             }
             

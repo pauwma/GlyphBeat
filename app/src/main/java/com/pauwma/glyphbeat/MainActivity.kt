@@ -15,8 +15,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.pauwma.glyphbeat.theme.NothingAndroidSDKDemoTheme
-import com.pauwma.glyphbeat.ui.ThemeSelectionScreen
-import com.pauwma.glyphbeat.ui.SettingsScreen
+import com.pauwma.glyphbeat.ui.screens.ThemeSelectionScreen
+import com.pauwma.glyphbeat.ui.screens.SettingsScreen
+import com.pauwma.glyphbeat.ui.navigation.GlyphBeatBottomNavigation
+import com.pauwma.glyphbeat.ui.navigation.MediaPlayerScreen
+import com.pauwma.glyphbeat.ui.navigation.TrackControlScreen
+import com.pauwma.glyphbeat.ui.navigation.SettingsNavigationScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,26 +36,49 @@ class MainActivity : ComponentActivity() {
             NothingAndroidSDKDemoTheme {
                 val navController = rememberNavController()
                 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomBar = {
+                        GlyphBeatBottomNavigation(navController = navController)
+                    }
+                ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "themes",
+                        startDestination = "media_player",
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        composable("themes") {
-                            ThemeSelectionScreen(
+                        // Media Player Tab
+                        composable("media_player") {
+                            MediaPlayerScreen(
                                 onNavigateToSettings = {
-                                    navController.navigate("settings")
+                                    navController.navigate("media_player_settings")
                                 }
                             )
                         }
+                        
+                        // Track Control Tab
+                        composable("track_control") {
+                            TrackControlScreen()
+                        }
+                        
+                        // Settings Tab
                         composable("settings") {
+                            SettingsNavigationScreen(
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+                        
+                        // Media player settings screen (accessed from within media player)
+                        composable("media_player_settings") {
                             SettingsScreen(
                                 onNavigateBack = {
                                     navController.popBackStack()
                                 }
                             )
                         }
+                        
                     }
                 }
             }

@@ -1,9 +1,9 @@
-package com.pauwma.glyphbeat.animation.styles
+package com.pauwma.glyphbeat.themes.animation
 
-import com.pauwma.glyphbeat.animation.AnimationTheme
+import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.sound.AudioData
-import com.pauwma.glyphbeat.sound.AudioReactiveTheme
-import com.pauwma.glyphbeat.GlyphMatrixRenderer
+import com.pauwma.glyphbeat.themes.base.AudioReactiveTheme
+import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 
 /**
  * Horizontal audio-reactive wave animation theme.

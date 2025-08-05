@@ -1,4 +1,4 @@
-package com.pauwma.glyphbeat.ui
+package com.pauwma.glyphbeat.ui.screens
 
 import android.content.Intent
 import android.content.SharedPreferences
@@ -9,7 +9,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -66,34 +65,24 @@ fun SettingsScreen(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        // Header with back button (fixed at top)
+        // Header to match other tabs
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.background
         ) {
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                contentAlignment = Alignment.CenterStart
             ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-                
                 Text(
                     text = "Settings",
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontFamily = customFont
                     ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(start = 8.dp)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
         }
@@ -103,7 +92,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(top = 16.dp, bottom = 16.dp),
+                .padding(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
@@ -113,7 +102,7 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF2A2A2A)
+                containerColor = Color(0xFF1A1A1A)
             )
         ) {
             Column(
@@ -201,7 +190,7 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF2A2A2A)
+                    containerColor = Color(0xFF1A1A1A)
                 )
             ) {
                 Column(
@@ -266,7 +255,7 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF2A2A2A)
+                containerColor = Color(0xFF1A1A1A)
             )
         ) {
             Column(
@@ -327,7 +316,7 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF2A2A2A)
+                containerColor = Color(0xFF1A1A1A)
             )
         ) {
             Column(

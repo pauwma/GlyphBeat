@@ -2,4 +2,8 @@
     <string name="app_name">Glyph Beat</string>
     <string name="toy_name_media_player">Media Player</string>
     <string name="toy_summary_media_player">Visual music player interface on the glyph matrix.</string>
+    <string name="toy_name_next_track">Next Track</string>
+    <string name="toy_summary_next_track">Long press to skip to next track.</string>
+    <string name="toy_name_previous_track">Previous Track</string>
+    <string name="toy_summary_previous_track">Long press to skip to previous track.</string>
 </resources>

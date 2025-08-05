@@ -1,6 +1,5 @@
-package com.pauwma.glyphbeat.animation.styles
+package com.pauwma.glyphbeat.themes.base
 
-import com.pauwma.glyphbeat.animation.AnimationTheme
 import com.pauwma.glyphbeat.ui.settings.*
 
 /**

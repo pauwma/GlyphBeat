@@ -1,11 +1,13 @@
-package com.pauwma.glyphbeat.animation.styles
+package com.pauwma.glyphbeat.themes.animation
 
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.util.Log
-import com.pauwma.glyphbeat.GlyphMatrixRenderer
+import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 import com.pauwma.glyphbeat.sound.MediaControlHelper
+import com.pauwma.glyphbeat.themes.base.ThemeTemplate
+import com.pauwma.glyphbeat.themes.base.FrameTransition
 import com.pauwma.glyphbeat.ui.settings.*
 
 /**

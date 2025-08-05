@@ -14,7 +14,7 @@ import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.util.Log
-import com.pauwma.glyphbeat.sound.MediaNotificationListenerService
+import com.pauwma.glyphbeat.services.notification.MediaNotificationListenerService
 import kotlin.math.pow
 import java.util.concurrent.CopyOnWriteArrayList
 

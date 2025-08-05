@@ -1,4 +1,4 @@
-package com.pauwma.glyphbeat.sound
+package com.pauwma.glyphbeat.services.notification
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification

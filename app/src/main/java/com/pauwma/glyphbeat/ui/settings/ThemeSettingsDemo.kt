@@ -2,7 +2,7 @@ package com.pauwma.glyphbeat.ui.settings
 
 import android.content.Context
 import android.util.Log
-import com.pauwma.glyphbeat.ui.ThemeRepository
+import com.pauwma.glyphbeat.data.ThemeRepository
 
 /**
  * Demonstration class showing how to use the theme settings system.

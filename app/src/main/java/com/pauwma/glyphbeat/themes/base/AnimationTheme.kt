@@ -1,6 +1,6 @@
-package com.pauwma.glyphbeat.animation
+package com.pauwma.glyphbeat.themes.base
 
-import com.pauwma.glyphbeat.GlyphMatrixRenderer
+import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 
 /**
  * Abstract base class for animation themes in the Glyph Matrix display.

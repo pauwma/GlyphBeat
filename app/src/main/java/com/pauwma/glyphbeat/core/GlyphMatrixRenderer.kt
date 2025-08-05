@@ -1,4 +1,4 @@
-package com.pauwma.glyphbeat
+package com.pauwma.glyphbeat.core
 
 /**
  * Utility class for transforming pixel data between different formats for the Glyph Matrix.

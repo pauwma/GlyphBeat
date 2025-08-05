@@ -13,11 +13,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.pauwma.glyphbeat.animation.AnimationTheme
-import com.pauwma.glyphbeat.animation.styles.CoverArtTheme
-import com.pauwma.glyphbeat.animation.styles.FrameTransitionSequence
-import com.pauwma.glyphbeat.animation.styles.ThemeTemplate
+import com.pauwma.glyphbeat.themes.base.AnimationTheme
+import com.pauwma.glyphbeat.themes.animation.CoverArtTheme
+import com.pauwma.glyphbeat.themes.base.FrameTransitionSequence
+import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.sound.MediaControlHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -119,7 +120,7 @@ fun GlyphMatrixPreview(
     val frameData = remember(theme, currentFrame, mediaTrigger) {
         try {
             // For VinylTheme, ensure consistent circular shape regardless of size setting
-            if (theme is com.pauwma.glyphbeat.animation.styles.VinylTheme) {
+            if (theme is com.pauwma.glyphbeat.themes.animation.VinylTheme) {
                 val currentVinylSizeField = theme.javaClass.getDeclaredField("currentVinylSize").apply { isAccessible = true }
                 val currentVinylSize = currentVinylSizeField.get(theme) as String
                 

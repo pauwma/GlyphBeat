@@ -25,8 +25,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pauwma.glyphbeat.R
-import com.pauwma.glyphbeat.animation.AnimationTheme
-import com.pauwma.glyphbeat.ui.ThemeRepository
+import com.pauwma.glyphbeat.themes.base.AnimationTheme
+import com.pauwma.glyphbeat.themes.base.TrackControlTheme
+import com.pauwma.glyphbeat.services.trackcontrol.TrackControlThemeManager
+import com.pauwma.glyphbeat.themes.base.TrackControlThemeSettingsProvider
+import com.pauwma.glyphbeat.data.ThemeRepository
 import kotlinx.coroutines.launch
 
 /**
@@ -204,6 +207,210 @@ fun ThemeSettingsSheet(
                                         val updatedSettings = themeSettings!!.withUpdatedValue(settingId, value)
                                         val themeId = if (theme is ThemeSettingsProvider) theme.getSettingsId() else theme.getThemeName()
                                         themeRepository.saveThemeSettings(themeId, updatedSettings)
+                                        themeSettings = updatedSettings
+                                        onSettingsChanged()
+                                    } catch (e: Exception) {
+                                        error = "Failed to save: ${e.message}"
+                                    }
+                                }
+                            }
+                        )
+                    }
+                    
+                    else -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No settings available",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = customFont
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Bottom sheet that displays theme settings for track control themes.
+ * Uses TrackControlThemeManager instead of ThemeRepository.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ThemeSettingsSheet(
+    theme: TrackControlTheme,
+    isVisible: Boolean,
+    onDismiss: () -> Unit,
+    onSettingsChanged: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val themeManager = remember { TrackControlThemeManager.getInstance(context) }
+    val customFont = FontFamily(Font(R.font.ntype82regular))
+    val scope = rememberCoroutineScope()
+    
+    // Get current theme settings
+    var themeSettings by remember(theme) { mutableStateOf<ThemeSettings?>(null) }
+    var isLoading by remember(theme) { mutableStateOf(true) }
+    var error by remember(theme) { mutableStateOf<String?>(null) }
+    
+    // Load settings when theme changes - moved to background thread
+    LaunchedEffect(theme) {
+        isLoading = true
+        error = null
+        try {
+            // Move to background thread to prevent ANR
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                // Check if theme supports settings first
+                val settings = if (theme is TrackControlThemeSettingsProvider) {
+                    themeManager.getCurrentThemeSettings()
+                } else {
+                    null
+                }
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    themeSettings = settings
+                    isLoading = false
+                }
+            }
+        } catch (e: Exception) {
+            error = "Failed to load settings: ${e.message}"
+            isLoading = false
+        }
+    }
+    
+    if (isVisible) {
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            modifier = modifier
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(16.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = theme.getThemeName(),
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontFamily = customFont,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        
+                        Text(
+                            text = theme.getDescription(),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = customFont,
+                                fontSize = 14.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                    
+                    Row {
+                        // Reset button
+                        IconButton(
+                            onClick = {
+                                themeSettings?.let { settings ->
+                                    scope.launch {
+                                        try {
+                                            val resetSettings = settings.withAllValuesReset()
+                                            themeManager.updateCurrentThemeSettings(resetSettings)
+                                            themeSettings = resetSettings
+                                            onSettingsChanged()
+                                        } catch (e: Exception) {
+                                            error = "Failed to reset: ${e.message}"
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = themeSettings?.userValues?.isNotEmpty() == true
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Reset to defaults",
+                                tint = if (themeSettings?.userValues?.isNotEmpty() == true)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            )
+                        }
+                        
+                        // Close button
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Content
+                when {
+                    isLoading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    
+                    error != null -> {
+                        ErrorMessage(
+                            message = error!!,
+                            onRetry = {
+                                scope.launch {
+                                    isLoading = true
+                                    error = null
+                                    try {
+                                        themeSettings = themeManager.getCurrentThemeSettings()
+                                        isLoading = false
+                                    } catch (e: Exception) {
+                                        error = "Failed to load settings: ${e.message}"
+                                        isLoading = false
+                                    }
+                                }
+                            }
+                        )
+                    }
+                    
+                    themeSettings != null -> {
+                        ThemeSettingsContent(
+                            themeSettings = themeSettings!!,
+                            onSettingChanged = { settingId, value ->
+                                scope.launch {
+                                    try {
+                                        val updatedSettings = themeSettings!!.withUpdatedValue(settingId, value)
+                                        themeManager.updateCurrentThemeSettings(updatedSettings)
                                         themeSettings = updatedSettings
                                         onSettingsChanged()
                                     } catch (e: Exception) {

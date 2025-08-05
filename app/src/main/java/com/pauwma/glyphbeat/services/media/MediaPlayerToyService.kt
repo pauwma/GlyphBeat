@@ -1,16 +1,19 @@
-package com.pauwma.glyphbeat
+package com.pauwma.glyphbeat.services.media
+
+import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 
 import android.content.Context
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
-import com.pauwma.glyphbeat.animation.AnimationTheme
-import com.pauwma.glyphbeat.animation.styles.ThemeTemplate
-import com.pauwma.glyphbeat.animation.styles.FrameTransitionSequence
+import com.pauwma.glyphbeat.services.GlyphMatrixService
+import com.pauwma.glyphbeat.themes.base.AnimationTheme
+import com.pauwma.glyphbeat.themes.base.ThemeTemplate
+import com.pauwma.glyphbeat.themes.base.FrameTransitionSequence
 import com.pauwma.glyphbeat.sound.AudioAnalyzer
 import com.pauwma.glyphbeat.sound.AudioData
-import com.pauwma.glyphbeat.sound.AudioReactiveTheme
+import com.pauwma.glyphbeat.themes.base.AudioReactiveTheme
 import com.pauwma.glyphbeat.sound.MediaControlHelper
-import com.pauwma.glyphbeat.ui.ThemeRepository
+import com.pauwma.glyphbeat.data.ThemeRepository
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
 import kotlinx.coroutines.CoroutineScope
@@ -138,8 +141,6 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         
         // Start settings monitoring for real-time updates
         startSettingsMonitoring()
-        
-        // No callback registration needed - using fast polling instead for reliability
         
         // Log initial theme information
         logThemeInfo(currentTheme)
