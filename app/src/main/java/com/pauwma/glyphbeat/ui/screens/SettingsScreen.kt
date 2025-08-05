@@ -279,7 +279,7 @@ fun SettingsScreen(
                     onClick = {
                         val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
                             data = Uri.parse("mailto:")
-                            putExtra(Intent.EXTRA_EMAIL, arrayOf("pauwma+glyphbeatsupport@proton.me"))
+                            putExtra(Intent.EXTRA_EMAIL, arrayOf("contact+glyphbeat@pauwma.com"))
                             putExtra(Intent.EXTRA_SUBJECT, "GlyphBeat Bug Report")
                             putExtra(
                                 Intent.EXTRA_TEXT,
