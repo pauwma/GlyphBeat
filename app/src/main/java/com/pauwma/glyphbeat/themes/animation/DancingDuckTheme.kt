@@ -130,7 +130,7 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
                 description = "Style of duck dancing",
                 defaultValue = "normal",
                 optionsMap = mapOf(
-                    "normal" to "Normal",
+                    "normal" to "Default",
                     "head" to "Nodders",
                     "bouncy" to "Bouncy",
                     "fast" to "Fast"
