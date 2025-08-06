@@ -441,7 +441,7 @@ class MediaControlHelper(private val context: Context) {
      * @param rotationAngle Rotation angle in degrees (0-360), default 0.0 (no rotation)
      * @return IntArray of 625 elements with intensity values (0-255)
      */
-    fun bitmapToMatrixArray(bitmap: Bitmap?, brightnessMultiplier: Double = 1.0, enhanceContrast: Boolean = true, rotationAngle: Float = 0f): IntArray {
+    fun bitmapToMatrixArray(bitmap: Bitmap?, brightnessMultiplier: Float = 1f, enhanceContrast: Boolean = true, rotationAngle: Float = 0f): IntArray {
         if (bitmap == null || bitmap.width != 25 || bitmap.height != 25) {
             Log.w(LOG_TAG, "Invalid bitmap for matrix conversion, using fallback pattern")
             return createFallbackPattern()

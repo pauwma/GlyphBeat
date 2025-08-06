@@ -45,7 +45,6 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     private var rotationStartTime: Long = 0L // When rotation started (for time-based calculation)
     private var savedRotationPosition: Float = 0f // Saved angle when paused
     private var isRotationPaused: Boolean = false // Track pause state
-    private var lastFrameTime: Long = 0L // Last time frame was calculated
     
     // =================================================================================
     // THEME METADATA
@@ -83,7 +82,9 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     // No frame transitions needed
     override val frameTransitions: List<FrameTransition>? = null
     
-    override val brightnessValue: Int = 255
+    // Dynamic brightness based on coverBrightness setting
+    override val brightnessValue: Int
+        get() = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.multiplierToBrightness(coverBrightness)
     
     override val loopMode: String = "normal"
     
@@ -294,81 +295,50 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     }
     
     /**
-     * Generate cached rotation frames for the current track.
-     */
-    private fun generateRotationFrames(): Array<IntArray> {
-        val trackInfo = mediaHelper.getTrackInfo()
-        val currentTrackTitle = trackInfo?.title
-        
-        // Check if we can use cached rotation frames
-        if (cachedRotationFrames != null && 
-            cachedRotationTrackTitle == currentTrackTitle && 
-            currentTrackTitle != null) {
-            return cachedRotationFrames!!
-        }
-        
-        // Generate new rotation frames
-        val angleStep = 360f / rotationFrameCount // Calculate degrees per frame
-        Log.v(LOG_TAG, "Generating $rotationFrameCount rotation frames (${angleStep}° per frame) for track: $currentTrackTitle")
-        
-        val rotationFrames = Array(rotationFrameCount) { frameIndex ->
-            val rotationAngle = frameIndex * angleStep // Dynamic angle calculation
-            getCurrentAlbumArtFrame(rotationAngle)
-        }
-        
-        // Cache the frames
-        cachedRotationFrames = rotationFrames
-        cachedRotationTrackTitle = currentTrackTitle
-        Log.v(LOG_TAG, "Cached $rotationFrameCount rotation frames for: $currentTrackTitle")
-        
-        return rotationFrames
-    }
-    
-    /**
      * Get current album art as a matrix frame, with caching for performance.
      * @param rotationAngle Optional rotation angle in degrees (default 0f for no rotation)
      */
     private fun getCurrentAlbumArtFrame(rotationAngle: Float = 0f): IntArray {
         return try {
             val trackInfo = mediaHelper.getTrackInfo()
-            
+
             // Check cache first to avoid repeated processing (only for non-rotating frames)
-            if (!enableRotation && rotationAngle == 0f && 
+            if (!enableRotation && rotationAngle == 0f &&
                 trackInfo?.title == cachedTrackTitle && cachedFrameData != null) {
                 return cachedFrameData!!
             }
-            
+
             // Process new album art with settings applied
             val frameData = if (trackInfo?.albumArt != null) {
                 Log.v(LOG_TAG, "Converting album art for track: ${trackInfo.title} (rotation: ${rotationAngle}°)")
-                
-                // Apply rotation, brightness and contrast settings
+
+                // Apply rotation and contrast settings (brightness handled by unified model)
                 mediaHelper.bitmapToMatrixArray(
-                    bitmap = trackInfo.albumArt, 
-                    brightnessMultiplier = coverBrightness.toDouble(), 
+                    bitmap = trackInfo.albumArt,
+                    brightnessMultiplier = coverBrightness,
                     enhanceContrast = enhanceContrast,
                     rotationAngle = rotationAngle
                 )
             } else {
                 Log.v(LOG_TAG, "No album art available, using fallback pattern")
-                mediaHelper.bitmapToMatrixArray(null, coverBrightness.toDouble(), false) // Fallback with brightness
+                mediaHelper.bitmapToMatrixArray(null, coverBrightness, false) // Fallback (brightness handled by unified model)
             }
-            
+
             // Update cache only for non-rotating frames
             if (!enableRotation && rotationAngle == 0f) {
                 cachedTrackTitle = trackInfo?.title
                 cachedAlbumArt = trackInfo?.albumArt
                 cachedFrameData = frameData
-                
-                // Generate paused frame with configurable opacity and cache it
-                cachedPausedFrameData = frameData.map { (it * pausedOpacity).toInt().coerceIn(0, 255) }.toIntArray()
+
+                // Cache paused frame data (opacity will be handled by unified model)
+                cachedPausedFrameData = frameData
             }
-            
+
             frameData
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Error generating album art frame: ${e.message}")
             // Return fallback pattern on error
-            mediaHelper.bitmapToMatrixArray(null, 1.0, false)
+            mediaHelper.bitmapToMatrixArray(null, 1f, false)
         }
     }
     
@@ -378,6 +348,8 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     
     /**
      * Paused frame shows the same album art but at current rotation position with reduced opacity.
+     * The opacity reduction is handled by returning a dimmer frame that will be further
+     * processed by the unified brightness model.
      */
     override val pausedFrame: IntArray
         get() {
@@ -390,7 +362,8 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
                 getCurrentAlbumArtFrame()
             }
             
-            // Apply paused opacity
+            // Apply paused opacity to the raw pixel values
+            // The unified brightness model will then apply theme brightness on top
             return currentFrame.map { (it * pausedOpacity).toInt().coerceIn(0, 255) }.toIntArray()
         }
     
