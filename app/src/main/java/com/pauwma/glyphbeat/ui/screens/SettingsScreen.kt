@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.provider.Settings
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,6 +49,14 @@ fun SettingsScreen(
     var notificationAccessGranted by remember { mutableStateOf(isNotificationAccessGranted(context)) }
     var mediaServiceWorking by remember { mutableStateOf(isMediaControlServiceWorking(context)) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
+    
+    // Shake settings state
+    var shakeEnabled by remember { 
+        mutableStateOf(prefs.getBoolean("shake_to_skip_enabled", false))
+    }
+    var shakeSensitivity by remember { 
+        mutableStateOf(prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM))
+    }
     
     // Automatically refresh permission and service status when app resumes
     DisposableEffect(lifecycleOwner) {
@@ -248,6 +258,123 @@ fun SettingsScreen(
             }
         }
 
+        // Shake Control Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF1A1A1A)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Shake Controls",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = customFont
+                    ),
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    text = "Skip to the next track with a shake gesture when Media Player is active.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                // Enable/Disable switch
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Shake to Skip",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    
+                    Switch(
+                        checked = shakeEnabled,
+                        onCheckedChange = { enabled ->
+                            shakeEnabled = enabled
+                            prefs.edit().putBoolean("shake_to_skip_enabled", enabled).apply()
+                            Log.d("SettingsScreen", "Shake to skip: $enabled")
+                        }
+                    )
+                }
+
+                // Sensitivity slider
+                if (shakeEnabled) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Shake Sensitivity",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Low",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Medium",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "High",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        
+                        Slider(
+                            value = when (shakeSensitivity) {
+                                ShakeDetector.SENSITIVITY_HIGH -> 2f
+                                ShakeDetector.SENSITIVITY_MEDIUM -> 1f
+                                ShakeDetector.SENSITIVITY_LOW -> 0f
+                                else -> 1f
+                            },
+                            onValueChange = { value ->
+                                shakeSensitivity = when {
+                                    value < 0.5f -> ShakeDetector.SENSITIVITY_LOW
+                                    value < 1.5f -> ShakeDetector.SENSITIVITY_MEDIUM
+                                    else -> ShakeDetector.SENSITIVITY_HIGH
+                                }
+                                prefs.edit().putFloat("shake_sensitivity", shakeSensitivity).apply()
+                                Log.d("SettingsScreen", "Shake sensitivity: $shakeSensitivity")
+                            },
+                            valueRange = 0f..2f,
+                            steps = 1,
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        )
+                        
+                        Text(
+                            text = when (shakeSensitivity) {
+                                ShakeDetector.SENSITIVITY_HIGH -> "High sensitivity - gentle shake required"
+                                ShakeDetector.SENSITIVITY_MEDIUM -> "Medium sensitivity - moderate shake required"
+                                ShakeDetector.SENSITIVITY_LOW -> "Low sensitivity - strong shake required"
+                                else -> ""
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
 
         // Bug Report Card
         Card(

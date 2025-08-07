@@ -18,6 +18,7 @@ import com.pauwma.glyphbeat.sound.MediaControlHelper
 import com.pauwma.glyphbeat.data.ThemeRepository
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
+import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -76,6 +77,11 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private lateinit var themeRepository: ThemeRepository
     private lateinit var audioAnalyzer: AudioAnalyzer
     private var matrixManager: GlyphMatrixManager? = null
+    
+    // Shake detection
+    private var shakeDetector: ShakeDetector? = null
+    private var isShakeEnabled = false
+    private var shakeSensitivity = ShakeDetector.SENSITIVITY_MEDIUM
     
     private var currentTheme: AnimationTheme? = null
     private var currentAudioData: AudioData = AudioData(0.0, 0.0, 0.0, 0.0, false)
@@ -147,6 +153,9 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         
         // Log initial theme information
         logThemeInfo(currentTheme)
+        
+        // Initialize shake detection
+        initializeShakeDetection(context)
 
         // Get initial state
         val initialController = mediaHelper.getActiveMediaController()
@@ -318,6 +327,10 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // Cleanup resources
         mediaHelper.cleanup()
         audioAnalyzer.cleanup()
+        
+        // Cleanup shake detector
+        shakeDetector?.cleanup()
+        shakeDetector = null
         
         // Clear settings cache and monitoring
         cachedThemeSettings = null
@@ -785,39 +798,83 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     }
 
     /**
-     * Debug method to test maximum brightness capability
+     * Initialize shake detection based on user preferences
      */
-    private fun testMaxBrightness() {
-        Log.d(LOG_TAG, "Testing maximum brightness - sending all pixels at 255")
-        
-        // Create a test pattern with all pixels at 255
-        val testFrame = IntArray(625) { pixelIndex ->
-            // Create a test pattern: full brightness in the center, gradient outward
-            val row = pixelIndex / 25
-            val col = pixelIndex % 25
-            val centerX = 12
-            val centerY = 12
-            val distance = kotlin.math.sqrt(((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY)).toDouble())
+    private fun initializeShakeDetection(context: Context) {
+        try {
+            // Load shake preferences
+            val prefs = context.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+            isShakeEnabled = prefs.getBoolean("shake_to_skip_enabled", false)
+            val sensitivityValue = prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM)
+            shakeSensitivity = sensitivityValue
             
-            when {
-                distance <= 5 -> 255 // Center circle at max brightness
-                distance <= 8 -> 200 // Middle ring at 200
-                distance <= 11 -> 150 // Outer ring at 150
-                else -> 0 // Outside
+            if (isShakeEnabled) {
+                Log.d(LOG_TAG, "Initializing shake detection - enabled: $isShakeEnabled, sensitivity: $shakeSensitivity")
+                
+                // Create and configure shake detector
+                shakeDetector = ShakeDetector(context)
+                shakeDetector?.apply {
+                    initialize()
+                    setSensitivity(shakeSensitivity)
+                    setOnShakeListener(object : ShakeDetector.OnShakeListener {
+                        override fun onShake(force: Float) {
+                            handleShakeDetected(force)
+                        }
+                    })
+                    startListening()
+                }
+                
+                Log.i(LOG_TAG, "Shake detection started with sensitivity: $shakeSensitivity")
+            } else {
+                Log.d(LOG_TAG, "Shake detection disabled by user preference")
             }
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Failed to initialize shake detection: ${e.message}", e)
         }
+    }
+    
+    /**
+     * Handle shake event - skip to next track
+     */
+    private fun handleShakeDetected(force: Float) {
+        Log.d(LOG_TAG, "Shake detected with force: $force")
         
-        // Log the test pattern info
-        val maxBrightness = testFrame.maxOrNull() ?: 0
-        val brightPixels = testFrame.count { it == 255 }
-        Log.d(LOG_TAG, "Test frame - Max brightness: $maxBrightness, Pixels at 255: $brightPixels")
+        // Only handle shake if we have active media
+        if (hasActiveMedia) {
+            val success = mediaHelper.skipToNext()
+            if (success) {
+                Log.i(LOG_TAG, "Skipped to next track via shake gesture")
+                
+                // Optional: Provide visual feedback via Glyph animation
+                // Could show a brief "skip" animation here
+            } else {
+                Log.w(LOG_TAG, "Failed to skip to next track")
+            }
+        } else {
+            Log.d(LOG_TAG, "Shake detected but no active media to control")
+        }
+    }
+    
+    /**
+     * Update shake detection settings dynamically
+     */
+    fun updateShakeSettings(enabled: Boolean, sensitivity: Float) {
+        Log.d(LOG_TAG, "Updating shake settings - enabled: $enabled, sensitivity: $sensitivity")
         
-        // Send the test frame using GlyphMatrixObject API with max brightness
-        uiScope.launch {
-            // Always use SDK brightness of 255 - themes now handle brightness in pixel values
-            val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, testFrame, 255)
-            glyphMatrixManager?.setMatrixFrame(matrixFrame.render())
-            Log.d(LOG_TAG, "Test frame sent using GlyphMatrixObject API with brightness=255")
+        isShakeEnabled = enabled
+        shakeSensitivity = sensitivity
+        
+        if (enabled) {
+            if (shakeDetector == null) {
+                initializeShakeDetection(applicationContext)
+            } else {
+                shakeDetector?.setSensitivity(sensitivity)
+                if (!shakeDetector!!.isActive()) {
+                    shakeDetector?.startListening()
+                }
+            }
+        } else {
+            shakeDetector?.stopListening()
         }
     }
 
