@@ -16,6 +16,10 @@ import androidx.compose.runtime.*
 import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -47,29 +51,47 @@ fun SettingsScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val prefs = remember { context.getSharedPreferences("glyph_settings", android.content.Context.MODE_PRIVATE) }
-    var notificationAccessGranted by remember { mutableStateOf(isNotificationAccessGranted(context)) }
-    var mediaServiceWorking by remember { mutableStateOf(isMediaControlServiceWorking(context)) }
+    var notificationAccessGranted by remember { mutableStateOf(false) }
+    var mediaServiceWorking by remember { mutableStateOf(false) }
+    var isLoadingPermissions by remember { mutableStateOf(true) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
     val notoEmojiFont = FontFamily(Font(R.font.notoemoji))
     var testResult by remember { mutableStateOf("") }
     
-    // Shake settings state
-    var shakeEnabled by remember { 
-        mutableStateOf(prefs.getBoolean("shake_to_skip_enabled", false))
-    }
-    var shakeSensitivity by remember { 
-        mutableStateOf(prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM))
-    }
-    var shakeSkipWhenPaused by remember {
-        mutableStateOf(prefs.getBoolean("shake_skip_when_paused", false))
+    // Shake settings state - initialize with defaults, load actual values asynchronously
+    var shakeEnabled by remember { mutableStateOf(false) }
+    var shakeSensitivity by remember { mutableStateOf(ShakeDetector.SENSITIVITY_MEDIUM) }
+    var shakeSkipWhenPaused by remember { mutableStateOf(false) }
+    var skipDelay by remember { mutableStateOf(2000L) }
+    
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Load initial values asynchronously
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            // Load permissions status
+            notificationAccessGranted = isNotificationAccessGranted(context)
+            mediaServiceWorking = isMediaControlServiceWorking(context)
+            isLoadingPermissions = false
+            
+            // Load preferences
+            shakeEnabled = prefs.getBoolean("shake_to_skip_enabled", false)
+            shakeSensitivity = prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM)
+            shakeSkipWhenPaused = prefs.getBoolean("shake_skip_when_paused", false)
+            skipDelay = prefs.getLong("shake_skip_delay", 2000L)
+        }
     }
     
     // Automatically refresh permission and service status when app resumes
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                notificationAccessGranted = isNotificationAccessGranted(context)
-                mediaServiceWorking = isMediaControlServiceWorking(context)
+                coroutineScope.launch {
+                    withContext(Dispatchers.IO) {
+                        notificationAccessGranted = isNotificationAccessGranted(context)
+                        mediaServiceWorking = isMediaControlServiceWorking(context)
+                    }
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -147,19 +169,27 @@ fun SettingsScreen(
                 )
 
                 // Permission status
-                Text(
-                    text = when {
-                        !notificationAccessGranted -> "❌ Permission Not Granted"
-                        mediaServiceWorking -> "✅ Permission Granted & Service Active"
-                        else -> "⚠️ Permission Granted but Service Not Connected"
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = when {
-                        !notificationAccessGranted -> MaterialTheme.colorScheme.error
-                        mediaServiceWorking -> Color(0xFF00C853)
-                        else -> Color(0xFFFF9800) // Orange for warning
-                    }
-                )
+                if (isLoadingPermissions) {
+                    Text(
+                        text = "⏳ Checking permissions...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = when {
+                            !notificationAccessGranted -> "❌ Permission Not Granted"
+                            mediaServiceWorking -> "✅ Permission Granted & Service Active"
+                            else -> "⚠️ Permission Granted but Service Not Connected"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = when {
+                            !notificationAccessGranted -> MaterialTheme.colorScheme.error
+                            mediaServiceWorking -> Color(0xFF00C853)
+                            else -> Color(0xFFFF9800) // Orange for warning
+                        }
+                    )
+                }
 
                 if (notificationAccessGranted && !mediaServiceWorking) {
                     Text(
@@ -193,26 +223,32 @@ fun SettingsScreen(
                     
                     FilledIconButton(
                         onClick = {
-                            try {
-                                val mediaHelper = com.pauwma.glyphbeat.sound.MediaControlHelper(context)
-                                val controller = mediaHelper.getActiveMediaController()
-                                val trackInfo = mediaHelper.getTrackInfo()
+                            coroutineScope.launch {
+                                try {
+                                    testResult = "⏳ Testing..."
+                                    
+                                    withContext(Dispatchers.IO) {
+                                        val mediaHelper = com.pauwma.glyphbeat.sound.MediaControlHelper(context)
+                                        val controller = mediaHelper.getActiveMediaController()
+                                        val trackInfo = mediaHelper.getTrackInfo()
 
-                                testResult = if (controller != null) {
-                                    if (trackInfo != null) {
-                                        "✅ Active session found:\n${trackInfo.title} by ${trackInfo.artist}\nApp: ${trackInfo.appName}"
-                                    } else {
-                                        "✅ Active session found but no track info available"
+                                        testResult = if (controller != null) {
+                                            if (trackInfo != null) {
+                                                "✅ Active session found:\n${trackInfo.title} by ${trackInfo.artist}\nApp: ${trackInfo.appName}"
+                                            } else {
+                                                "✅ Active session found but no track info available"
+                                            }
+                                        } else {
+                                            "ℹ️ No active music sessions found\n(Start playing music to test)"
+                                        }
+
+                                        // Also refresh the service status when testing
+                                        notificationAccessGranted = isNotificationAccessGranted(context)
+                                        mediaServiceWorking = isMediaControlServiceWorking(context)
                                     }
-                                } else {
-                                    "ℹ️ No active music sessions found\n(Start playing music to test)"
+                                } catch (e: Exception) {
+                                    testResult = "❌ Error: ${e.message}"
                                 }
-
-                                // Also refresh the service status when testing
-                                notificationAccessGranted = isNotificationAccessGranted(context)
-                                mediaServiceWorking = isMediaControlServiceWorking(context)
-                            } catch (e: Exception) {
-                                testResult = "❌ Error: ${e.message}"
                             }
                         },
                         modifier = Modifier.height(40.dp).width(48.dp),
@@ -364,11 +400,6 @@ fun SettingsScreen(
                             text = "Skip Delay",
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        
-                        // Load current skip delay
-                        var skipDelay by remember { 
-                            mutableStateOf(prefs.getLong("shake_skip_delay", 2000L))
-                        }
                         
                         Row(
                             modifier = Modifier.fillMaxWidth(),

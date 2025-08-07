@@ -96,20 +96,22 @@ fun isNotificationAccessGranted(context: android.content.Context): Boolean {
     return enabledListeners.contains(context.packageName)
 }
 
-fun isMediaControlServiceWorking(context: android.content.Context): Boolean {
+suspend fun isMediaControlServiceWorking(context: android.content.Context): Boolean {
     if (!isNotificationAccessGranted(context)) return false
     
-    return try {
-        val mediaHelper = com.pauwma.glyphbeat.sound.MediaControlHelper(context)
-        // Try to get active sessions - this will fail if service isn't properly connected
-        val controller = mediaHelper.getActiveMediaController()
-        // If we don't get a SecurityException, the service is working
-        true
-    } catch (e: SecurityException) {
-        false
-    } catch (e: Exception) {
-        // Service might be connected but no active sessions - still working
-        true
+    return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            val mediaHelper = com.pauwma.glyphbeat.sound.MediaControlHelper(context)
+            // Try to get active sessions - this will fail if service isn't properly connected
+            val controller = mediaHelper.getActiveMediaController()
+            // If we don't get a SecurityException, the service is working
+            true
+        } catch (e: SecurityException) {
+            false
+        } catch (e: Exception) {
+            // Service might be connected but no active sessions - still working
+            true
+        }
     }
 }
 
