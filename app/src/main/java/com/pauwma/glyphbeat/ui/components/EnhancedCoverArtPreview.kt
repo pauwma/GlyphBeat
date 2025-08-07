@@ -94,12 +94,14 @@ fun EnhancedCoverArtPreview(
     var previousSettings by remember { mutableStateOf(settings) }
     var previousIsSelected by remember { mutableStateOf(isSelected) }
     
-    // Apply settings when they change - only when actually different
+    // Apply settings when they change - only when actually different (on IO thread)
     LaunchedEffect(settings, isSelected) {
         // Only apply if settings actually changed or selection state changed
         if (settings != previousSettings || isSelected != previousIsSelected) {
-            settings?.let { 
-                previewManager.applySettings(it, isSelected)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                settings?.let { 
+                    previewManager.applySettings(it, isSelected)
+                }
             }
             previousSettings = settings
             previousIsSelected = isSelected

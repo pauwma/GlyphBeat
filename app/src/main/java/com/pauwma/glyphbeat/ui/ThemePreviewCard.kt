@@ -44,25 +44,30 @@ fun ThemePreviewCard(
     var currentSettings by remember(theme) { mutableStateOf<com.pauwma.glyphbeat.ui.settings.ThemeSettings?>(null) }
     val supportsSettings = theme is ThemeSettingsProvider
     
-    // Initial settings load
+    // Initial settings load - fully on IO thread to prevent ANR
     LaunchedEffect(theme) {
         if (supportsSettings) {
-            try {
-                // Move to background thread to prevent ANR
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
                     val themeSettings = themeRepository.getThemeSettings((theme as ThemeSettingsProvider).getSettingsId())
+                    val hasSettings = themeSettings?.userValues?.isNotEmpty() == true
+                    
+                    // Apply settings if available (safe to do on IO thread)
+                    if (themeSettings != null) {
+                        (theme as ThemeSettingsProvider).applySettings(themeSettings)
+                    }
+                    
+                    // Only update UI state on Main thread
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        hasCustomSettings = themeSettings?.userValues?.isNotEmpty() == true
+                        hasCustomSettings = hasSettings
                         currentSettings = themeSettings
-                        // Apply settings to this theme instance for correct preview
-                        if (themeSettings != null) {
-                            (theme as ThemeSettingsProvider).applySettings(themeSettings)
-                        }
+                    }
+                } catch (e: Exception) {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        hasCustomSettings = false
+                        currentSettings = null
                     }
                 }
-            } catch (e: Exception) {
-                hasCustomSettings = false
-                currentSettings = null
             }
         } else {
             hasCustomSettings = false

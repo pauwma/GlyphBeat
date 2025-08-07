@@ -73,27 +73,45 @@ fun GlyphMatrixPreview(
     LaunchedEffect(isSelected, theme, transitionSequence) {
         if (isSelected) {
             // Only animate selected theme to reduce resource usage
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                 while (kotlinx.coroutines.currentCoroutineContext().isActive) {
-                    val frameCount = theme.getFrameCount()
+                    val frameCount = try {
+                        theme.getFrameCount()
+                    } catch (e: Exception) {
+                        1 // Default to 1 frame if error
+                    }
+                    
                     if (frameCount <= 1) break // No animation needed
                     
-                    // Calculate frame timing based on theme
-                    val transitions = transitionSequence
-                    val frameDuration = when {
-                        transitions != null -> transitions.getCurrentDuration()
-                        else -> theme.getAnimationSpeed().coerceAtLeast(50L) // Minimum 50ms to match VinylTheme's minimum
+                    // Calculate frame timing based on theme (all on Default dispatcher)
+                    val frameDuration = try {
+                        val transitions = transitionSequence
+                        when {
+                            transitions != null -> transitions.getCurrentDuration()
+                            else -> theme.getAnimationSpeed().coerceAtLeast(50L)
+                        }
+                    } catch (e: Exception) {
+                        100L // Default delay if error
                     }
                     
                     delay(frameDuration)
                     
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    // Calculate next frame on Default dispatcher
+                    val nextFrame = try {
+                        val transitions = transitionSequence
                         if (transitions != null) {
                             transitions.advance()
-                            currentFrame = transitions.getCurrentFrameIndex()
+                            transitions.getCurrentFrameIndex()
                         } else {
-                            currentFrame = (currentFrame + 1) % frameCount
+                            (currentFrame + 1) % frameCount
                         }
+                    } catch (e: Exception) {
+                        0 // Reset to first frame on error
+                    }
+                    
+                    // Only update UI state on Main thread
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        currentFrame = nextFrame
                     }
                 }
             }
@@ -103,49 +121,60 @@ fun GlyphMatrixPreview(
         }
     }
     
-    val frameData = remember(theme, currentFrame, mediaTrigger) {
-        try {
-            // For VinylTheme, ensure consistent circular shape regardless of size setting
-            if (theme is com.pauwma.glyphbeat.themes.animation.VinylTheme) {
-                val currentVinylSizeField = theme.javaClass.getDeclaredField("currentVinylSize").apply { isAccessible = true }
-                val currentVinylSize = currentVinylSizeField.get(theme) as String
-                
-                if (currentVinylSize == "small") {
-                    // Get the small frame data but apply the same circular mapping as large
-                    val smallFramesField = theme.javaClass.getDeclaredField("smallFrames").apply { isAccessible = true }
-                    val smallFrames = smallFramesField.get(theme) as Array<IntArray>
-                    val shapedData = smallFrames[currentFrame]
+    // Frame generation state - computed asynchronously to prevent blocking
+    var frameData by remember { mutableStateOf(IntArray(625) { 0 }) }
+    
+    // Generate frame data on background thread
+    LaunchedEffect(theme, currentFrame, mediaTrigger) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            val generatedFrame = try {
+                // For VinylTheme, ensure consistent circular shape regardless of size setting
+                if (theme is com.pauwma.glyphbeat.themes.animation.VinylTheme) {
+                    val currentVinylSizeField = theme.javaClass.getDeclaredField("currentVinylSize").apply { isAccessible = true }
+                    val currentVinylSize = currentVinylSizeField.get(theme) as String
                     
-                    // Apply the same circular mapping logic as used for large size
-                    val flatArray = IntArray(625) { 0 }
-                    var shapedIndex = 0
-                    
-                    for (row in 0 until 25) {
-                        for (col in 0 until 25) {
-                            val flatIndex = row * 25 + col
-                            
-                            // Check if this pixel is within the circular matrix shape
-                            val centerX = 12.0
-                            val centerY = 12.0
-                            val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-                            
-                            if (distance <= 12.5 && shapedIndex < shapedData.size) {
-                                flatArray[flatIndex] = shapedData[shapedIndex]
-                                shapedIndex++
+                    if (currentVinylSize == "small") {
+                        // Get the small frame data but apply the same circular mapping as large
+                        val smallFramesField = theme.javaClass.getDeclaredField("smallFrames").apply { isAccessible = true }
+                        val smallFrames = smallFramesField.get(theme) as Array<IntArray>
+                        val shapedData = smallFrames[currentFrame]
+                        
+                        // Apply the same circular mapping logic as used for large size
+                        val flatArray = IntArray(625) { 0 }
+                        var shapedIndex = 0
+                        
+                        for (row in 0 until 25) {
+                            for (col in 0 until 25) {
+                                val flatIndex = row * 25 + col
+                                
+                                // Check if this pixel is within the circular matrix shape
+                                val centerX = 12.0
+                                val centerY = 12.0
+                                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
+                                
+                                if (distance <= 12.5 && shapedIndex < shapedData.size) {
+                                    flatArray[flatIndex] = shapedData[shapedIndex]
+                                    shapedIndex++
+                                }
                             }
                         }
+                        flatArray
+                    } else {
+                        // Use normal generation for large size
+                        theme.generateFrame(currentFrame)
                     }
-                    flatArray
                 } else {
-                    // Use normal generation for large size
                     theme.generateFrame(currentFrame)
                 }
-            } else {
-                theme.generateFrame(currentFrame)
+            } catch (e: Exception) {
+                // Fallback to empty frame if generation fails
+                IntArray(625) { 0 }
             }
-        } catch (e: Exception) {
-            // Fallback to empty frame if generation fails
-            IntArray(625) { 0 }
+            
+            // Update frame data on main thread
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                frameData = generatedFrame
+            }
         }
     }
     

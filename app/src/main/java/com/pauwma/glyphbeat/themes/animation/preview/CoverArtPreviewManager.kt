@@ -124,8 +124,10 @@ class CoverArtPreviewManager(private val context: Context) {
             }
         })
         
-        // Start with current media state
-        updatePreviewState()
+        // Start with current media state - asynchronously to avoid blocking
+        monitorScope.launch {
+            updatePreviewState()
+        }
     }
     
     /**
