@@ -45,8 +45,11 @@ class ThemeRepository private constructor(private val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val settingsPersistence: ThemeSettingsPersistence = ThemeSettingsPersistence.getInstance(context)
     
-    // Settings change notifications
-    private val _settingsChangedFlow = MutableSharedFlow<Pair<String, ThemeSettings>>(replay = 0)
+    // Settings change notifications with replay for late subscribers
+    private val _settingsChangedFlow = MutableSharedFlow<Pair<String, ThemeSettings>>(
+        replay = 1,  // Keep last emission for late subscribers
+        extraBufferCapacity = 1  // Allow buffering of emissions
+    )
     val settingsChangedFlow: SharedFlow<Pair<String, ThemeSettings>> = _settingsChangedFlow.asSharedFlow()
     
     // Available themes list

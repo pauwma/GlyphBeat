@@ -19,6 +19,8 @@ import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.themes.animation.CoverArtTheme
 import com.pauwma.glyphbeat.themes.base.FrameTransitionSequence
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
+import com.pauwma.glyphbeat.ui.components.EnhancedCoverArtPreview
+import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.sound.MediaControlHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -30,14 +32,29 @@ import kotlin.math.min
 /**
  * Miniature Glyph Matrix preview component that displays a scaled-down version of the 25x25 matrix.
  * Shows static preview for unselected themes and animated preview for the selected theme.
+ * Uses enhanced preview for CoverArtTheme to show actual album art.
  */
 @Composable
 fun GlyphMatrixPreview(
     theme: AnimationTheme,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
-    previewSize: Int = 120 // Size in dp for the preview
+    previewSize: Int = 120, // Size in dp for the preview
+    settings: ThemeSettings? = null // Optional settings for enhanced preview
 ) {
+    // Use enhanced preview for CoverArtTheme
+    if (theme is CoverArtTheme && theme.useEnhancedPreview()) {
+        EnhancedCoverArtPreview(
+            theme = theme,
+            isSelected = isSelected,
+            settings = settings,
+            modifier = modifier,
+            previewSize = previewSize
+        )
+        return
+    }
+    
+    // Regular preview for other themes
     val context = LocalContext.current
     var currentFrame by remember { mutableIntStateOf(0) }
     var transitionSequence by remember { mutableStateOf<FrameTransitionSequence?>(null) }
@@ -49,37 +66,6 @@ fun GlyphMatrixPreview(
             theme.createTransitionSequence()
         } else {
             null
-        }
-    }
-    
-    // Monitor media changes for CoverArtTheme - FIXED: Move to background thread and add proper cancellation
-    LaunchedEffect(theme, isSelected) {
-        if (theme is CoverArtTheme && isSelected) { // Only monitor when selected to reduce load
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                val mediaHelper = MediaControlHelper(context)
-                var lastTrackTitle: String? = null
-                
-                while (kotlinx.coroutines.currentCoroutineContext().isActive) { // Proper cancellation check
-                    try {
-                        val trackInfo = mediaHelper.getTrackInfo()
-                        val currentTrackTitle = trackInfo?.title
-                        
-                        if (currentTrackTitle != lastTrackTitle) {
-                            // Media changed, clear cache and trigger recomposition
-                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                theme.clearCache()
-                                mediaTrigger++
-                            }
-                            lastTrackTitle = currentTrackTitle
-                        }
-                        
-                        delay(5000) // Reduced frequency: Check every 5 seconds
-                    } catch (e: Exception) {
-                        // Break the loop on any error to prevent infinite loops
-                        break
-                    }
-                }
-            }
         }
     }
     

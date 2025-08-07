@@ -41,8 +41,10 @@ fun ThemePreviewCard(
     
     // Check if theme supports settings and has custom settings
     var hasCustomSettings by remember(theme) { mutableStateOf(false) }
+    var currentSettings by remember(theme) { mutableStateOf<com.pauwma.glyphbeat.ui.settings.ThemeSettings?>(null) }
     val supportsSettings = theme is ThemeSettingsProvider
     
+    // Initial settings load
     LaunchedEffect(theme) {
         if (supportsSettings) {
             try {
@@ -51,6 +53,7 @@ fun ThemePreviewCard(
                     val themeSettings = themeRepository.getThemeSettings((theme as ThemeSettingsProvider).getSettingsId())
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                         hasCustomSettings = themeSettings?.userValues?.isNotEmpty() == true
+                        currentSettings = themeSettings
                         // Apply settings to this theme instance for correct preview
                         if (themeSettings != null) {
                             (theme as ThemeSettingsProvider).applySettings(themeSettings)
@@ -59,9 +62,27 @@ fun ThemePreviewCard(
                 }
             } catch (e: Exception) {
                 hasCustomSettings = false
+                currentSettings = null
             }
         } else {
             hasCustomSettings = false
+            currentSettings = null
+        }
+    }
+    
+    // Monitor settings changes for real-time updates
+    LaunchedEffect(theme, supportsSettings) {
+        if (supportsSettings) {
+            themeRepository.settingsChangedFlow.collect { (themeId, settings) ->
+                // Check if this settings change is for our theme
+                if (themeId == (theme as ThemeSettingsProvider).getSettingsId()) {
+                    // Update the settings state which will trigger preview recomposition
+                    currentSettings = settings
+                    hasCustomSettings = settings.userValues.isNotEmpty()
+                    // Apply settings to the theme instance
+                    theme.applySettings(settings)
+                }
+            }
         }
     }
     Card(
@@ -101,11 +122,12 @@ fun ThemePreviewCard(
                     .padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-            // Glyph Matrix Preview
+            // Glyph Matrix Preview with settings
             GlyphMatrixPreview(
                 theme = theme,
                 isSelected = isSelected,
-                previewSize = 120
+                previewSize = 120,
+                settings = currentSettings
             )
             
             Spacer(modifier = Modifier.height(12.dp))

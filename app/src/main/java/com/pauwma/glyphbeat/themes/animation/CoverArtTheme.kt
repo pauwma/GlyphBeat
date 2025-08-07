@@ -8,6 +8,8 @@ import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 import com.pauwma.glyphbeat.sound.MediaControlHelper
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.themes.base.FrameTransition
+import com.pauwma.glyphbeat.themes.animation.preview.CoverArtPreviewManager
+import com.pauwma.glyphbeat.themes.animation.preview.CoverArtPreviewRenderer
 import com.pauwma.glyphbeat.ui.settings.*
 
 /**
@@ -111,35 +113,12 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     // =================================================================================
     
     /**
-     * Preview frame shown in theme selection, using a simple circular pattern
-     * like other themes instead of dynamic album art content.
+     * Preview frame shown in theme selection, using the offline frame pattern
+     * for consistency with the actual theme behavior when no media is available.
      */
     override val previewFrame: IntArray by lazy {
-        val frame = IntArray(625) { 0 } // 25x25 flat array
-        val centerX = 12.0
-        val centerY = 12.0
-
-        // Create concentric circles only within the circular display area
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                // Only draw within the circular display area
-                if (distance <= 12.5) {
-                    when {
-                        distance <= 2.0 -> frame[flatIndex] = 255  // Center bright
-                        distance <= 4.0 -> frame[flatIndex] = 0    // Inner ring dark
-                        distance <= 6.0 -> frame[flatIndex] = 200  // Middle ring
-                        distance <= 8.0 -> frame[flatIndex] = 0    // Gap
-                        distance <= 10.0 -> frame[flatIndex] = 150 // Outer ring
-                        else -> frame[flatIndex] = 0               // Edge fade
-                    }
-                }
-            }
-        }
-
-        frame
+        // Use the offline frame for preview to show the same pattern users will see
+        offlineFrame
     }
 
     // =================================================================================
@@ -199,13 +178,15 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     /**
      * Generate frames dynamically based on current media.
      * This overrides the static frames approach to provide dynamic content.
-     * When rotation is enabled, uses time-based rotation for smooth pause/resume.
+     * When rotation is enabled, generates all rotation frames.
      */
     override val frames: Array<IntArray>
         get() = if (enableRotation) {
-            // Use time-based rotation angle for current frame
-            val currentAngle = calculateCurrentRotationAngle()
-            arrayOf(getCurrentAlbumArtFrame(currentAngle))
+            // Generate all rotation frames for smooth animation
+            Array(rotationFrameCount) { frameIndex ->
+                val angle = (360f / rotationFrameCount) * frameIndex
+                getCurrentAlbumArtFrame(angle)
+            }
         } else {
             arrayOf(getCurrentAlbumArtFrame())
         }
@@ -233,7 +214,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
                 val anglePerMillisecond = 360f * rotationsPerSecond / 1000f
                 val calculatedAngle = (savedRotationPosition + (elapsedTime * anglePerMillisecond)) % 360f
                 
-                Log.v(LOG_TAG, "Rotation angle: ${calculatedAngle}° (elapsed: ${elapsedTime}ms)")
+                // Log.v(LOG_TAG, "Rotation angle: ${calculatedAngle}° (elapsed: ${elapsedTime}ms)")
                 calculatedAngle
             }
         }
@@ -310,7 +291,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
 
             // Process new album art with settings applied
             val frameData = if (trackInfo?.albumArt != null) {
-                Log.v(LOG_TAG, "Converting album art for track: ${trackInfo.title} (rotation: ${rotationAngle}°)")
+                // Log.v(LOG_TAG, "Converting album art for track: ${trackInfo.title} (rotation: ${rotationAngle}°)")
 
                 // Apply rotation and contrast settings (brightness handled by unified model)
                 mediaHelper.bitmapToMatrixArray(
@@ -482,8 +463,8 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
         // Check if we have active media first
         return try {
             val trackInfo = mediaHelper.getTrackInfo()
-            if (trackInfo?.albumArt != null || trackInfo?.title != null) {
-                // We have active media, use time-based rotation when enabled
+            if (trackInfo?.albumArt != null) {
+                // We have album art, use time-based rotation when enabled
                 if (enableRotation) {
                     // Use real-time rotation angle for smooth pause/resume
                     val currentAngle = calculateCurrentRotationAngle()
@@ -492,7 +473,8 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
                     getCurrentAlbumArtFrame()
                 }
             } else {
-                // No active media, return the hardcoded offline frame for consistency
+                // No album art available, return the static offline frame
+                // NEVER rotate the offline frame, even if rotation is enabled
                 offlineFrame
             }
         } catch (e: Exception) {
@@ -578,10 +560,112 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             // Save rotation state before cleanup
             saveRotationState()
             mediaHelper.cleanup()
+            // Cleanup preview manager if it exists
+            previewManager?.cleanup()
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Error during cleanup: ${e.message}")
         }
     }
+    
+    // =================================================================================
+    // PREVIEW-SPECIFIC METHODS
+    // =================================================================================
+    
+    // Lazy initialization of preview components
+    private var previewManager: CoverArtPreviewManager? = null
+    private val previewRenderer: CoverArtPreviewRenderer by lazy {
+        CoverArtPreviewRenderer()
+    }
+    
+    /**
+     * Get a preview frame with current settings applied.
+     * This method is optimized for preview display and returns a frame
+     * suitable for the preview UI with all settings properly applied.
+     * 
+     * @param settings Optional theme settings to apply
+     * @return Preview frame data as IntArray
+     */
+    fun getPreviewFrame(settings: ThemeSettings? = null): IntArray {
+        // Initialize preview manager if needed
+        if (previewManager == null) {
+            previewManager = CoverArtPreviewManager(context)
+        }
+        
+        return previewManager?.generatePreviewFrame(settings ?: getSettingsSchema()) 
+            ?: previewFrame
+    }
+    
+    /**
+     * Get a preview frame for specific media with settings.
+     * Useful for showing preview of how specific album art would look.
+     * 
+     * @param trackInfo Track information with album art
+     * @param settings Theme settings to apply
+     * @return Preview frame data as IntArray
+     */
+    fun getPreviewFrameForMedia(
+        trackInfo: MediaControlHelper.TrackInfo?,
+        settings: ThemeSettings? = null
+    ): IntArray {
+        if (trackInfo?.albumArt == null) {
+            return previewRenderer.generateFallbackPreview(settings)
+        }
+        
+        return try {
+            val processedBitmap = previewRenderer.processAlbumArtForPreview(
+                albumArt = trackInfo.albumArt,
+                targetSize = 25,
+                settings = settings
+            )
+            
+            val rotation = if (settings?.getToggleValue("enable_rotation", false) == true) {
+                currentRotationAngle
+            } else {
+                0f
+            }
+            
+            previewRenderer.bitmapToPreviewFrame(
+                bitmap = processedBitmap,
+                rotation = rotation,
+                settings = settings
+            )
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error generating preview frame for media: ${e.message}")
+            previewRenderer.generateFallbackPreview(settings)
+        }
+    }
+    
+    /**
+     * Check if the preview needs to be updated.
+     * Returns true if the preview should be refreshed due to media changes
+     * or settings updates.
+     * 
+     * @return True if preview needs update, false otherwise
+     */
+    fun shouldUpdatePreview(): Boolean {
+        return previewManager?.shouldUpdatePreview() ?: false
+    }
+    
+    /**
+     * Get the preview manager instance for advanced preview control.
+     * Creates the manager if it doesn't exist.
+     * 
+     * @return CoverArtPreviewManager instance
+     */
+    fun getPreviewManager(): CoverArtPreviewManager {
+        if (previewManager == null) {
+            previewManager = CoverArtPreviewManager(context)
+        }
+        return previewManager!!
+    }
+    
+    /**
+     * Check if this theme should use enhanced preview.
+     * CoverArtTheme always uses enhanced preview for better accuracy.
+     * 
+     * @return True to use enhanced preview
+     */
+    fun useEnhancedPreview(): Boolean = true
     
     // =================================================================================
     // THEME SETTINGS PROVIDER IMPLEMENTATION
