@@ -24,7 +24,7 @@ class ShakeDetector(private val context: Context) {
         // Shake threshold levels - Lower values = more sensitive
         // Increased gaps for more notable differences
         const val SENSITIVITY_LOW = 25f      // Requires strong shake (was 15f)
-        const val SENSITIVITY_MEDIUM = 20f   // Moderate shake (unchanged)
+        const val SENSITIVITY_MEDIUM = 18f   // Moderate shake (unchanged)
         const val SENSITIVITY_HIGH = 7f      // Light shake (was 9f)
         
         // Default time between shakes to prevent multiple triggers
