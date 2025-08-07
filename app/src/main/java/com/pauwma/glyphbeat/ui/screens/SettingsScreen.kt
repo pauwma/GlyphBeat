@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -49,6 +50,8 @@ fun SettingsScreen(
     var notificationAccessGranted by remember { mutableStateOf(isNotificationAccessGranted(context)) }
     var mediaServiceWorking by remember { mutableStateOf(isMediaControlServiceWorking(context)) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
+    val notoEmojiFont = FontFamily(Font(R.font.notoemoji))
+    var testResult by remember { mutableStateOf("") }
     
     // Shake settings state
     var shakeEnabled by remember { 
@@ -56,6 +59,9 @@ fun SettingsScreen(
     }
     var shakeSensitivity by remember { 
         mutableStateOf(prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM))
+    }
+    var shakeSkipWhenPaused by remember {
+        mutableStateOf(prefs.getBoolean("shake_skip_when_paused", false))
     }
     
     // Automatically refresh permission and service status when app resumes
@@ -69,6 +75,14 @@ fun SettingsScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    
+    // Clear test result after 3 seconds
+    LaunchedEffect(testResult) {
+        if (testResult.isNotEmpty()) {
+            delay(3000L)
+            testResult = ""
         }
     }
     
@@ -158,7 +172,8 @@ fun SettingsScreen(
                 // Button row for permission actions
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Button(
                         onClick = {
@@ -176,59 +191,13 @@ fun SettingsScreen(
                         )
                     }
                     
-                    IconButton(
-                        onClick = {
-                            notificationAccessGranted = isNotificationAccessGranted(context)
-                            mediaServiceWorking = isMediaControlServiceWorking(context)
-                        },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh Permission Status",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-        }
-
-        // Media Control Test Card
-        if (mediaServiceWorking) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1A1A1A)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Media Control Test",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = customFont
-                        ),
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    Text(
-                        text = "Test if the media control service is working by checking for active music sessions.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-
-                    var testResult by remember { mutableStateOf("") }
-
-                    Button(
+                    FilledIconButton(
                         onClick = {
                             try {
                                 val mediaHelper = com.pauwma.glyphbeat.sound.MediaControlHelper(context)
                                 val controller = mediaHelper.getActiveMediaController()
                                 val trackInfo = mediaHelper.getTrackInfo()
-                                
+
                                 testResult = if (controller != null) {
                                     if (trackInfo != null) {
                                         "✅ Active session found:\n${trackInfo.title} by ${trackInfo.artist}\nApp: ${trackInfo.appName}"
@@ -238,25 +207,39 @@ fun SettingsScreen(
                                 } else {
                                     "ℹ️ No active music sessions found\n(Start playing music to test)"
                                 }
+
+                                // Also refresh the service status when testing
+                                notificationAccessGranted = isNotificationAccessGranted(context)
+                                mediaServiceWorking = isMediaControlServiceWorking(context)
                             } catch (e: Exception) {
                                 testResult = "❌ Error: ${e.message}"
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.height(40.dp).width(48.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
                     ) {
-                        Text("Test Media Control")
-                    }
-
-                    if (testResult.isNotEmpty()) {
                         Text(
-                            text = testResult,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 8.dp)
+                            text = "🧪",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontFamily = notoEmojiFont
                         )
                     }
                 }
+
+                // Show test results if available
+                if (testResult.isNotEmpty()) {
+                    Text(
+                        text = testResult,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
         }
+
 
         // Shake Control Card
         Card(
@@ -402,6 +385,11 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
+                                text = "3.5s",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
                                 text = "5s",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -416,6 +404,7 @@ fun SettingsScreen(
                                 Log.d("SettingsScreen", "Skip delay: ${skipDelay}ms")
                             },
                             valueRange = 0f..1f,
+                            steps = 8,
                             colors = SliderDefaults.colors(
                                 thumbColor = MaterialTheme.colorScheme.primary,
                                 activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -428,6 +417,40 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                    
+                    // Skip when paused toggle
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = "Skip when paused",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = "Allow shake to skip even when music is paused",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            Switch(
+                                checked = shakeSkipWhenPaused,
+                                onCheckedChange = { enabled ->
+                                    shakeSkipWhenPaused = enabled
+                                    prefs.edit().putBoolean("shake_skip_when_paused", enabled).apply()
+                                    Log.d("SettingsScreen", "Skip when paused: $enabled")
+                                }
+                            )
+                        }
                     }
                 }
             }
