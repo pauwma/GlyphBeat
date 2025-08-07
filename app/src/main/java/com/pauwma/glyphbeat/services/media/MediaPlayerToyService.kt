@@ -3,6 +3,7 @@ package com.pauwma.glyphbeat.services.media
 import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
 import com.nothing.ketchum.GlyphMatrixFrame
@@ -82,6 +83,10 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private var shakeDetector: ShakeDetector? = null
     private var isShakeEnabled = false
     private var shakeSensitivity = ShakeDetector.SENSITIVITY_MEDIUM
+    private var shakePreferences: SharedPreferences? = null
+    private val shakePreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        handleShakePreferenceChange(key)
+    }
     
     private var currentTheme: AnimationTheme? = null
     private var currentAudioData: AudioData = AudioData(0.0, 0.0, 0.0, 0.0, false)
@@ -154,8 +159,9 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // Log initial theme information
         logThemeInfo(currentTheme)
         
-        // Initialize shake detection
+        // Initialize shake detection and preferences listener
         initializeShakeDetection(context)
+        registerShakePreferencesListener(context)
 
         // Get initial state
         val initialController = mediaHelper.getActiveMediaController()
@@ -328,7 +334,8 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         mediaHelper.cleanup()
         audioAnalyzer.cleanup()
         
-        // Cleanup shake detector
+        // Cleanup shake detector and preferences listener
+        unregisterShakePreferencesListener()
         shakeDetector?.cleanup()
         shakeDetector = null
         
@@ -863,7 +870,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     /**
      * Update shake detection settings dynamically
      */
-    fun updateShakeSettings(enabled: Boolean, sensitivity: Float, skipDelay: Long = 2000L) {
+    private fun updateShakeSettings(enabled: Boolean, sensitivity: Float, skipDelay: Long = 2000L) {
         Log.d(LOG_TAG, "Updating shake settings - enabled: $enabled, sensitivity: $sensitivity, delay: ${skipDelay}ms")
         
         isShakeEnabled = enabled
@@ -881,6 +888,53 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             }
         } else {
             shakeDetector?.stopListening()
+        }
+    }
+
+    /**
+     * Register listener for shake preferences changes
+     */
+    private fun registerShakePreferencesListener(context: Context) {
+        try {
+            shakePreferences = context.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+            shakePreferences?.registerOnSharedPreferenceChangeListener(shakePreferenceListener)
+            Log.d(LOG_TAG, "Registered shake preferences listener")
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Failed to register shake preferences listener: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Unregister shake preferences listener
+     */
+    private fun unregisterShakePreferencesListener() {
+        try {
+            shakePreferences?.unregisterOnSharedPreferenceChangeListener(shakePreferenceListener)
+            shakePreferences = null
+            Log.d(LOG_TAG, "Unregistered shake preferences listener")
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Failed to unregister shake preferences listener: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Handle changes to shake-related preferences
+     */
+    private fun handleShakePreferenceChange(key: String?) {
+        when (key) {
+            "shake_to_skip_enabled", "shake_sensitivity", "shake_skip_delay" -> {
+                Log.d(LOG_TAG, "Shake preference changed: $key")
+                
+                // Reload all shake preferences
+                shakePreferences?.let { prefs ->
+                    val enabled = prefs.getBoolean("shake_to_skip_enabled", false)
+                    val sensitivity = prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM)
+                    val skipDelay = prefs.getLong("shake_skip_delay", 2000L)
+                    
+                    // Update shake settings with new values
+                    updateShakeSettings(enabled, sensitivity, skipDelay)
+                }
+            }
         }
     }
 
