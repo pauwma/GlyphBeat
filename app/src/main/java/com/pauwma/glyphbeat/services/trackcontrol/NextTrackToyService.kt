@@ -95,7 +95,7 @@ class NextTrackToyService : GlyphMatrixService("NextTrack-Toy") {
     
     override fun onTouchPointPressed() {
         Log.d(TAG, "Touch pressed")
-        updateState(TrackControlTheme.InteractionState.PRESSED)
+        //updateState(TrackControlTheme.InteractionState.PRESSED)
     }
     
     override fun onTouchPointLongPress() {
