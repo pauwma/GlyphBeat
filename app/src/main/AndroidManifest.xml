@@ -7,6 +7,12 @@
     
     <!-- Permission to bind notification listener service -->
     <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
+    
+    <!-- Permission for haptic feedback when shake is detected -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    
+    <!-- Permission to keep CPU awake for shake detection when screen is locked -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"

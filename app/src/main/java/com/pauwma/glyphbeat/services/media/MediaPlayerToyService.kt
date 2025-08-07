@@ -807,15 +807,17 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             isShakeEnabled = prefs.getBoolean("shake_to_skip_enabled", false)
             val sensitivityValue = prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM)
             shakeSensitivity = sensitivityValue
+            val skipDelay = prefs.getLong("shake_skip_delay", 2000L)
             
             if (isShakeEnabled) {
-                Log.d(LOG_TAG, "Initializing shake detection - enabled: $isShakeEnabled, sensitivity: $shakeSensitivity")
+                Log.d(LOG_TAG, "Initializing shake detection - enabled: $isShakeEnabled, sensitivity: $shakeSensitivity, delay: ${skipDelay}ms")
                 
                 // Create and configure shake detector
                 shakeDetector = ShakeDetector(context)
                 shakeDetector?.apply {
                     initialize()
                     setSensitivity(shakeSensitivity)
+                    setCooldown(skipDelay)
                     setOnShakeListener(object : ShakeDetector.OnShakeListener {
                         override fun onShake(force: Float) {
                             handleShakeDetected(force)
@@ -824,7 +826,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     startListening()
                 }
                 
-                Log.i(LOG_TAG, "Shake detection started with sensitivity: $shakeSensitivity")
+                Log.i(LOG_TAG, "Shake detection started with sensitivity: $shakeSensitivity, cooldown: ${skipDelay}ms")
             } else {
                 Log.d(LOG_TAG, "Shake detection disabled by user preference")
             }
@@ -845,6 +847,9 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             if (success) {
                 Log.i(LOG_TAG, "Skipped to next track via shake gesture")
                 
+                // Provide haptic feedback for successful skip
+                shakeDetector?.provideHapticFeedback()
+                
                 // Optional: Provide visual feedback via Glyph animation
                 // Could show a brief "skip" animation here
             } else {
@@ -858,8 +863,8 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     /**
      * Update shake detection settings dynamically
      */
-    fun updateShakeSettings(enabled: Boolean, sensitivity: Float) {
-        Log.d(LOG_TAG, "Updating shake settings - enabled: $enabled, sensitivity: $sensitivity")
+    fun updateShakeSettings(enabled: Boolean, sensitivity: Float, skipDelay: Long = 2000L) {
+        Log.d(LOG_TAG, "Updating shake settings - enabled: $enabled, sensitivity: $sensitivity, delay: ${skipDelay}ms")
         
         isShakeEnabled = enabled
         shakeSensitivity = sensitivity
@@ -869,6 +874,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 initializeShakeDetection(applicationContext)
             } else {
                 shakeDetector?.setSensitivity(sensitivity)
+                shakeDetector?.setCooldown(skipDelay)
                 if (!shakeDetector!!.isActive()) {
                     shakeDetector?.startListening()
                 }

@@ -42,6 +42,14 @@ class MediaControlHelper(private val context: Context) {
     private var lastLoggedActiveState: Int? = null
     private var lastLoggedSessions = mutableMapOf<String, Int>()
     
+    // Cache for isPlaying log to prevent duplicates
+    private var lastIsPlayingLogState: Int? = null
+    private var lastIsPlayingLogPackage: String? = null
+    
+    // Cache for callback logs to prevent duplicates
+    private var lastCallbackLogState: Int? = null
+    private var lastMetadataLogHasMedia: Boolean? = null
+    
     // Cached state to avoid unnecessary callbacks
     private var cachedIsPlaying = false
     private var cachedHasActiveMedia = false
@@ -142,7 +150,7 @@ class MediaControlHelper(private val context: Context) {
                     Log.d(LOG_TAG, "Controller changed, registering new callback for: $currentPackage")
                     registerCallbackOnActiveController()
                 } else {
-                    Log.v(LOG_TAG, "Controller unchanged: $currentPackage")
+                    // Log.v(LOG_TAG, "Controller unchanged: $currentPackage")
                 }
             }
             
@@ -172,7 +180,7 @@ class MediaControlHelper(private val context: Context) {
         activeControllerCallback?.let { callback ->
             try {
                 // Note: We can't easily unregister without keeping the original controller reference
-                Log.v(LOG_TAG, "Previous callback will be cleaned up automatically")
+                // Log.v(LOG_TAG, "Previous callback will be cleaned up automatically")
             } catch (e: Exception) {
                 Log.w(LOG_TAG, "Error cleaning up previous callback: ${e.message}")
             }
@@ -185,14 +193,26 @@ class MediaControlHelper(private val context: Context) {
                     override fun onPlaybackStateChanged(state: PlaybackState?) {
                         val isPlaying = state?.state == PlaybackState.STATE_PLAYING
                         val hasActiveMedia = activeController != null
-                        Log.v(LOG_TAG, "MediaController callback - state changed to: ${state?.state}, playing: $isPlaying")
+                        
+                        // Only log if state actually changed
+                        if (state?.state != lastCallbackLogState) {
+                            Log.v(LOG_TAG, "MediaController callback - state changed to: ${state?.state}, playing: $isPlaying")
+                            lastCallbackLogState = state?.state
+                        }
+                        
                         notifyStateChange(isPlaying, hasActiveMedia)
                     }
                     
                     override fun onMetadataChanged(metadata: MediaMetadata?) {
                         // Track changes in media metadata which might affect active media status
                         val hasActiveMedia = activeController != null && metadata != null
-                        Log.v(LOG_TAG, "MediaController callback - metadata changed, hasActiveMedia: $hasActiveMedia")
+                        
+                        // Only log if hasActiveMedia status changed
+                        if (hasActiveMedia != lastMetadataLogHasMedia) {
+                            Log.v(LOG_TAG, "MediaController callback - metadata changed, hasActiveMedia: $hasActiveMedia")
+                            lastMetadataLogHasMedia = hasActiveMedia
+                        }
+                        
                         notifyStateChange(cachedIsPlaying, hasActiveMedia)
                     }
                 }
@@ -222,7 +242,15 @@ class MediaControlHelper(private val context: Context) {
         val controller = getActiveMediaController()
         val state = controller?.playbackState?.state
         val playing = state == PlaybackState.STATE_PLAYING
-        Log.d(LOG_TAG, "isPlaying check: state=$state, playing=$playing, package=${controller?.packageName}")
+        
+        // Only log if state or package has changed
+        val currentPackage = controller?.packageName
+        if (state != lastIsPlayingLogState || currentPackage != lastIsPlayingLogPackage) {
+            Log.d(LOG_TAG, "isPlaying check: state=$state, playing=$playing, package=$currentPackage")
+            lastIsPlayingLogState = state
+            lastIsPlayingLogPackage = currentPackage
+        }
+        
         return playing
     }
     
@@ -393,7 +421,7 @@ class MediaControlHelper(private val context: Context) {
             val config = originalBitmap.config ?: Bitmap.Config.ARGB_8888
             val resized = Bitmap.createScaledBitmap(originalBitmap, 25, 25, true)
             
-            Log.v(LOG_TAG, "Album art resized from ${originalBitmap.width}x${originalBitmap.height} to 25x25")
+            // Log.v(LOG_TAG, "Album art resized from ${originalBitmap.width}x${originalBitmap.height} to 25x25")
             resized
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Error resizing album art: ${e.message}")
@@ -425,7 +453,7 @@ class MediaControlHelper(private val context: Context) {
             val canvas = Canvas(rotatedBitmap)
             canvas.drawBitmap(bitmap, matrix, null)
             
-            Log.v(LOG_TAG, "Bitmap rotated by ${rotationAngle}° (centered)")
+            // Log.v(LOG_TAG, "Bitmap rotated by ${rotationAngle}° (centered)")
             rotatedBitmap
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Error rotating bitmap by ${rotationAngle}°: ${e.message}")
@@ -487,7 +515,7 @@ class MediaControlHelper(private val context: Context) {
                 (luminance * brightnessMultiplier).toInt().coerceIn(0, 255)
             }.toIntArray()
             
-            Log.v(LOG_TAG, "Bitmap converted to matrix array (contrast: $enhanceContrast, brightness: $brightnessMultiplier)")
+            // Log.v(LOG_TAG, "Bitmap converted to matrix array (contrast: $enhanceContrast, brightness: $brightnessMultiplier)")
             finalArray
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Error converting bitmap to matrix array: ${e.message}")

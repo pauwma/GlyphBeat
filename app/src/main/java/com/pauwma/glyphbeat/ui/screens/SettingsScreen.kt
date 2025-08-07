@@ -372,6 +372,63 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    
+                    // Skip Delay slider
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Skip Delay",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        
+                        // Load current skip delay
+                        var skipDelay by remember { 
+                            mutableStateOf(prefs.getLong("shake_skip_delay", 2000L))
+                        }
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "0.5s",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "2s",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "5s",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        
+                        Slider(
+                            value = ((skipDelay - 500f) / 4500f).coerceIn(0f, 1f),
+                            onValueChange = { value ->
+                                skipDelay = (500 + (value * 4500)).toLong()
+                                prefs.edit().putLong("shake_skip_delay", skipDelay).apply()
+                                Log.d("SettingsScreen", "Skip delay: ${skipDelay}ms")
+                            },
+                            valueRange = 0f..1f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        )
+                        
+                        Text(
+                            text = "Delay between skips: ${String.format("%.1f", skipDelay / 1000.0)} seconds",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
