@@ -159,9 +159,14 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // Log initial theme information
         logThemeInfo(currentTheme)
         
-        // Initialize shake detection and preferences listener
-        initializeShakeDetection(context)
-        registerShakePreferencesListener(context)
+        // Delay shake detection initialization to prevent false positives at startup
+        // This gives the service time to stabilize and prevents detecting the initial sensor variations
+        backgroundScope.launch {
+            delay(1500L) // 1.5 second delay before enabling shake detection
+            Log.d(LOG_TAG, "Initializing shake detection after startup delay")
+            initializeShakeDetection(context)
+            registerShakePreferencesListener(context)
+        }
 
         // Get initial state
         val initialController = mediaHelper.getActiveMediaController()
@@ -848,22 +853,37 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private fun handleShakeDetected(force: Float) {
         Log.d(LOG_TAG, "Shake detected with force: $force")
         
-        // Only handle shake if we have active media
-        if (hasActiveMedia) {
-            val success = mediaHelper.skipToNext()
-            if (success) {
-                Log.i(LOG_TAG, "Skipped to next track via shake gesture")
-                
-                // Provide haptic feedback for successful skip
-                shakeDetector?.provideHapticFeedback()
-                
-                // Optional: Provide visual feedback via Glyph animation
-                // Could show a brief "skip" animation here
-            } else {
-                Log.w(LOG_TAG, "Failed to skip to next track")
-            }
-        } else {
+        // Check if we have active media
+        if (!hasActiveMedia) {
             Log.d(LOG_TAG, "Shake detected but no active media to control")
+            return
+        }
+        
+        // Check if media is paused and whether we should skip when paused
+        if (currentPlayerState == PlayerState.PAUSED) {
+            val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+            val skipWhenPaused = prefs.getBoolean("shake_skip_when_paused", false)
+            
+            if (!skipWhenPaused) {
+                Log.d(LOG_TAG, "Media is paused and skip when paused is disabled - ignoring shake")
+                return
+            }
+            
+            Log.d(LOG_TAG, "Media is paused but skip when paused is enabled - proceeding with skip")
+        }
+        
+        // Proceed with skip
+        val success = mediaHelper.skipToNext()
+        if (success) {
+            Log.i(LOG_TAG, "Skipped to next track via shake gesture")
+            
+            // Provide haptic feedback for successful skip
+            shakeDetector?.provideHapticFeedback()
+            
+            // Optional: Provide visual feedback via Glyph animation
+            // Could show a brief "skip" animation here
+        } else {
+            Log.w(LOG_TAG, "Failed to skip to next track")
         }
     }
     

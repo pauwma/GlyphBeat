@@ -23,8 +23,8 @@ class ShakeDetector(private val context: Context) {
         
         // Shake threshold levels - Lower values = more sensitive
         // Increased gaps for more notable differences
-        const val SENSITIVITY_LOW = 20f      // Requires strong shake (was 15f)
-        const val SENSITIVITY_MEDIUM = 12f   // Moderate shake (unchanged)
+        const val SENSITIVITY_LOW = 25f      // Requires strong shake (was 15f)
+        const val SENSITIVITY_MEDIUM = 20f   // Moderate shake (unchanged)
         const val SENSITIVITY_HIGH = 7f      // Light shake (was 9f)
         
         // Default time between shakes to prevent multiple triggers
@@ -55,6 +55,9 @@ class ShakeDetector(private val context: Context) {
     
     // State
     private var isListening = false
+    private var isWarmingUp = false
+    private var warmupStartTime = 0L
+    private val WARMUP_PERIOD_MS = 500L // 500ms warmup period
     
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
@@ -76,6 +79,19 @@ class ShakeDetector(private val context: Context) {
             
             // Low-pass filter to remove gravity and noise
             acceleration = acceleration * 0.9f + delta
+            
+            // Check if we're still warming up
+            if (isWarmingUp) {
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - warmupStartTime < WARMUP_PERIOD_MS) {
+                    // Still in warmup period, ignore shake detection
+                    return
+                } else {
+                    // Warmup period complete
+                    isWarmingUp = false
+                    Log.d(LOG_TAG, "Warmup period complete, shake detection now active")
+                }
+            }
             
             // Check if acceleration exceeds threshold
             if (acceleration > shakeThreshold) {
@@ -136,8 +152,8 @@ class ShakeDetector(private val context: Context) {
                 Log.d(LOG_TAG, "Shake detector initialized")
             }
             
-            // Initialize acceleration values
-            acceleration = 10f
+            // Initialize acceleration values to prevent false positives
+            acceleration = 0f  // Start at 0 to prevent immediate false positives
             currentAcceleration = SensorManager.GRAVITY_EARTH
             lastAcceleration = SensorManager.GRAVITY_EARTH
         }
@@ -172,7 +188,12 @@ class ShakeDetector(private val context: Context) {
                 SensorManager.SENSOR_DELAY_UI // Faster than NORMAL for better responsiveness
             )
             isListening = true
-            Log.d(LOG_TAG, "Started listening for shakes with UI delay rate")
+            
+            // Start warmup period to prevent false positives at startup
+            isWarmingUp = true
+            warmupStartTime = System.currentTimeMillis()
+            
+            Log.d(LOG_TAG, "Started listening for shakes with UI delay rate (${WARMUP_PERIOD_MS}ms warmup)")
         } ?: run {
             Log.w(LOG_TAG, "Cannot start listening - accelerometer not available")
         }
@@ -185,6 +206,7 @@ class ShakeDetector(private val context: Context) {
         if (isListening) {
             sensorManager?.unregisterListener(sensorEventListener)
             isListening = false
+            isWarmingUp = false
             
             // Release wake lock when stopping
             try {
