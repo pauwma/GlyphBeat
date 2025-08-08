@@ -15,19 +15,12 @@
 .cxx
 local.properties
 
-# Android Studio
+# Android Studio / IntelliJ IDEA
+.idea/
+!.idea/codeStyles/
+!.idea/codeStyles/Project.xml
+!.idea/codeStyles/codeStyleConfig.xml
 *.iws
-/.idea/shelf
-/.idea/dictionaries
-/.idea/runConfigurations
-/.idea/gradle.xml
-/.idea/misc.xml
-/.idea/compiler.xml
-/.idea/copyright/
-/.idea/encodings.xml
-/.idea/scopes/
-/.idea/vcs.xml
-/.idea/jsLibraryMappings.xml
 
 # Keystore files
 *.jks
