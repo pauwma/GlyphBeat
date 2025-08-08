@@ -863,23 +863,28 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         if (currentPlayerState == PlayerState.PAUSED) {
             val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
             val skipWhenPaused = prefs.getBoolean("shake_skip_when_paused", false)
-            
+
             if (!skipWhenPaused) {
                 Log.d(LOG_TAG, "Media is paused and skip when paused is disabled - ignoring shake")
                 return
             }
-            
+
             Log.d(LOG_TAG, "Media is paused but skip when paused is enabled - proceeding with skip")
         }
-        
+
         // Proceed with skip
         val success = mediaHelper.skipToNext()
         if (success) {
             Log.i(LOG_TAG, "Skipped to next track via shake gesture")
-            
-            // Provide haptic feedback for successful skip
-            shakeDetector?.provideHapticFeedback()
-            
+
+            val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+            val feedback_when_shaked = prefs.getBoolean("feedback_when_shaked", false)
+
+            if (feedback_when_shaked){
+                // Provide haptic feedback for successful skip
+                shakeDetector?.provideHapticFeedback()
+            }
+
             // Optional: Provide visual feedback via Glyph animation
             // Could show a brief "skip" animation here
         } else {

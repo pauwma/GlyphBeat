@@ -253,38 +253,24 @@ class ShakeDetector(private val context: Context) {
      */
     fun provideHapticFeedback() {
         Log.d(LOG_TAG, "provideHapticFeedback() called")
-        
+
         if (vibrator == null) {
             Log.e(LOG_TAG, "Cannot provide haptic feedback - vibrator is null")
             return
         }
-        
+
         try {
             vibrator?.let { vib ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    // Android Q+ - Use predefined effects that should work on all devices
-                    val effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
-                    vib.vibrate(effect)
-                    Log.i(LOG_TAG, "Haptic feedback triggered using EFFECT_CLICK predefined effect")
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    // Android O+ - Use simple vibration pattern
-                    val timings = longArrayOf(0, 100, 50, 100) // Pattern: wait 0ms, vibrate 100ms, wait 50ms, vibrate 100ms
-                    val amplitudes = intArrayOf(0, 255, 0, 200) // Corresponding amplitudes
-                    
-                    val effect = if (vib.hasAmplitudeControl()) {
-                        VibrationEffect.createWaveform(timings, amplitudes, -1)
-                    } else {
-                        VibrationEffect.createWaveform(timings, -1)
-                    }
-                    vib.vibrate(effect)
-                    Log.i(LOG_TAG, "Haptic feedback triggered using waveform pattern")
+                val timings = longArrayOf(50, 200, 0, 0) // Pattern: wait 0ms, vibrate 100ms, wait 50ms, vibrate 100ms
+                val amplitudes = intArrayOf(0, 255, 0, 255) // Forces
+
+                val effect = if (vib.hasAmplitudeControl()) {
+                    VibrationEffect.createWaveform(timings, amplitudes, -1)
                 } else {
-                    // Legacy devices - Use simple pattern
-                    @Suppress("DEPRECATION")
-                    val pattern = longArrayOf(0, 100, 50, 100)
-                    vib.vibrate(pattern, -1)
-                    Log.i(LOG_TAG, "Haptic feedback triggered (legacy pattern)")
+                    VibrationEffect.createWaveform(timings, -1)
                 }
+                vib.vibrate(effect)
+                Log.i(LOG_TAG, "Haptic feedback triggered using waveform pattern")
             }
         } catch (e: Exception) {
             Log.e(LOG_TAG, "Failed to provide haptic feedback: ${e.message}", e)
