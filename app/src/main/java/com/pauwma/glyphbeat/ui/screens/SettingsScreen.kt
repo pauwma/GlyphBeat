@@ -1,16 +1,16 @@
 package com.pauwma.glyphbeat.ui.screens
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
-import android.provider.Settings
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.pauwma.glyphbeat.services.shake.ShakeDetector
@@ -35,7 +35,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.core.app.NotificationManagerCompat
 import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.isNotificationAccessGranted
 import com.pauwma.glyphbeat.isMediaControlServiceWorking
@@ -62,9 +61,11 @@ fun SettingsScreen(
     var shakeEnabled by remember { mutableStateOf(false) }
     var shakeSensitivity by remember { mutableStateOf(ShakeDetector.SENSITIVITY_MEDIUM) }
     var shakeSkipWhenPaused by remember { mutableStateOf(false) }
+    var hapticFeedbackWhenShaked by remember { mutableStateOf(false) }
     var skipDelay by remember { mutableStateOf(2000L) }
     
     val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
     
     // Load initial values asynchronously
     LaunchedEffect(Unit) {
@@ -133,14 +134,17 @@ fun SettingsScreen(
             }
         }
 
-        // Scrollable content
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        // Scrollable content with scrollbar
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
 
         // Permission Status Card
         Card(
@@ -256,10 +260,10 @@ fun SettingsScreen(
                             containerColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text(
-                            text = "🧪",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontFamily = notoEmojiFont
+                        Icon(
+                            imageVector = Icons.Default.Audiotrack,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -299,7 +303,7 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "Skip to the next track with a shake gesture when Media Player is active.",
+                    text = "Skip to the next track with a shake gesture.",
                     style = MaterialTheme.typography.bodySmall
                 )
 
@@ -483,6 +487,40 @@ fun SettingsScreen(
                             )
                         }
                     }
+
+                    // Skip when paused toggle
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = "Haptic feedback",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = "Sends a short vibration confirming the action",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Switch(
+                                checked = hapticFeedbackWhenShaked,
+                                onCheckedChange = { enabled ->
+                                    hapticFeedbackWhenShaked = enabled
+                                    prefs.edit().putBoolean("feedback_when_shaked", enabled).apply()
+                                    Log.d("SettingsScreen", "Feedback on shaked: $enabled")
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -509,7 +547,7 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "Found a bug or need help? Send me a message and we'll get back to you.",
+                    text = "Found a bug or need help? Send me a message and I'll get back to you.",
                     style = MaterialTheme.typography.bodySmall
                 )
 
@@ -543,7 +581,62 @@ fun SettingsScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Mail,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Contact")
+                }
+            }
+        }
+
+        // Tutorial Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF1A1A1A)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Tutorial",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = customFont
+                    ),
+                    fontWeight = FontWeight.SemiBold
+                )
+                
+                Text(
+                    text = "View the app introduction and setup guide again",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                
+                Button(
+                    onClick = {
+                        // Reset tutorial and launch it
+                        com.pauwma.glyphbeat.tutorial.utils.TutorialPreferences.resetTutorial(context)
+                        val intent = Intent(context, com.pauwma.glyphbeat.tutorial.TutorialActivity::class.java)
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = com.pauwma.glyphbeat.theme.NothingRed
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.School,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Replay Tutorial")
                 }
             }
         }
@@ -606,7 +699,8 @@ fun SettingsScreen(
                 )
             }
         }
-        } // End scrollable content
+            } // End scrollable Column
+        } // End Box
     } // End main column
 }
 

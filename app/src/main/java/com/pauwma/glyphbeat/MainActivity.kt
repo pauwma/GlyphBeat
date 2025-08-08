@@ -21,15 +21,30 @@ import com.pauwma.glyphbeat.ui.navigation.GlyphBeatBottomNavigation
 import com.pauwma.glyphbeat.ui.navigation.MediaPlayerScreen
 import com.pauwma.glyphbeat.ui.navigation.TrackControlScreen
 import com.pauwma.glyphbeat.ui.navigation.SettingsNavigationScreen
+import com.pauwma.glyphbeat.tutorial.TutorialActivity
+import com.pauwma.glyphbeat.tutorial.utils.TutorialPreferences
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Check if tutorial should be shown
+        if (!TutorialPreferences.isTutorialCompleted(this)) {
+            // Launch tutorial activity
+            val intent = Intent(this, TutorialActivity::class.java)
+            startActivity(intent)
+            finish()
+            return
+        }
+        
         enableEdgeToEdge()
         
-        // Check and request notification access permission
+        // Check and request notification access permission if not in tutorial
         if (!isNotificationAccessGranted(this)) {
-            requestNotificationAccess()
+            // Only request if user didn't skip in tutorial
+            if (!TutorialPreferences.hasSkippedPermissions(this)) {
+                requestNotificationAccess()
+            }
         }
         
         setContent {

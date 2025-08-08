@@ -6,7 +6,8 @@
     <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />
     
     <!-- Permission to bind notification listener service -->
-    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
+    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+        tools:ignore="ProtectedPermissions" />
     
     <!-- Permission for haptic feedback when shake is detected -->
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -32,6 +33,7 @@
         <activity
             android:name="com.pauwma.glyphbeat.MainActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.NothingAndroidSDKDemo">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -39,6 +41,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- Tutorial Activity -->
+        <activity
+            android:name="com.pauwma.glyphbeat.tutorial.TutorialActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.NothingAndroidSDKDemo" />
 
         <!-- Notification Listener Service for media control -->
         <service
