@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -46,6 +47,7 @@ fun TrackControlScreen(
     val context = LocalContext.current
     val themeManager = remember { TrackControlThemeManager.getInstance(context) }
     val selectedThemeIndex by themeManager.selectedThemeIndexFlow.collectAsState()
+    val settingsChanged by themeManager.settingsChangedFlow.collectAsState()
     val scope = rememberCoroutineScope()
     val customFont = FontFamily(Font(R.font.ntype82regular))
     
@@ -58,7 +60,9 @@ fun TrackControlScreen(
     
     Column(
         modifier = modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Header
@@ -93,7 +97,7 @@ fun TrackControlScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = 0.dp,
-                bottom = 16.dp
+                bottom = 120.dp
             ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -103,6 +107,7 @@ fun TrackControlScreen(
                     theme = theme,
                     themeIndex = index,
                     isSelected = index == selectedThemeIndex,
+                    settingsVersion = settingsChanged?.hashCode() ?: 0, // Force recomposition on settings change
                     onSelect = {
                         scope.launch {
                             themeManager.selectTheme(index)
@@ -143,6 +148,7 @@ private fun TrackControlThemeCard(
     theme: TrackControlTheme,
     themeIndex: Int,
     isSelected: Boolean,
+    settingsVersion: Int = 0, // Force recomposition when settings change
     onSelect: () -> Unit,
     onSettings: () -> Unit
 ) {
@@ -204,10 +210,16 @@ private fun TrackControlThemeCard(
                             .fillMaxSize()
                             .padding(8.dp)
                     ) {
-                        val pixels = themeManager.getThemePreview(
-                            themeIndex,
-                            TrackControlTheme.Direction.NEXT
-                        )
+                        // Get fresh preview frame to reflect current settings
+                        val pixels = if (isSelected && settingsVersion != 0) {
+                            // For selected theme, get fresh frame from current instance
+                            themeManager.currentTheme.getPreviewFrame(TrackControlTheme.Direction.NEXT)
+                        } else {
+                            themeManager.getThemePreview(
+                                themeIndex,
+                                TrackControlTheme.Direction.NEXT
+                            )
+                        }
                         // Simple preview rendering
                         val cellSize = size.width / 25f
                         for (row in 0 until 25) {

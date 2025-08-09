@@ -3,7 +3,9 @@ package com.pauwma.glyphbeat.ui.screens
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
@@ -110,7 +112,10 @@ fun SettingsScreen(
     }
     
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
     ) {
         // Header to match other tabs
         Surface(
@@ -142,7 +147,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(scrollState)
-                    .padding(vertical = 16.dp),
+                    .padding(top = 16.dp, bottom = 120.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
@@ -164,12 +169,14 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont
                     ),
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
                 Text(
                     text = "Required to detect and control music playback from apps like Spotify, YouTube Music, etc.",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
 
                 // Permission status
@@ -299,12 +306,14 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont
                     ),
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
                 Text(
                     text = "Skip to the next track with a shake gesture.",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
 
                 // Enable/Disable switch
@@ -315,7 +324,8 @@ fun SettingsScreen(
                 ) {
                     Text(
                         text = "Shake to Skip",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                     
                     Switch(
@@ -335,7 +345,8 @@ fun SettingsScreen(
                     ) {
                         Text(
                             text = "Shake Sensitivity",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         
                         Row(
@@ -392,7 +403,7 @@ fun SettingsScreen(
                                 else -> ""
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )
                     }
                     
@@ -402,7 +413,8 @@ fun SettingsScreen(
                     ) {
                         Text(
                             text = "Skip Delay",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         
                         Row(
@@ -450,7 +462,7 @@ fun SettingsScreen(
                         Text(
                             text = "Delay between skips: ${String.format("%.1f", skipDelay / 1000.0)} seconds",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )
                     }
                     
@@ -468,12 +480,13 @@ fun SettingsScreen(
                             ) {
                                 Text(
                                     text = "Skip when paused",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Text(
                                     text = "Allow shake to skip even when music is paused",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                                 )
                             }
                             
@@ -502,12 +515,13 @@ fun SettingsScreen(
                             ) {
                                 Text(
                                     text = "Haptic feedback",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Text(
                                     text = "Sends a short vibration confirming the action",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                                 )
                             }
 
@@ -543,12 +557,14 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont
                     ),
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
                 Text(
                     text = "Found a bug or need help? Send me a message and I'll get back to you.",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
 
                 Button(
@@ -608,14 +624,16 @@ fun SettingsScreen(
                 Text(
                     text = "Tutorial",
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = customFont
+                        fontFamily = customFont,
                     ),
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 
                 Text(
                     text = "View the app introduction and setup guide again",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
                 
                 Button(
@@ -659,12 +677,14 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont
                     ),
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
                 Text(
                     text = "GlyphBeat - Animated Media Player Toy for Glyph Matrix",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
 
                 ClickableText(

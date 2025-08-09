@@ -8,16 +8,24 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.background
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.core.app.NotificationManagerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import com.pauwma.glyphbeat.theme.NothingAndroidSDKDemoTheme
 import com.pauwma.glyphbeat.ui.screens.ThemeSelectionScreen
 import com.pauwma.glyphbeat.ui.screens.SettingsScreen
-import com.pauwma.glyphbeat.ui.navigation.GlyphBeatBottomNavigation
+import com.pauwma.glyphbeat.ui.navigation.PillNavigationBar
 import com.pauwma.glyphbeat.ui.navigation.MediaPlayerScreen
 import com.pauwma.glyphbeat.ui.navigation.TrackControlScreen
 import com.pauwma.glyphbeat.ui.navigation.SettingsNavigationScreen
@@ -53,14 +61,22 @@ class MainActivity : ComponentActivity() {
                 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
+                    containerColor = Color.Transparent,
                     bottomBar = {
-                        GlyphBeatBottomNavigation(navController = navController)
-                    }
+                        PillNavigationBar(navController = navController)
+                    },
+                    contentWindowInsets = WindowInsets(0, 0, 0, 0)
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
                         startDestination = "media_player",
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black),
+                        enterTransition = { fadeIn(animationSpec = androidx.compose.animation.core.tween(150)) },
+                        exitTransition = { fadeOut(animationSpec = androidx.compose.animation.core.tween(150)) },
+                        popEnterTransition = { fadeIn(animationSpec = androidx.compose.animation.core.tween(150)) },
+                        popExitTransition = { fadeOut(animationSpec = androidx.compose.animation.core.tween(150)) }
                     ) {
                         // Media Player Tab
                         composable("media_player") {

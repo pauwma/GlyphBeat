@@ -2,6 +2,7 @@ package com.pauwma.glyphbeat.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -80,6 +81,7 @@ fun ThemeSelectionScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -117,7 +119,7 @@ fun ThemeSelectionScreen(
                         start = 16.dp,
                         end = 16.dp,
                         top = 0.dp,
-                        bottom = 16.dp
+                        bottom = 120.dp
                     ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
