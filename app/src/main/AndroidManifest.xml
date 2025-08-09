@@ -73,7 +73,7 @@
                 android:resource="@string/toy_name_media_player" />
             <meta-data
                 android:name="com.nothing.glyph.toy.image"
-                android:resource="@drawable/glyph_beat_thumbnail" />
+                android:resource="@drawable/media_player_track_toy_icon" />
             <meta-data
                 android:name="com.nothing.glyph.toy.summary"
                 android:resource="@string/toy_summary_media_player" />
@@ -96,7 +96,7 @@
                 android:resource="@string/toy_name_next_track" />
             <meta-data
                 android:name="com.nothing.glyph.toy.image"
-                android:resource="@drawable/glyph_beat_thumbnail" />
+                android:resource="@drawable/next_track_toy_icon" />
             <meta-data
                 android:name="com.nothing.glyph.toy.summary"
                 android:resource="@string/toy_summary_next_track" />
@@ -119,7 +119,7 @@
                 android:resource="@string/toy_name_previous_track" />
             <meta-data
                 android:name="com.nothing.glyph.toy.image"
-                android:resource="@drawable/glyph_beat_thumbnail" />
+                android:resource="@drawable/previous_track_toy_icon"/>
             <meta-data
                 android:name="com.nothing.glyph.toy.summary"
                 android:resource="@string/toy_summary_previous_track" />
