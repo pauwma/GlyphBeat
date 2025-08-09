@@ -20,7 +20,7 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
     // =================================================================================
     
     override val titleTheme: String = "Vinyl Record"
-    override val descriptionTheme: String = "Go full retro.\nGo full DJ mode!"
+    override val descriptionTheme: String = "Go full retro\nGo full DJ mode!"
     override val authorName: String = "pauwma"
     override val version: String = "1.0.0" 
     override val category: String = "Music"

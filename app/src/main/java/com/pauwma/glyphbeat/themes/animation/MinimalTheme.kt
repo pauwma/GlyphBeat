@@ -22,7 +22,7 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
 
     override val titleTheme: String = "Minimal"
 
-    override val descriptionTheme: String = "I'm empty inside I just want nothing."
+    override val descriptionTheme: String = "I'm empty inside I just want nothing"
 
     override val authorName: String = "pauwma"
 

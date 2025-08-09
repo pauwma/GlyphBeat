@@ -21,7 +21,7 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
     
     override val titleTheme: String = "Shapes"
     
-    override val descriptionTheme: String = "Hmmm... It goes in the square hole!"
+    override val descriptionTheme: String = "Hmm... It goes in the square hole!"
     
     override val authorName: String = "pauwma"
     

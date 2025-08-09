@@ -23,7 +23,7 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
     // =================================================================================
     
     override val titleTheme: String = "Dancing Duck"
-    override val descriptionTheme: String = "He knows exactly what he's doing."
+    override val descriptionTheme: String = "He knows exactly what he's doing"
     override val authorName: String = "pauwma"
     override val version: String = "1.0.0" 
     override val category: String = "Fun"

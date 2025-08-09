@@ -186,7 +186,7 @@ fun ThemeGuidePage(
                     EnhancedCustomizationItem(
                         icon = Icons.Default.Tune,
                         title = "Settings",
-                        description = "Fine-tune",
+                        description = "And much more",
                         customFont = customFont,
                         modifier = Modifier.weight(1f)
                     )
