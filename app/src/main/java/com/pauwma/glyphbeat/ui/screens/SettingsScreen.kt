@@ -3,7 +3,15 @@ package com.pauwma.glyphbeat.ui.screens
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -11,10 +19,14 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
+import androidx.compose.ui.draw.rotate
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.delay
@@ -65,6 +77,8 @@ fun SettingsScreen(
     var shakeSkipWhenPaused by remember { mutableStateOf(false) }
     var hapticFeedbackWhenShaked by remember { mutableStateOf(false) }
     var skipDelay by remember { mutableStateOf(2000L) }
+    // Use rememberSaveable to persist collapse state during navigation, but defaults to false on app restart
+    var shakeControlsExpanded by rememberSaveable { mutableStateOf(false) }
     
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -193,7 +207,7 @@ fun SettingsScreen(
                             mediaServiceWorking -> "✅ Permission Granted & Service Active"
                             else -> "⚠️ Permission Granted but Service Not Connected"
                         },
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = when {
                             !notificationAccessGranted -> MaterialTheme.colorScheme.error
                             mediaServiceWorking -> Color(0xFF00C853)
@@ -280,8 +294,8 @@ fun SettingsScreen(
                     Text(
                         text = testResult,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp)
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 2.dp)
                     )
                 }
             }
@@ -301,22 +315,53 @@ fun SettingsScreen(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = "Shake Controls",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = customFont
-                    ),
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                // Clickable header with expand/collapse icon
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { shakeControlsExpanded = !shakeControlsExpanded },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Shake Controls",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = customFont
+                            ),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
 
-                Text(
-                    text = "Skip to the next track with a shake gesture.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                )
+                        Text(
+                            text = "Skip to the next track with a shake gesture.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        )
+                    }
+                    
+                    // Animated expand/collapse icon
+                    val rotationAngle by animateFloatAsState(
+                        targetValue = if (shakeControlsExpanded) 180f else 0f,
+                        label = "expandIcon"
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ExpandMore,
+                        contentDescription = if (shakeControlsExpanded) "Collapse" else "Expand",
+                        modifier = Modifier
+                            .size(24.dp)
+                            .rotate(rotationAngle),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
-                // Enable/Disable switch
+                // Enable/Disable switch (always visible)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -334,15 +379,35 @@ fun SettingsScreen(
                             shakeEnabled = enabled
                             prefs.edit().putBoolean("shake_to_skip_enabled", enabled).apply()
                             Log.d("SettingsScreen", "Shake to skip: $enabled")
+                            // Auto-expand when enabling, auto-collapse when disabling
+                            if (enabled && !shakeControlsExpanded) {
+                                shakeControlsExpanded = true
+                            } else if (!enabled && shakeControlsExpanded) {
+                                shakeControlsExpanded = false
+                            }
                         }
                     )
                 }
 
-                // Sensitivity slider
-                if (shakeEnabled) {
+                // Animated visibility for detailed settings
+                AnimatedVisibility(
+                    visible = shakeControlsExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        // Divider between header and settings
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                        )
+                        
+                        // Sensitivity slider
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
                         Text(
                             text = "Shake Sensitivity",
                             style = MaterialTheme.typography.bodyMedium,
@@ -535,7 +600,8 @@ fun SettingsScreen(
                             )
                         }
                     }
-                }
+                    } // End of AnimatedVisibility Column
+                } // End of AnimatedVisibility
             }
         }
 
@@ -604,6 +670,98 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Contact")
+                }
+            }
+        }
+
+        // Support/Donation Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF1A1A1A)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "Support GlyphBeat",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = customFont
+                        ),
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Text(
+                    text = "GlyphBeat is a passion project, completely ad-free. " +
+                           "If you're enjoying the app and would like to fuel future updates and new features, " +
+                           "consider buying me a coffee! Every contribution, no matter how small, makes a real " +
+                           "difference and keeps me motivated. Thank you for being awesome! 🎵",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Main donation button
+                Button(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            data = Uri.parse("https://www.buymeacoffee.com/pauwma")
+                        }
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("Buy me a coffee ☕")
+                }
+
+                // Alternative donation options
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                data = Uri.parse("https://paypal.me/pauwma")
+                            }
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("PayPal", style = MaterialTheme.typography.bodySmall)
+                    }
+                    
+                    OutlinedButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                data = Uri.parse("https://github.com/sponsors/pauwma")
+                            }
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("GitHub", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }
