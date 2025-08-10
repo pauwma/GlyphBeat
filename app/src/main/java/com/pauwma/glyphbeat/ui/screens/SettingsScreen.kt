@@ -17,12 +17,19 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material3.*
 import androidx.compose.ui.draw.rotate
 import androidx.compose.runtime.*
@@ -35,7 +42,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.buildAnnotatedString
@@ -45,14 +55,268 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.isNotificationAccessGranted
 import com.pauwma.glyphbeat.isMediaControlServiceWorking
 import com.pauwma.glyphbeat.openNotificationAccessSettings
+
+@Composable
+private fun TestResultCard(
+    isLoading: Boolean,
+    trackInfo: com.pauwma.glyphbeat.sound.MediaControlHelper.TrackInfo?,
+    error: String?,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .clickable { onDismiss() },
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF2A2A2A)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        when {
+            isLoading -> {
+                // Loading state
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            trackInfo != null -> {
+                // Media found - show beautiful track info
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Album art or music icon - increased size for better quality
+                    Card(
+                        modifier = Modifier.size(64.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        if (trackInfo.albumArt != null) {
+                            Image(
+                                bitmap = trackInfo.albumArt.asImageBitmap(),
+                                contentDescription = "Album Art",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MusicNote,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Track info
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        // Title
+                        Text(
+                            text = trackInfo.title,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        
+                        // Artist
+                        Text(
+                            text = trackInfo.artist,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        
+                        // App name with icon and brand colors
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val brandColor = getAppBrandColor(trackInfo.appName) 
+                                ?: MaterialTheme.colorScheme.primary
+                            val appIcon = getAppIcon(context, trackInfo.appName)
+                            
+                            // Show app icon if available, otherwise music icon
+                            if (appIcon != null) {
+                                Image(
+                                    bitmap = appIcon.asImageBitmap(),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Audiotrack,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = brandColor
+                                )
+                            }
+                            
+                            Text(
+                                text = getAppNameFromPackage(context, trackInfo.appName),
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = brandColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+            error != null -> {
+                // Error or no media state
+                val isNoActiveMedia = error.contains("No active")
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Icon
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (isNoActiveMedia) 
+                                Icons.Default.MusicOff 
+                            else 
+                                Icons.Default.Warning,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = if (isNoActiveMedia)
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            else
+                                MaterialTheme.colorScheme.error
+                        )
+                    }
+                    
+                    // Message
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = if (isNoActiveMedia) 
+                                "No Music Playing" 
+                            else 
+                                "Test Failed",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text = if (isNoActiveMedia)
+                                "Start playing music to test the connection"
+                            else
+                                error,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Helper function to get brand color for popular music apps
+private fun getAppBrandColor(packageName: String): Color? {
+    return when {
+        packageName.contains("spotify", ignoreCase = true) -> Color(0xFF1DB954) // Spotify Green
+        packageName.contains("youtube", ignoreCase = true) -> Color(0xFFFF0000) // YouTube Red
+        packageName.contains("apple", ignoreCase = true) -> Color(0xFFFA243C) // Apple Music Red
+        packageName.contains("amazon", ignoreCase = true) -> Color(0xFF00A8E1) // Amazon Music Blue
+        packageName.contains("soundcloud", ignoreCase = true) -> Color(0xFFFF5500) // SoundCloud Orange
+        packageName.contains("tidal", ignoreCase = true) -> Color(0xFF000000) // Tidal Black
+        packageName.contains("deezer", ignoreCase = true) -> Color(0xFFFF6D3A) // Deezer Orange
+        packageName.contains("pandora", ignoreCase = true) -> Color(0xFF224099) // Pandora Blue
+        else -> null
+    }
+}
+
+// Helper function to get app icon
+private fun getAppIcon(context: android.content.Context, packageName: String): android.graphics.Bitmap? {
+    return try {
+        val packageManager = context.packageManager
+        val appInfo = packageManager.getApplicationInfo(packageName, 0)
+        val drawable = packageManager.getApplicationIcon(appInfo)
+        drawable.toBitmap(48, 48, android.graphics.Bitmap.Config.ARGB_8888)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+// Helper function to get readable app name from package name
+private fun getAppNameFromPackage(context: android.content.Context, packageName: String): String {
+    return try {
+        val packageManager = context.packageManager
+        val appInfo = packageManager.getApplicationInfo(packageName, 0)
+        packageManager.getApplicationLabel(appInfo).toString()
+    } catch (e: Exception) {
+        // Fallback to beautifying the package name
+        when {
+            packageName.contains("spotify", ignoreCase = true) -> "Spotify"
+            packageName.contains("youtube", ignoreCase = true) -> "YouTube Music"
+            packageName.contains("amazon", ignoreCase = true) -> "Amazon Music"
+            packageName.contains("apple", ignoreCase = true) -> "Apple Music"
+            packageName.contains("tidal", ignoreCase = true) -> "Tidal"
+            packageName.contains("deezer", ignoreCase = true) -> "Deezer"
+            packageName.contains("soundcloud", ignoreCase = true) -> "SoundCloud"
+            packageName.contains("pandora", ignoreCase = true) -> "Pandora"
+            else -> packageName.substringAfterLast('.').capitalize()
+        }
+    }
+}
 
 @Preview
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,14 +333,17 @@ fun SettingsScreen(
     var isLoadingPermissions by remember { mutableStateOf(true) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
     val notoEmojiFont = FontFamily(Font(R.font.notoemoji))
-    var testResult by remember { mutableStateOf("") }
+    var testTrackInfo by remember { mutableStateOf<com.pauwma.glyphbeat.sound.MediaControlHelper.TrackInfo?>(null) }
+    var showTestResult by remember { mutableStateOf(false) }
+    var isTestLoading by remember { mutableStateOf(false) }
+    var testError by remember { mutableStateOf<String?>(null) }
     
     // Shake settings state - initialize with defaults, load actual values asynchronously
     var shakeEnabled by remember { mutableStateOf(false) }
     var shakeSensitivity by remember { mutableStateOf(ShakeDetector.SENSITIVITY_MEDIUM) }
     var shakeSkipWhenPaused by remember { mutableStateOf(false) }
-    var hapticFeedbackWhenShaked by remember { mutableStateOf(false) }
-    var skipDelay by remember { mutableStateOf(2000L) }
+    var hapticFeedbackWhenShaked by remember { mutableStateOf(true) }
+    var skipDelay by remember { mutableStateOf(3500L) }
     // Use rememberSaveable to persist collapse state during navigation, but defaults to false on app restart
     var shakeControlsExpanded by rememberSaveable { mutableStateOf(false) }
     
@@ -117,11 +384,13 @@ fun SettingsScreen(
         }
     }
     
-    // Clear test result after 3 seconds
-    LaunchedEffect(testResult) {
-        if (testResult.isNotEmpty()) {
-            delay(3000L)
-            testResult = ""
+    // Clear test result after 5 seconds
+    LaunchedEffect(showTestResult) {
+        if (showTestResult) {
+            delay(5000L)
+            showTestResult = false
+            testTrackInfo = null
+            testError = null
         }
     }
     
@@ -193,28 +462,6 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
 
-                // Permission status
-                if (isLoadingPermissions) {
-                    Text(
-                        text = "⏳ Checking permissions...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    Text(
-                        text = when {
-                            !notificationAccessGranted -> "❌ Permission Not Granted"
-                            mediaServiceWorking -> "✅ Permission Granted & Service Active"
-                            else -> "⚠️ Permission Granted but Service Not Connected"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = when {
-                            !notificationAccessGranted -> MaterialTheme.colorScheme.error
-                            mediaServiceWorking -> Color(0xFF00C853)
-                            else -> Color(0xFFFF9800) // Orange for warning
-                        }
-                    )
-                }
 
                 if (notificationAccessGranted && !mediaServiceWorking) {
                     Text(
@@ -235,7 +482,14 @@ fun SettingsScreen(
                             openNotificationAccessSettings(context)
                         },
                         modifier = Modifier.weight(1f),
-                        enabled = !mediaServiceWorking
+                        colors = if (mediaServiceWorking) {
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                                contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        } else {
+                            ButtonDefaults.buttonColors()
+                        }
                     ) {
                         Text(
                             when {
@@ -250,21 +504,25 @@ fun SettingsScreen(
                         onClick = {
                             coroutineScope.launch {
                                 try {
-                                    testResult = "⏳ Testing..."
+                                    isTestLoading = true
+                                    showTestResult = true
+                                    testTrackInfo = null
+                                    testError = null
                                     
                                     withContext(Dispatchers.IO) {
                                         val mediaHelper = com.pauwma.glyphbeat.sound.MediaControlHelper(context)
                                         val controller = mediaHelper.getActiveMediaController()
-                                        val trackInfo = mediaHelper.getTrackInfo()
+                                        val trackInfo = mediaHelper.getTrackInfoForUI()
 
-                                        testResult = if (controller != null) {
-                                            if (trackInfo != null) {
-                                                "✅ Active session found:\n${trackInfo.title} by ${trackInfo.artist}\nApp: ${trackInfo.appName}"
-                                            } else {
-                                                "✅ Active session found but no track info available"
+                                        isTestLoading = false
+                                        
+                                        if (controller != null) {
+                                            testTrackInfo = trackInfo
+                                            if (trackInfo == null) {
+                                                testError = "Active session found but no track info available"
                                             }
                                         } else {
-                                            "ℹ️ No active music sessions found\n(Start playing music to test)"
+                                            testError = "No active music sessions found"
                                         }
 
                                         // Also refresh the service status when testing
@@ -272,7 +530,8 @@ fun SettingsScreen(
                                         mediaServiceWorking = isMediaControlServiceWorking(context)
                                     }
                                 } catch (e: Exception) {
-                                    testResult = "❌ Error: ${e.message}"
+                                    isTestLoading = false
+                                    testError = "Error: ${e.message}"
                                 }
                             }
                         },
@@ -289,13 +548,29 @@ fun SettingsScreen(
                     }
                 }
 
-                // Show test results if available
-                if (testResult.isNotEmpty()) {
-                    Text(
-                        text = testResult,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(top = 2.dp)
+                // Show test results card with animation  
+                AnimatedVisibility(
+                    visible = showTestResult,
+                    enter = expandVertically(
+                        animationSpec = androidx.compose.animation.core.tween(300)
+                    ) + fadeIn(
+                        animationSpec = androidx.compose.animation.core.tween(300)
+                    ),
+                    exit = shrinkVertically(
+                        animationSpec = androidx.compose.animation.core.tween(200)
+                    ) + fadeOut(
+                        animationSpec = androidx.compose.animation.core.tween(200)
+                    )
+                ) {
+                    TestResultCard(
+                        isLoading = isTestLoading,
+                        trackInfo = testTrackInfo,
+                        error = testError,
+                        onDismiss = {
+                            showTestResult = false
+                            testTrackInfo = null
+                            testError = null
+                        }
                     )
                 }
             }
@@ -716,7 +991,7 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 // Main donation button
                 Button(
@@ -731,7 +1006,13 @@ fun SettingsScreen(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Text("Buy me a coffee ☕")
+                    Icon(
+                        imageVector = Icons.Default.LocalCafe,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Buy me a coffee")
                 }
 
                 // Alternative donation options

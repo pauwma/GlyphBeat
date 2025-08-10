@@ -389,6 +389,33 @@ class MediaControlHelper(private val context: Context) {
     }
     
     /**
+     * Get track info with full resolution album art for UI display.
+     * Unlike getTrackInfo(), this returns the original resolution album art.
+     */
+    fun getTrackInfoForUI(): TrackInfo? {
+        val controller = getActiveMediaController() ?: return null
+        val metadata = controller.metadata ?: return null
+        
+        return try {
+            // Get full resolution album art
+            val albumArt = metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
+                ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_ART)
+                ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
+            
+            TrackInfo(
+                title = metadata.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "Unknown",
+                artist = metadata.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: "Unknown",
+                album = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM) ?: "Unknown",
+                appName = controller.packageName ?: "Unknown",
+                albumArt = albumArt
+            )
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Error getting track info for UI", e)
+            null
+        }
+    }
+    
+    /**
      * Extract album art from media metadata.
      * @param metadata MediaMetadata object containing track information
      * @return Bitmap of album art or null if not available
