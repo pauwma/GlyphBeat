@@ -18,6 +18,15 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
     private var currentAnimationPattern: String = "normal" // Default should have transitions
     private var currentBrightness: Int = 255
     
+    // Track transition changes for live updates
+    private var transitionsChanged = false
+    private var previousTransitionSignature = ""
+    
+    init {
+        // Initialize the signature to current state
+        previousTransitionSignature = getTransitionSignature()
+    }
+    
     // =================================================================================
     // THEME METADATA - Dancing duck theme information
     // =================================================================================
@@ -170,6 +179,15 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
             else -> 150L // normal
         }
         
+        // Check if transitions have changed
+        val newSignature = getTransitionSignature()
+        if (previousTransitionSignature != newSignature) {
+            transitionsChanged = true
+            previousTransitionSignature = newSignature
+            android.util.Log.d("DancingDuckTheme", "Transitions changed! Pattern: '$previousPattern' -> '$currentAnimationPattern'")
+            android.util.Log.d("DancingDuckTheme", "New signature: $newSignature")
+        }
+        
         // Log settings change for debugging
         if (previousPattern != currentAnimationPattern) {
             android.util.Log.d("DancingDuckTheme", "Animation pattern changed from '$previousPattern' to '$currentAnimationPattern'")
@@ -208,11 +226,21 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
     }
     
     /**
-     * Helper method to check if frame transitions have changed
-     * This could be used by the service to detect when transitions need reinitialization
+     * Helper method to get a unique signature for the current transitions
      */
     fun getTransitionSignature(): String {
         return "pattern:$currentAnimationPattern"
+    }
+    
+    /**
+     * Check if transitions have changed since last check and reset the flag
+     */
+    fun hasTransitionsChanged(): Boolean {
+        val changed = transitionsChanged
+        if (changed) {
+            transitionsChanged = false
+        }
+        return changed
     }
     
     override fun generateFrame(frameIndex: Int): IntArray {
