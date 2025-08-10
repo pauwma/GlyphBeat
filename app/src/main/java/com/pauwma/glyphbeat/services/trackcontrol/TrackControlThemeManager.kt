@@ -6,7 +6,6 @@ import android.util.Log
 import com.pauwma.glyphbeat.themes.base.TrackControlTheme
 import com.pauwma.glyphbeat.themes.base.TrackControlThemeSettingsProvider
 import com.pauwma.glyphbeat.themes.trackcontrol.MinimalArrowTheme
-import com.pauwma.glyphbeat.themes.trackcontrol.PulseRippleTheme
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsPersistence
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,8 +55,7 @@ class TrackControlThemeManager private constructor(private val context: Context)
     
     // Available track control themes
     val availableThemes: List<TrackControlTheme> = listOf(
-        MinimalArrowTheme(),
-        PulseRippleTheme()
+        MinimalArrowTheme()
         // Future themes can be added here
     )
     
@@ -132,7 +130,9 @@ class TrackControlThemeManager private constructor(private val context: Context)
         val theme = currentTheme
         return if (theme is TrackControlThemeSettingsProvider) {
             val themeId = theme.getSettingsId()
-            settingsPersistence.loadThemeSettings(themeId)
+            val schema = theme.getSettingsSchema()
+            // Load saved settings with schema as fallback for new/unsaved themes
+            settingsPersistence.loadThemeSettings(themeId, schema)
         } else {
             null
         }
@@ -212,13 +212,15 @@ class TrackControlThemeManager private constructor(private val context: Context)
         val theme = currentTheme
         if (theme is TrackControlThemeSettingsProvider) {
             val themeId = theme.getSettingsId()
-            val settings = settingsPersistence.loadThemeSettings(themeId)
+            val schema = theme.getSettingsSchema()
+            // Load saved settings with schema as fallback for new/unsaved themes
+            val settings = settingsPersistence.loadThemeSettings(themeId, schema)
             
             if (settings != null) {
                 theme.applySettings(settings)
-                Log.d(TAG, "Applied saved settings to theme: $themeId")
+                Log.d(TAG, "Applied settings to theme: $themeId")
             } else {
-                Log.d(TAG, "No saved settings found for theme: $themeId")
+                Log.d(TAG, "No settings available for theme: $themeId")
             }
         }
     }

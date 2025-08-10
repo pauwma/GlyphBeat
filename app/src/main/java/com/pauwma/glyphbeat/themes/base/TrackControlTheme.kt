@@ -26,7 +26,8 @@ abstract class TrackControlTheme : AnimationTheme() {
         IDLE,           // No user interaction
         PRESSED,        // User has pressed but not released
         LONG_PRESSED,   // User has performed a long press
-        RELEASED        // User has released after interaction
+        RELEASED,       // User has released after interaction
+        POST_ACTION     // Post-action animation state (after main action completes)
     }
     
     /**
@@ -100,6 +101,7 @@ abstract class TrackControlTheme : AnimationTheme() {
             InteractionState.PRESSED -> settingsOpacityPressed ?: getBrightness()
             InteractionState.LONG_PRESSED -> settingsOpacityPressed ?: getBrightness()
             InteractionState.RELEASED -> settingsOpacityIdle ?: (getBrightness() / 2)
+            InteractionState.POST_ACTION -> settingsBrightness ?: getBrightness()
         }
     }
     
@@ -144,6 +146,35 @@ abstract class TrackControlTheme : AnimationTheme() {
      * @return Transition duration (0 for instant transitions)
      */
     open fun getStateTransitionDuration(): Long = 0L
+    
+    /**
+     * Indicates whether this theme has post-action animations.
+     * Post-action animations play after the main action (press/long-press) completes.
+     * 
+     * @return True if post-action animations are available
+     */
+    open fun hasPostActionAnimation(): Boolean = false
+    
+    /**
+     * Gets the number of frames for post-action animation.
+     * 
+     * @return Number of post-action animation frames
+     */
+    open fun getPostActionFrameCount(): Int = 0
+    
+    /**
+     * Gets the delay before starting post-action animation.
+     * 
+     * @return Delay in milliseconds before post-action animation starts
+     */
+    open fun getPostActionDelay(): Long = 100L
+    
+    /**
+     * Gets the animation speed for post-action animation.
+     * 
+     * @return Animation speed in milliseconds per frame
+     */
+    open fun getPostActionAnimationSpeed(): Long = 50L
     
     /**
      * Gets theme metadata for enhanced UI display.

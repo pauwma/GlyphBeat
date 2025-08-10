@@ -1,8 +1,6 @@
 package com.pauwma.glyphbeat.themes.trackcontrol
 
-import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 import com.pauwma.glyphbeat.themes.base.TrackControlTheme
-import com.pauwma.glyphbeat.services.trackcontrol.TrackControlThemeRenderer
 import com.pauwma.glyphbeat.themes.base.TrackControlThemeSettingsProvider
 import com.pauwma.glyphbeat.ui.settings.*
 
@@ -11,7 +9,7 @@ import com.pauwma.glyphbeat.ui.settings.*
  * 
  * Features:
  * - Static arrow icons (left/right)
- * - Opacity changes based on interaction state
+ * - Brightness changes based on interaction state
  * - Configurable arrow size and thickness
  * - Simple, clean design
  */
@@ -19,22 +17,34 @@ class MinimalArrowTheme : TrackControlTheme(), TrackControlThemeSettingsProvider
     
     // Theme metadata
     override fun getThemeName(): String = "Minimal"
-    override fun getDescription(): String = "Simple arrow icons with opacity feedback"
+    override fun getDescription(): String = "Simple arrow icons with brightness feedback"
     
     // Default theme parameters
-    private var idleOpacity: Float = 0.5f
-    private var pressedOpacity: Float = 1.0f
-    private var arrowStyle: String = "bold"
+    private var idleBrightness: Float = 0.5f
+    private var pressedBrightness: Float = 1.0f
+    private var arrowStyle: String = "skip"
+    private var currentStateBrightness: Float = idleBrightness // Initialize with idle brightness
+
     
     // Pre-generated frames cache
     private val frameCache = mutableMapOf<String, IntArray>()
+    private val postActionFrameCache = mutableMapOf<String, Array<IntArray>>()
     
     override fun getStateFrame(
         state: InteractionState,
         direction: Direction,
         frameIndex: Int
     ): IntArray {
-        // Create cache key
+        // Update current brightness based on state (even when using cache)
+        currentStateBrightness = when (state) {
+            InteractionState.IDLE -> idleBrightness
+            InteractionState.PRESSED -> pressedBrightness  // Not currently used by services
+            InteractionState.LONG_PRESSED -> pressedBrightness  // Use pressed brightness for long press
+            InteractionState.RELEASED -> idleBrightness
+            InteractionState.POST_ACTION -> pressedBrightness  // Use pressed brightness for post-action
+        }
+        
+        // Create cache key for regular states
         val cacheKey = "${state.name}_${direction.name}"
         
         // Check cache first
@@ -56,27 +66,9 @@ class MinimalArrowTheme : TrackControlTheme(), TrackControlThemeSettingsProvider
             Direction.NEXT -> getRightArrowFrame(arrowStyle)
         }
         
-        // Apply state-based opacity to the frame
-        val opacity = when (state) {
-            InteractionState.IDLE -> idleOpacity
-            InteractionState.PRESSED -> pressedOpacity
-            InteractionState.LONG_PRESSED -> 1.0f // Full brightness for action
-            InteractionState.RELEASED -> idleOpacity
-        }
-        
-        // Apply opacity to shaped frame
-        val shapedWithOpacity = if (opacity < 1.0f) {
-            shapedFrame.map { value ->
-                if (value > 0) {
-                    (value * opacity).toInt().coerceIn(0, 255)
-                } else 0
-            }.toIntArray()
-        } else {
-            shapedFrame.clone() // Return a copy at full brightness
-        }
-        
-        // Convert shaped data to flat array for the matrix display
-        return convertShapedToFlat(shapedWithOpacity)
+        // Don't apply brightness here - let getBrightness() handle it
+        // Just convert shaped data to flat array for the matrix display
+        return convertShapedToFlat(shapedFrame)
     }
     
     private fun convertShapedToFlat(shapedData: IntArray): IntArray {
@@ -114,182 +106,43 @@ class MinimalArrowTheme : TrackControlTheme(), TrackControlThemeSettingsProvider
     )
     
     private val rightArrowThin = intArrayOf(
-        // Row 0 (7 pixels)
-        0,0,0,0,0,0,0,
-        // Row 1 (11 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,
-        // Row 2 (15 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 3 (17 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 4 (19 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 5 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,
-        // Row 6 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,
-        // Row 7 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,
-        // Row 8 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,
-        // Row 9 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,0,0,0,0,0,0,
-        // Row 10 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,0,0,0,0,0,
-        // Row 11 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,
-        // Row 12 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,
-        // Row 13 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,
-        // Row 14 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,
-        // Row 15 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,
-        // Row 16 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 17 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 18 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 19 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 20 (19 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 21 (17 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 22 (15 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 23 (11 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,
-        // Row 24 (7 pixels)
-        0,0,0,0,0,0,0
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    )
+
+    private val rightArrowSkip = intArrayOf(
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
     )
     
     private fun getRightArrowFrame(style: String): IntArray {
         return when (style) {
+            "bold" -> rightArrowBold
             "thin" -> rightArrowThin
-            else -> rightArrowBold // Default to bold
+            else -> rightArrowSkip // Default
         }
     }
     
     // Left arrow frame in shaped format (489 pixels) with different styles
     private val leftArrowBold = intArrayOf(
-        // Row 0 (7 pixels)
-        0,0,0,0,0,0,0,
-        // Row 1 (11 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,
-        // Row 2 (15 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 3 (17 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 4 (19 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,
-        // Row 5 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,
-        // Row 6 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,
-        // Row 7 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,
-        // Row 8 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,
-        // Row 9 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,255,0,
-        // Row 10 (25 pixels)
-        0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,
-        // Row 11 (25 pixels)
-        0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,
-        // Row 12 (25 pixels)
-        0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,
-        // Row 13 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,0,0,0,0,
-        // Row 14 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,0,
-        // Row 15 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,0,0,
-        // Row 16 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,0,
-        // Row 17 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,
-        // Row 18 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,
-        // Row 19 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 20 (19 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 21 (17 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 22 (15 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 23 (11 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,
-        // Row 24 (7 pixels)
-        0,0,0,0,0,0,0
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
     )
     
     private val leftArrowThin = intArrayOf(
-        // Row 0 (7 pixels)
-        0,0,0,0,0,0,0,
-        // Row 1 (11 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,
-        // Row 2 (15 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 3 (17 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 4 (19 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 5 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,
-        // Row 6 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,
-        // Row 7 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,
-        // Row 8 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,
-        // Row 9 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,0,0,0,0,0,0,
-        // Row 10 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,
-        // Row 11 (25 pixels)
-        0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,
-        // Row 12 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,
-        // Row 13 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,
-        // Row 14 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,
-        // Row 15 (25 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,
-        // Row 16 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 17 (23 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 18 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 19 (21 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 20 (19 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 21 (17 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 22 (15 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        // Row 23 (11 pixels)
-        0,0,0,0,0,0,0,0,0,0,0,
-        // Row 24 (7 pixels)
-        0,0,0,0,0,0,0
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
     )
-    
+
+    private val leftArrowSkip = intArrayOf(
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    )
+
     private fun getLeftArrowFrame(style: String): IntArray {
         return when (style) {
+            "bold" -> leftArrowBold
             "thin" -> leftArrowThin
-            else -> leftArrowBold // Default to bold
+            else -> leftArrowSkip // Default
         }
     }
-    
-    override fun isAnimatedForState(state: InteractionState): Boolean = false
-    
-    override fun getBrightness(): Int = 255 // Full brightness for pre-baked frames
+
+    override fun getBrightness(): Int = (currentStateBrightness * 255).toInt() // Dynamic brightness based on state
     
     // Override preview to return flat array for UI display
     override fun getPreviewFrame(direction: Direction): IntArray {
@@ -318,45 +171,61 @@ class MinimalArrowTheme : TrackControlTheme(), TrackControlThemeSettingsProvider
                     id = "arrow_style",
                     displayName = "Arrow Style",
                     description = "Visual style of the arrow",
-                    defaultValue = "bold",
+                    defaultValue = "skip",
                     options = listOf(
+                        DropdownOption("skip", "Skip"),
                         DropdownOption("bold", "Bold"),
                         DropdownOption("thin", "Thin")
                     ),
                     category = "Visual"
                 ),
-                "pressed_opacity" to SliderSetting(
-                    id = "pressed_opacity",
-                    displayName = "Pressed Opacity",
-                    description = "Opacity when pressed",
-                    defaultValue = 100,
-                    minValue = 50,
-                    maxValue = 100,
-                    stepSize = 5,
-                    unit = "%",
-                    category = "Interaction"
-                )
+/*                "idle_brightness" to SliderSetting(
+                    id = "idle_brightness",
+                    displayName = "Idle Brightness",
+                    description = "Brightness when not pressed",
+                    defaultValue = 5,
+                    minValue = 1,
+                    maxValue = 10,
+                    stepSize = 1,
+                    unit = "x",
+                    category = "Visual"
+                ),
+                "pressed_brightness" to SliderSetting(
+                    id = "pressed_brightness",
+                    displayName = "Pressed Brightness",
+                    description = "Brightness when pressed",
+                    defaultValue = 10,
+                    minValue = 5,
+                    maxValue = 10,
+                    stepSize = 1,
+                    unit = "x",
+                    category = "Visual"
+                )*/
             )
         )
     }
     
     override fun applySettings(settings: ThemeSettings) {
         // Apply arrow style
-        settings.getTypedValue("arrow_style", "bold").let {
-            arrowStyle = (it as? String) ?: "bold"
+        settings.getTypedValue("arrow_style", "skip").let {
+            arrowStyle = (it as? String) ?: "skip"
         }
         
-        // Apply idle opacity (convert percentage to fraction)
-        settings.getTypedValue("idle_opacity", 50).let {
-            idleOpacity = ((it as? Number)?.toFloat() ?: 50f) / 100f
+        // Apply idle brightness (convert from 1-10 to 0.1-1.0 multiplier)
+        settings.getTypedValue("idle_brightness", 5).let {
+            idleBrightness = ((it as? Number)?.toFloat() ?: 5f) / 10f
+        }
+
+        // Apply pressed brightness (convert from 1-10 to 0.1-1.0 multiplier)
+        settings.getTypedValue("pressed_brightness", 10).let {
+            pressedBrightness = ((it as? Number)?.toFloat() ?: 10f) / 10f
         }
         
-        // Apply pressed opacity (convert percentage to fraction)
-        settings.getTypedValue("pressed_opacity", 100).let {
-            pressedOpacity = ((it as? Number)?.toFloat() ?: 100f) / 100f
-        }
-        
-        // Clear frame cache to regenerate with new settings
+        // Update current brightness to idle brightness (for proper initialization/restart)
+        currentStateBrightness = idleBrightness
+
+        // Clear frame caches to regenerate with new settings
         frameCache.clear()
+        postActionFrameCache.clear()
     }
 }

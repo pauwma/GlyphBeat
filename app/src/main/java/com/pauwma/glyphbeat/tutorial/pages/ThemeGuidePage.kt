@@ -134,8 +134,9 @@ fun ThemeGuidePage(
                         title = "Track Control",
                         description = "Playback feedback",
                         previewResIds = listOf(
+                            R.drawable.skip_arrow_preview,
                             R.drawable.minimal_arrow_preview,
-                            R.drawable.minimal_arrow_preview
+                            R.drawable.thin_arrow_preview
                         ),
                         modifier = Modifier.weight(1f),
                         customFont = customFont

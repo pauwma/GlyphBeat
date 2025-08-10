@@ -57,6 +57,11 @@ fun SettingsSlider(
             
             if (setting.showValue) {
                 val displayValue = when {
+                    setting.unit == "x" -> {
+                        // Special formatting for brightness multipliers
+                        val multiplier = currentValue.toFloat() / 10f
+                        String.format(java.util.Locale.ROOT, "%.1f", multiplier)
+                    }
                     setting.stepSize.toFloat() % 1 == 0f -> currentValue.toInt().toString()
                     else -> String.format(java.util.Locale.ROOT, "%.1f", currentValue.toFloat())
                 }
@@ -92,8 +97,16 @@ fun SettingsSlider(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val minLabel = when {
+                setting.unit == "x" -> {
+                    val multiplier = setting.minValue.toFloat() / 10f
+                    String.format(java.util.Locale.ROOT, "%.1fx", multiplier)
+                }
+                else -> setting.minValue.toString()
+            }
+            
             Text(
-                text = setting.minValue.toString(),
+                text = minLabel,
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontFamily = customFont,
                     fontSize = 10.sp
@@ -126,8 +139,16 @@ fun SettingsSlider(
                 )
             )
             
+            val maxLabel = when {
+                setting.unit == "x" -> {
+                    val multiplier = setting.maxValue.toFloat() / 10f
+                    String.format(java.util.Locale.ROOT, "%.1fx", multiplier)
+                }
+                else -> setting.maxValue.toString()
+            }
+            
             Text(
-                text = setting.maxValue.toString(),
+                text = maxLabel,
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontFamily = customFont,
                     fontSize = 10.sp

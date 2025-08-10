@@ -79,6 +79,18 @@ class NextTrackToyService : GlyphMatrixService("NextTrack-Toy") {
                 updateDisplay(currentState)
             }
         }
+        
+        // Observe settings changes
+        serviceScope.launch {
+            themeManager.settingsChangedFlow.collect { settingsChange ->
+                if (settingsChange != null) {
+                    Log.d(TAG, "Settings changed for theme: ${settingsChange.first}")
+                    // Clear cache and update display with new settings
+                    currentFrameIndex = 0
+                    updateDisplay(currentState)
+                }
+            }
+        }
     }
     
     override fun performOnServiceDisconnected(context: Context) {
@@ -92,12 +104,7 @@ class NextTrackToyService : GlyphMatrixService("NextTrack-Toy") {
         serviceScope.cancel()
         uiScope.cancel()
     }
-    
-    override fun onTouchPointPressed() {
-        Log.d(TAG, "Touch pressed")
-        //updateState(TrackControlTheme.InteractionState.PRESSED)
-    }
-    
+
     override fun onTouchPointLongPress() {
         Log.d(TAG, "Long press detected - triggering next track")
         
@@ -113,6 +120,27 @@ class NextTrackToyService : GlyphMatrixService("NextTrack-Toy") {
                     
                     // Keep visual feedback for a moment
                     delay(LONG_PRESS_FEEDBACK_DURATION)
+                    
+                    // Check if theme has post-action animation
+                    val theme = themeManager.currentTheme
+                    if (theme.hasPostActionAnimation()) {
+                        Log.d(TAG, "Starting post-action animation")
+                        
+                        // Optional delay before post-action
+                        val postActionDelay = theme.getPostActionDelay()
+                        if (postActionDelay > 0) {
+                            delay(postActionDelay)
+                        }
+                        
+                        // Switch to post-action state
+                        updateState(TrackControlTheme.InteractionState.POST_ACTION)
+                        
+                        // Wait for post-action animation to complete
+                        val frameCount = theme.getPostActionFrameCount()
+                        val animationSpeed = theme.getPostActionAnimationSpeed()
+                        val totalDuration = frameCount * animationSpeed
+                        delay(totalDuration)
+                    }
                 } else {
                     Log.w(TAG, "Failed to trigger next track")
                 }
