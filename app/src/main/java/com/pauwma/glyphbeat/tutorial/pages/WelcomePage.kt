@@ -71,7 +71,7 @@ fun WelcomePage(
                     .background(Color.Black)
             ) {
                 Image(
-                    imageVector = ImageVector.vectorResource(id = R.drawable.glyph_beat_thumbnail),
+                    imageVector = ImageVector.vectorResource(id = R.drawable.media_player_track_toy_icon),
                     contentDescription = "Glyph Beat Logo",
                     modifier = Modifier
                         .fillMaxSize()
