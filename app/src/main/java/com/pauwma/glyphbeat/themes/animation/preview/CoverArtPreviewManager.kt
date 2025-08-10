@@ -193,7 +193,7 @@ class CoverArtPreviewManager(private val context: Context) {
             val safeRotationAngle = atomicRotationAngle.get()
             
             // For rotation, we always need to regenerate the frame
-            val isRotating = settings?.getToggleValue("enable_rotation", false) == true && rotationJob != null
+            val isRotating = rotationJob != null && settings?.getToggleValue("enable_rotation", false) != false
             
             // Check if we need to update the cached frame
             val needsUpdate = trackInfo?.title != cachedTrackTitle || 
@@ -224,9 +224,10 @@ class CoverArtPreviewManager(private val context: Context) {
                     }
                     
                     // Convert to frame data with current rotation
+                    // Use rotation angle if rotation is active, even if settings say false (during transition)
                     renderer.bitmapToPreviewFrame(
                         bitmap = previewBitmap,
-                        rotation = if (settings?.getToggleValue("enable_rotation", false) == true) {
+                        rotation = if (isRotating || settings?.getToggleValue("enable_rotation", false) == true) {
                             safeRotationAngle
                         } else {
                             0f
