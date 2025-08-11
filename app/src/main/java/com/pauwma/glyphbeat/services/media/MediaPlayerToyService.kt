@@ -244,8 +244,15 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                             pausedFrameIndex = currentFrameIndex
                             Log.d(LOG_TAG, "Animation paused at frame $pausedFrameIndex")
                         } else if (previousState == PlayerState.PAUSED && newPlayerState == PlayerState.PLAYING) {
-                            currentFrameIndex = pausedFrameIndex
-                            Log.d(LOG_TAG, "Animation resumed from frame $currentFrameIndex")
+                            // Reset animation to include opening sequence when resuming
+                            if (isUsingTransitions) {
+                                frameTransitionSequence?.reset(includeOpening = true)
+                                currentFrameIndex = frameTransitionSequence?.getCurrentFrameIndex() ?: 0
+                                Log.d(LOG_TAG, "Animation reset to opening sequence")
+                            } else {
+                                currentFrameIndex = 0 // Start from beginning for non-transition themes
+                                Log.d(LOG_TAG, "Animation reset to frame 0")
+                            }
                         }
                         
                         Log.d(LOG_TAG, "State change detected: $previousState -> $newPlayerState (playing: $currentlyPlaying)")
@@ -570,8 +577,15 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             pausedFrameIndex = currentFrameIndex
             Log.d(LOG_TAG, "Predicted animation pause at frame $pausedFrameIndex")
         } else if (currentPlayerState == PlayerState.PAUSED && newState == PlayerState.PLAYING) {
-            currentFrameIndex = pausedFrameIndex
-            Log.d(LOG_TAG, "Predicted animation resume from frame $currentFrameIndex")
+            // Reset animation to include opening sequence when resuming
+            if (isUsingTransitions) {
+                frameTransitionSequence?.reset(includeOpening = true)
+                currentFrameIndex = frameTransitionSequence?.getCurrentFrameIndex() ?: 0
+                Log.d(LOG_TAG, "Predicted animation reset to opening sequence")
+            } else {
+                currentFrameIndex = 0 // Start from beginning for non-transition themes
+                Log.d(LOG_TAG, "Predicted animation reset to frame 0")
+            }
         }
         
         // Update current state for immediate effect (will be validated later)
@@ -734,6 +748,14 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                             (currentTheme as? ThemeSettingsProvider)?.applySettings(settings)
                             cachedThemeSettings = settings
                             
+                            // Recreate transition sequence if theme uses transitions
+                            // This ensures animation style changes take effect immediately
+                            val theme = currentTheme
+                            if (theme is AnimationTheme) {
+                                initializeThemeTransitions(theme)
+                                Log.d(LOG_TAG, "Recreated transition sequence after settings update")
+                            }
+                            
                             Log.i(LOG_TAG, "Applied real-time settings update to current theme: $themeId")
                             logThemeSettings(themeId, settings)
                         } else {
@@ -801,6 +823,13 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     Log.d(LOG_TAG, "Settings changed detected via fallback check for theme: $themeId")
                     theme.applySettings(latestSettings)
                     cachedThemeSettings = latestSettings
+                    
+                    // Recreate transition sequence if theme uses transitions
+                    if (theme is AnimationTheme) {
+                        initializeThemeTransitions(theme)
+                        Log.d(LOG_TAG, "Recreated transition sequence after fallback settings update")
+                    }
+                    
                     logThemeSettings(themeId, latestSettings)
                 }
             }

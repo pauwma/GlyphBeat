@@ -37,11 +37,21 @@ data class FrameTransition(
  */
 class FrameTransitionSequence(
     private val transitions: List<FrameTransition>,
-    private val maxFrameCount: Int
+    private val maxFrameCount: Int,
+    private val openingTransitions: List<FrameTransition>? = null
 ) {
     private var currentTransitionIndex = 0
     private var currentRepetition = 0
     private var isShowingFromFrame = true // true = from frame, false = to frame
+    private var isInOpeningSequence = openingTransitions != null
+    
+    // Get the current active transitions list
+    private val activeTransitions: List<FrameTransition>
+        get() = if (isInOpeningSequence && openingTransitions != null) {
+            openingTransitions
+        } else {
+            transitions
+        }
     
     init {
         require(transitions.isNotEmpty()) { "Transition sequence cannot be empty" }
@@ -55,13 +65,23 @@ class FrameTransitionSequence(
                 "To frame index ${transition.toFrameIndex} is out of bounds (max: ${maxFrameCount - 1})"
             }
         }
+        
+        // Validate opening transitions if present
+        openingTransitions?.forEach { transition ->
+            require(transition.fromFrameIndex < maxFrameCount) {
+                "Opening from frame index ${transition.fromFrameIndex} is out of bounds (max: ${maxFrameCount - 1})"
+            }
+            require(transition.toFrameIndex < maxFrameCount) {
+                "Opening to frame index ${transition.toFrameIndex} is out of bounds (max: ${maxFrameCount - 1})"
+            }
+        }
     }
     
     /**
      * Get the current frame index to display.
      */
     fun getCurrentFrameIndex(): Int {
-        val currentTransition = transitions[currentTransitionIndex]
+        val currentTransition = activeTransitions[currentTransitionIndex]
         return if (isShowingFromFrame) {
             currentTransition.fromFrameIndex
         } else {
@@ -73,7 +93,7 @@ class FrameTransitionSequence(
      * Get the duration for the current frame.
      */
     fun getCurrentDuration(): Long {
-        return transitions[currentTransitionIndex].transitionDuration
+        return activeTransitions[currentTransitionIndex].transitionDuration
     }
     
     /**
@@ -81,7 +101,7 @@ class FrameTransitionSequence(
      * Returns true if sequence continues, false if it should loop back to start.
      */
     fun advance(): Boolean {
-        val currentTransition = transitions[currentTransitionIndex]
+        val currentTransition = activeTransitions[currentTransitionIndex]
         
         // Toggle between from and to frame
         if (isShowingFromFrame) {
@@ -95,10 +115,20 @@ class FrameTransitionSequence(
                 currentRepetition = 0
                 currentTransitionIndex++
                 
-                // Check if we've completed all transitions
-                if (currentTransitionIndex >= transitions.size) {
-                    currentTransitionIndex = 0
-                    return false // Indicates loop completion
+                // Check if we've completed all transitions in current sequence
+                if (currentTransitionIndex >= activeTransitions.size) {
+                    if (isInOpeningSequence) {
+                        // Switch from opening to main loop
+                        isInOpeningSequence = false
+                        currentTransitionIndex = 0
+                        currentRepetition = 0
+                        isShowingFromFrame = true
+                        return true // Continue with main loop
+                    } else {
+                        // Loop main transitions
+                        currentTransitionIndex = 0
+                        return false // Indicates main loop completion
+                    }
                 }
             }
         }
@@ -108,19 +138,26 @@ class FrameTransitionSequence(
     
     /**
      * Reset the sequence to the beginning.
+     * @param includeOpening If true and opening transitions exist, restart from opening sequence
      */
-    fun reset() {
+    fun reset(includeOpening: Boolean = false) {
         currentTransitionIndex = 0
         currentRepetition = 0
         isShowingFromFrame = true
+        
+        // Reset to opening sequence if requested and available
+        if (includeOpening && openingTransitions != null) {
+            isInOpeningSequence = true
+        }
     }
     
     /**
      * Get information about the current state for debugging.
      */
     fun getDebugInfo(): String {
-        val currentTransition = transitions[currentTransitionIndex]
-        return "Transition ${currentTransitionIndex + 1}/${transitions.size}: " +
+        val currentTransition = activeTransitions[currentTransitionIndex]
+        val sequenceType = if (isInOpeningSequence) "Opening" else "Main"
+        return "$sequenceType Transition ${currentTransitionIndex + 1}/${activeTransitions.size}: " +
                 "F${currentTransition.fromFrameIndex}→F${currentTransition.toFrameIndex} " +
                 "(${currentRepetition + 1}/${currentTransition.repetitions}) " +
                 "showing ${if (isShowingFromFrame) "from" else "to"} frame"
@@ -321,6 +358,21 @@ open class ThemeTemplate() : AnimationTheme() {
      * )
      */
     protected open val frameTransitions: List<FrameTransition>? = null
+    
+    /**
+     * Optional opening/intro animation transitions that play once at startup.
+     * After these complete, the main frameTransitions will loop continuously.
+     * If null, animation starts directly with frameTransitions or regular frames.
+     * 
+     * EXAMPLE: Eye opening animation before main dance loop
+     * openingTransitions = listOf(
+     *     FrameTransition(0, 1, 1, 50L),  // Closed to slightly open
+     *     FrameTransition(1, 2, 1, 50L),  // Opening more
+     *     FrameTransition(2, 3, 1, 50L),  // Fully open
+     *     FrameTransition(3, 3, 5, 200L)  // Hold open before starting main loop
+     * )
+     */
+    protected open val openingTransitions: List<FrameTransition>? = null
     
     /**
      * Default brightness level for the entire theme.
@@ -822,7 +874,7 @@ open class ThemeTemplate() : AnimationTheme() {
         val transitions = this.frameTransitions ?: throw IllegalStateException(
             "Theme ${getThemeName()} does not use frame transitions"
         )
-        return FrameTransitionSequence(transitions, getFrameCount())
+        return FrameTransitionSequence(transitions, getFrameCount(), this.openingTransitions)
     }
 
     // Note: All getter methods are automatically generated from the properties above

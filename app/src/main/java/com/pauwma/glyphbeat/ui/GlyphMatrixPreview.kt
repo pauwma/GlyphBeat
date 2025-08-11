@@ -21,6 +21,7 @@ import com.pauwma.glyphbeat.themes.base.FrameTransitionSequence
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.ui.components.EnhancedCoverArtPreview
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
+import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
 import com.pauwma.glyphbeat.sound.MediaControlHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -61,12 +62,19 @@ fun GlyphMatrixPreview(
     var mediaTrigger by remember { mutableIntStateOf(0) }
     
     // Initialize transition sequence if theme uses frame transitions
-    LaunchedEffect(theme) {
+    // Recreate when theme or settings change to support live updates
+    LaunchedEffect(theme, settings) {
         transitionSequence = if (theme is ThemeTemplate && theme.hasFrameTransitions()) {
+            // Apply settings first to ensure transitions reflect current configuration
+            if (theme is ThemeSettingsProvider && settings != null) {
+                theme.applySettings(settings)
+            }
             theme.createTransitionSequence()
         } else {
             null
         }
+        // Reset frame to beginning when transitions change
+        currentFrame = 0
     }
     
     // Animation logic - OPTIMIZED to prevent ANR
@@ -116,8 +124,18 @@ fun GlyphMatrixPreview(
                 }
             }
         } else {
-            // Unselected themes show static first frame
-            currentFrame = 0
+            // Unselected themes show static preview frame
+            // Check if theme has a custom preview frame index
+            currentFrame = try {
+                // Try to get previewFrameIndex property if it exists
+                val previewIndexField = theme.javaClass.getDeclaredField("previewFrameIndex")
+                previewIndexField.isAccessible = true
+                val index = previewIndexField.get(theme) as? Int
+                index?.coerceIn(0, theme.getFrameCount() - 1) ?: 0
+            } catch (e: Exception) {
+                // Default to first frame if property doesn't exist
+                0
+            }
         }
     }
     

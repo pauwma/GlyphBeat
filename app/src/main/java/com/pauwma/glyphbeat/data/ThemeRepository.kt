@@ -10,6 +10,7 @@ import com.pauwma.glyphbeat.themes.animation.VinylTheme
 import com.pauwma.glyphbeat.themes.animation.DancingDuckTheme
 import com.pauwma.glyphbeat.themes.animation.ShapeTheme
 import com.pauwma.glyphbeat.themes.animation.CoverArtTheme
+import com.pauwma.glyphbeat.themes.animation.GlyphyTheme
 import com.pauwma.glyphbeat.themes.animation.MinimalTheme
 import com.pauwma.glyphbeat.themes.animation.PulseVisualizerTheme
 import com.pauwma.glyphbeat.themes.animation.WaveformTheme
@@ -59,6 +60,7 @@ class ThemeRepository private constructor(private val context: Context) {
         CoverArtTheme(context),
         MinimalTheme(),
         ShapeTheme(),
+        GlyphyTheme(),
         PulseVisualizerTheme(),
         WaveformTheme()
     )
