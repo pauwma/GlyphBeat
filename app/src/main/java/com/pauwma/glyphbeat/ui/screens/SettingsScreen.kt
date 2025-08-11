@@ -445,8 +445,7 @@ fun SettingsScreen(
             )
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(16.dp)
             ) {
                 Text(
                     text = "Notification Access",
@@ -458,23 +457,27 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "Required to detect and control music playback from apps like Spotify, YouTube Music, etc.",
+                    text = "Required to detect and control music playback from apps like Spotify, YouTube Music, etc",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp)
                 )
 
 
                 if (notificationAccessGranted && !mediaServiceWorking) {
                     Text(
-                        text = "The notification listener service may need to be restarted. Try toggling the permission off and on in settings.",
+                        text = "The notification listener service may need to be restarted. Try toggling the permission off and on in settings",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
 
                 // Button row for permission actions
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -578,6 +581,67 @@ fun SettingsScreen(
         }
 
 
+        // Glyph Interface Settings Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF1A1A1A)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Glyph Interface Settings",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = customFont
+                    ),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Text(
+                    text = "Access Glyph Toys configuration",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                // Glyph Toys button
+                Button(
+                    onClick = {
+                        try {
+                            val intent = Intent().apply {
+                                component = android.content.ComponentName(
+                                    "com.nothing.thirdparty",
+                                    "com.nothing.thirdparty.matrix.toys.preview.ToysPreviewActivity"
+                                )
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                            Log.d("SettingsScreen", "Opened Glyph Toys preview")
+                        } catch (e: Exception) {
+                            Log.e("SettingsScreen", "Failed to open Glyph Toys: ${e.message}")
+                            try {
+                                // Fallback to general settings
+                                val fallbackIntent = Intent(android.provider.Settings.ACTION_SETTINGS)
+                                context.startActivity(fallbackIntent)
+                            } catch (e2: Exception) {
+                                Log.e("SettingsScreen", "Failed to open settings: ${e2.message}")
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                ) {
+                    Text("Glyph Toys")
+                }
+            }
+        }
+
         // Shake Control Card
         Card(
             modifier = Modifier
@@ -616,7 +680,7 @@ fun SettingsScreen(
                         )
 
                         Text(
-                            text = "Skip to the next track with a shake gesture.",
+                            text = "Skip to the next track with a shake gesture",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )
@@ -891,8 +955,7 @@ fun SettingsScreen(
             )
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(16.dp)
             ) {
                 Text(
                     text = "Bug Report & Support",
@@ -904,9 +967,10 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "Found a bug or need help? Send me a message and I'll get back to you.",
+                    text = "Found a bug or need help? Contact me for support",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp)
                 )
 
                 Button(
@@ -937,7 +1001,9 @@ fun SettingsScreen(
                             context.startActivity(fallbackIntent)
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Mail,
@@ -960,8 +1026,7 @@ fun SettingsScreen(
             )
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(16.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -989,10 +1054,11 @@ fun SettingsScreen(
                            "consider buying me a coffee! Every contribution, no matter how small, makes a real " +
                            "difference and keeps me motivated. Thank you for being awesome! 🎵",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp)
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Main donation button
                 Button(
@@ -1058,8 +1124,7 @@ fun SettingsScreen(
             )
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(16.dp)
             ) {
                 Text(
                     text = "Tutorial",
@@ -1073,7 +1138,8 @@ fun SettingsScreen(
                 Text(
                     text = "View the app introduction and setup guide again",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp)
                 )
                 
                 Button(
@@ -1083,7 +1149,9 @@ fun SettingsScreen(
                         val intent = Intent(context, com.pauwma.glyphbeat.tutorial.TutorialActivity::class.java)
                         context.startActivity(intent)
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = com.pauwma.glyphbeat.theme.NothingRed
                     )
@@ -1109,8 +1177,7 @@ fun SettingsScreen(
             )
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(16.dp)
             ) {
                 Text(
                     text = "App Information",
@@ -1124,10 +1191,12 @@ fun SettingsScreen(
                 Text(
                     text = "GlyphBeat - Animated Media Player Toy for Glyph Matrix",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp)
                 )
 
                 ClickableText(
+                    modifier = Modifier.padding(top = 8.dp),
                     text = buildAnnotatedString {
                         append("Version: 1.0.0 - ")
                         pushStringAnnotation(tag = "URL", annotation = "https://privacidad.me/@pauwma")
