@@ -26,10 +26,12 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Bento
 import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.MusicOff
+import androidx.compose.material.icons.filled.Pix
 import androidx.compose.material3.*
 import androidx.compose.ui.draw.rotate
 import androidx.compose.runtime.*
@@ -637,6 +639,12 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .padding(top = 12.dp)
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Pix,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Glyph Toys")
                 }
             }
