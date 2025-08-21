@@ -344,6 +344,7 @@ fun SettingsScreen(
     var shakeEnabled by remember { mutableStateOf(false) }
     var shakeSensitivity by remember { mutableStateOf(ShakeDetector.SENSITIVITY_MEDIUM) }
     var shakeSkipWhenPaused by remember { mutableStateOf(false) }
+    var shakeSkipWhenUnlocked by remember { mutableStateOf(false) }
     var hapticFeedbackWhenShaked by remember { mutableStateOf(true) }
     var skipDelay by remember { mutableStateOf(3500L) }
     // Use rememberSaveable to persist collapse state during navigation, but defaults to false on app restart
@@ -364,6 +365,7 @@ fun SettingsScreen(
             shakeEnabled = prefs.getBoolean("shake_to_skip_enabled", false)
             shakeSensitivity = prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM)
             shakeSkipWhenPaused = prefs.getBoolean("shake_skip_when_paused", false)
+            shakeSkipWhenUnlocked = prefs.getBoolean("shake_skip_when_unlocked", false)
             hapticFeedbackWhenShaked = prefs.getBoolean("haptic_feedback_when_shaked", true)
             skipDelay = prefs.getLong("shake_skip_delay", 3500L)
         }
@@ -914,6 +916,40 @@ fun SettingsScreen(
                         }
                     }
 
+                        // Skip when paused toggle
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = "Skip when unlocked",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onBackground
+                                    )
+                                    Text(
+                                        text = "Allow shake to skip when phone is unlocked",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                                    )
+                                }
+
+                                Switch(
+                                    checked = shakeSkipWhenUnlocked,
+                                    onCheckedChange = { enabled ->
+                                        shakeSkipWhenUnlocked = enabled
+                                        prefs.edit().putBoolean("shake_skip_when_unlocked", enabled).apply()
+                                        Log.d("SettingsScreen", "Skip when unlocked: $enabled")
+                                    }
+                                )
+                            }
+                        }
                     // Skip when paused toggle
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)

@@ -1,33 +1,31 @@
 package com.pauwma.glyphbeat.services.media
 
-import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
-
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
-import com.nothing.ketchum.GlyphMatrixFrame
-import com.nothing.ketchum.GlyphMatrixObject
+import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
+import com.pauwma.glyphbeat.data.ThemeRepository
 import com.pauwma.glyphbeat.services.GlyphMatrixService
-import com.pauwma.glyphbeat.themes.base.AnimationTheme
-import com.pauwma.glyphbeat.themes.base.ThemeTemplate
-import com.pauwma.glyphbeat.themes.base.FrameTransitionSequence
+import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import com.pauwma.glyphbeat.sound.AudioAnalyzer
 import com.pauwma.glyphbeat.sound.AudioData
-import com.pauwma.glyphbeat.themes.base.AudioReactiveTheme
 import com.pauwma.glyphbeat.sound.MediaControlHelper
 import com.pauwma.glyphbeat.themes.animation.ScrollTheme
-import com.pauwma.glyphbeat.data.ThemeRepository
+import com.pauwma.glyphbeat.themes.base.AnimationTheme
+import com.pauwma.glyphbeat.themes.base.AudioReactiveTheme
+import com.pauwma.glyphbeat.themes.base.FrameTransitionSequence
+import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
-import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.collect
+
 
 /**
  * Enhanced Media Player Toy Service with optimized state change detection
@@ -911,6 +909,22 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             }
 
             Log.d(LOG_TAG, "Media is paused but skip when paused is enabled - proceeding with skip")
+        }
+
+        val myKM = applicationContext.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+        val isPhoneLocked = myKM.inKeyguardRestrictedInputMode()
+
+        // Check if phone is unlocked and whether we should skip when unlocked
+        if (!isPhoneLocked) {
+            val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+            val skipWhenUnlocked = prefs.getBoolean("shake_skip_when_unlocked", false)
+
+            if (!skipWhenUnlocked) {
+                Log.d(LOG_TAG, "Phone is unlocked and skip when unlocked is disabled - ignoring shake")
+                return
+            }
+
+            Log.d(LOG_TAG, "Phone is unlocked but skip when unlocked is enabled - proceeding with skip")
         }
 
         // Proceed with skip
