@@ -16,6 +16,7 @@ import com.pauwma.glyphbeat.sound.AudioAnalyzer
 import com.pauwma.glyphbeat.sound.AudioData
 import com.pauwma.glyphbeat.themes.base.AudioReactiveTheme
 import com.pauwma.glyphbeat.sound.MediaControlHelper
+import com.pauwma.glyphbeat.themes.animation.ScrollTheme
 import com.pauwma.glyphbeat.data.ThemeRepository
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
@@ -244,13 +245,15 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                             pausedFrameIndex = currentFrameIndex
                             Log.d(LOG_TAG, "Animation paused at frame $pausedFrameIndex")
                         } else if (previousState == PlayerState.PAUSED && newPlayerState == PlayerState.PLAYING) {
+                            // Handle ScrollTheme resume
+                            (currentTheme as? ScrollTheme)?.resumeScrolling()
                             // Reset animation to include opening sequence when resuming
                             if (isUsingTransitions) {
                                 frameTransitionSequence?.reset(includeOpening = true)
                                 currentFrameIndex = frameTransitionSequence?.getCurrentFrameIndex() ?: 0
                                 Log.d(LOG_TAG, "Animation reset to opening sequence")
-                            } else {
-                                currentFrameIndex = 0 // Start from beginning for non-transition themes
+                            } else if (currentTheme !is ScrollTheme) {
+                                currentFrameIndex = 0 // Start from beginning for non-transition themes (except ScrollTheme)
                                 Log.d(LOG_TAG, "Animation reset to frame 0")
                             }
                         }
@@ -299,10 +302,17 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 // Check if theme was changed and update current theme
                 val selectedTheme = themeRepository.selectedTheme
                 if (currentTheme?.getThemeName() != selectedTheme.getThemeName()) {
+                    // Deactivate old theme
+                    (currentTheme as? ScrollTheme)?.onDeactivate()
+                    
                     currentTheme = selectedTheme
                     initializeThemeTransitions(selectedTheme)
                     initializeThemeSettings(selectedTheme) // Apply settings to new theme
                     logThemeInfo(currentTheme)
+                    
+                    // Activate new theme
+                    (currentTheme as? ScrollTheme)?.onActivate()
+                    
                     Log.d(LOG_TAG, "Theme changed to: ${currentTheme?.getThemeName()}")
                 }
 
