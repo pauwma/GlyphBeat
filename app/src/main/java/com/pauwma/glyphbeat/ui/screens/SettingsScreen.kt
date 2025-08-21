@@ -1242,7 +1242,7 @@ fun SettingsScreen(
                 ClickableText(
                     modifier = Modifier.padding(top = 8.dp),
                     text = buildAnnotatedString {
-                        append("Version: 1.0.0 - ")
+                        append("Version: 1.1.0 - ")
                         pushStringAnnotation(tag = "URL", annotation = "https://privacidad.me/@pauwma")
                         withStyle(
                             style = SpanStyle(
