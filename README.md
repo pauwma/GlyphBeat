@@ -7,8 +7,8 @@
 [![Privacy Policy](https://img.shields.io/badge/Privacy-Policy-blue?style=for-the-badge)](https://pauwma.github.io/GlyphBeat/privacy.html)
 
 ## 🌟 Overview
-
 **Glyph Beat** brings your Nothing Phone's Glyph interface to life with beautiful, custom and music-reactive animations. Watch as your device's LED matrix dances to the rhythm of your favorite songs, creating a unique visual experience that's perfectly synchronized with your music.
+<img width="1920" height="1080" alt="unnamed" src="https://github.com/user-attachments/assets/921ea196-97eb-4eff-b774-0fb7b2504cb0" />
 
 ### 🎯 Key Features
 
