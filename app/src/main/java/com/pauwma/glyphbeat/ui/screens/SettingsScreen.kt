@@ -1223,7 +1223,7 @@ fun SettingsScreen(
                     ),
                     onClick = { offset ->
                         val annotations = buildAnnotatedString {
-                            append("Version: 1.0.0 - ")
+                            append("Version: 1.1.0 - ")
                             pushStringAnnotation(tag = "URL", annotation = "https://privacidad.me/@pauwma")
                             append("pauwma")
                             pop()

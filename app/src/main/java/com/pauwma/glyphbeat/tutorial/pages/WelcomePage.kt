@@ -101,7 +101,7 @@ fun WelcomePage(
                 )
                 
                 Text(
-                    text = "Version 1.0",
+                    text = "Version 1.1.0",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
