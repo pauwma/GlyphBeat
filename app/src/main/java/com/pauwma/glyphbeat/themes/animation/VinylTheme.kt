@@ -240,7 +240,7 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
                 minValue = 0.1f,
                 maxValue = 1.0f,
                 stepSize = 0.1f,
-                unit = "x",
+                unit = null,
                 category = SettingCategories.VISUAL
             )
             .build()

@@ -81,12 +81,17 @@ fun PillNavigationBar(
         modifier = modifier
             .fillMaxWidth()
             .background(Color.Transparent)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = { /* Consume clicks to prevent passthrough */ }
+            )
     ) {
         // Blur gradient overlay behind the navigation bar - full width
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp)
+                .height(100.dp)
                 .align(Alignment.BottomCenter)
                 .blur(radius = 30.dp)
                 .background(
@@ -107,7 +112,7 @@ fun PillNavigationBar(
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .windowInsetsPadding(WindowInsets.navigationBars) // Proper system navigation bar padding
-                .padding(horizontal = 24.dp, vertical = 12.dp),
+                .padding(horizontal = 24.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -122,7 +127,7 @@ fun PillNavigationBar(
                     )
                     .clip(RoundedCornerShape(32.dp))
                     .background(Color(0xFF1A1A1A))
-                    .padding(horizontal = 6.dp, vertical = 8.dp),
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {

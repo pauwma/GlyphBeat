@@ -681,7 +681,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
                 minValue = 0.1f,
                 maxValue = 1.0f,
                 stepSize = 0.1f,
-                unit = "x",
+                unit = null,
                 category = SettingCategories.VISUAL
             )
             .addToggleSetting(

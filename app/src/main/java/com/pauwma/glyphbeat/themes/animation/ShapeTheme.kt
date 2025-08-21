@@ -350,7 +350,7 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
                 minValue = 0.1f,
                 maxValue = 1.0f,
                 stepSize = 0.1f,
-                unit = "x",
+                unit = null,
                 category = SettingCategories.VISUAL,
                 showValue = true
             )
@@ -358,11 +358,11 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
                 id = "paused_opacity",
                 displayName = "Paused Opacity",
                 description = "How dim the pattern gets when paused",
-                defaultValue = 50,
-                minValue = 10,
-                maxValue = 100,
-                stepSize = 5,
-                unit = "%",
+                defaultValue = 0.5f,
+                minValue = 0.1f,
+                maxValue = 1.0f,
+                stepSize = 0.1f,
+                unit = null,
                 category = SettingCategories.VISUAL,
                 showValue = true
             )
@@ -374,9 +374,9 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
         val brightnessMultiplier = settings.getSliderValueFloat(CommonSettingIds.BRIGHTNESS, 1.0f)
         currentBrightness = (brightnessMultiplier * 255).toInt().coerceIn(0, 255)
         
-        // Apply paused opacity setting (convert percentage to float)
-        val opacityPercent = settings.getSliderValueInt("paused_opacity", 50)
-        pausedOpacity = (opacityPercent / 100.0f).coerceIn(0.1f, 1.0f)
+        // Apply paused opacity setting
+        pausedOpacity = settings.getSliderValueFloat("paused_opacity", 0.5f)
+            .coerceIn(0.1f, 1.0f)
         
         // Apply pattern style setting
         currentPatternStyle = settings.getDropdownValue("pattern_style", "cross")

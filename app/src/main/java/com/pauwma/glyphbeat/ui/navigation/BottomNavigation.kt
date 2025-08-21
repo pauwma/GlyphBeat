@@ -53,7 +53,7 @@ val bottomNavItems = listOf(
  * Bottom navigation bar component.
  */
 @Composable
-fun GlyphBeatBottomNavigation(
+fun GlyphBeatBott2omNavigation(
     navController: NavController
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()

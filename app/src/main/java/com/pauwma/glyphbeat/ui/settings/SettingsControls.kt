@@ -59,7 +59,7 @@ fun SettingsSlider(
                 val displayValue = when {
                     setting.unit == "x" -> {
                         // Special formatting for brightness multipliers
-                        val multiplier = currentValue.toFloat() / 10f
+                        val multiplier = currentValue.toFloat()
                         String.format(java.util.Locale.ROOT, "%.1f", multiplier)
                     }
                     setting.stepSize.toFloat() % 1 == 0f -> currentValue.toInt().toString()
@@ -99,7 +99,7 @@ fun SettingsSlider(
         ) {
             val minLabel = when {
                 setting.unit == "x" -> {
-                    val multiplier = setting.minValue.toFloat() / 10f
+                    val multiplier = setting.minValue.toFloat()
                     String.format(java.util.Locale.ROOT, "%.1fx", multiplier)
                 }
                 else -> setting.minValue.toString()
@@ -141,7 +141,7 @@ fun SettingsSlider(
             
             val maxLabel = when {
                 setting.unit == "x" -> {
-                    val multiplier = setting.maxValue.toFloat() / 10f
+                    val multiplier = setting.maxValue.toFloat()
                     String.format(java.util.Locale.ROOT, "%.1fx", multiplier)
                 }
                 else -> setting.maxValue.toString()
