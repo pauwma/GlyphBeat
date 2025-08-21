@@ -244,6 +244,8 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                         if (previousState == PlayerState.PLAYING && newPlayerState == PlayerState.PAUSED) {
                             pausedFrameIndex = currentFrameIndex
                             Log.d(LOG_TAG, "Animation paused at frame $pausedFrameIndex")
+                            // Handle ScrollTheme pause
+                            (currentTheme as? ScrollTheme)?.onPause()
                         } else if (previousState == PlayerState.PAUSED && newPlayerState == PlayerState.PLAYING) {
                             // Handle ScrollTheme resume
                             (currentTheme as? ScrollTheme)?.resumeScrolling()
