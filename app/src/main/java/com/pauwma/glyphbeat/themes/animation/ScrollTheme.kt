@@ -370,6 +370,31 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
                 ),
                 category = SettingCategories.ANIMATION
             )
+            .addToggleSetting(
+                id = "show_artist",
+                displayName = "Show Artist",
+                description = "Display artist name",
+                defaultValue = true,
+                category = SettingCategories.DESIGN
+            )
+            .addToggleSetting(
+                id = "show_album",
+                displayName = "Show Album",
+                description = "Display album name",
+                defaultValue = false,
+                category = SettingCategories.DESIGN
+            )
+            .addSliderSetting(
+                id = "text_spacing",
+                displayName = "Character Spacing",
+                description = "Space between characters",
+                defaultValue = 1,
+                minValue = 1,
+                maxValue = 5,
+                stepSize = 1,
+                unit = "px",
+                category = SettingCategories.DESIGN
+            )
             .addSliderSetting(
                 id = "brightness",
                 displayName = "Brightness",
@@ -388,31 +413,6 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
                 minValue = 0.1f,
                 maxValue = 0.8f,
                 stepSize = 0.1f,
-                category = SettingCategories.VISUAL
-            )
-            .addToggleSetting(
-                id = "show_artist",
-                displayName = "Show Artist",
-                description = "Display artist name",
-                defaultValue = true,
-                category = SettingCategories.VISUAL
-            )
-            .addToggleSetting(
-                id = "show_album",
-                displayName = "Show Album",
-                description = "Display album name",
-                defaultValue = false,
-                category = SettingCategories.VISUAL
-            )
-            .addSliderSetting(
-                id = "text_spacing",
-                displayName = "Character Spacing",
-                description = "Space between characters",
-                defaultValue = 1,
-                minValue = 1,
-                maxValue = 5,
-                stepSize = 1,
-                unit = "px",
                 category = SettingCategories.VISUAL
             )
             .build()

@@ -183,15 +183,13 @@ class ThemeSettingsBuilder(private val themeId: String) {
  */
 object SettingCategories {
     const val ANIMATION = "Animation"
+    const val DESIGN = "Design"
     const val LAYOUT = "Layout"
     const val VISUAL = "Visual"
     const val TIMING = "Timing"
     const val BEHAVIOR = "Behavior"
     const val EFFECTS = "Effects"
-    const val COLORS = "Colors"
     const val AUDIO = "Audio"
-    const val ADVANCED = "Advanced"
-    const val GENERAL = "General"
 }
 
 /**
