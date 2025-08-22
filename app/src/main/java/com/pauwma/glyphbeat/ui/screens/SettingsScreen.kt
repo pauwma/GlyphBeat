@@ -598,7 +598,7 @@ fun SettingsScreen(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Glyph Interface Settings",
+                    text = "Glyph Interface",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont
                     ),
@@ -1076,12 +1076,6 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
                     Text(
                         text = "Support GlyphBeat",
                         style = MaterialTheme.typography.titleMedium.copy(
@@ -1093,10 +1087,7 @@ fun SettingsScreen(
                 }
 
                 Text(
-                    text = "GlyphBeat is a passion project, completely ad-free. " +
-                           "If you're enjoying the app and would like to fuel future updates and new features, " +
-                           "consider buying me a coffee! Every contribution, no matter how small, makes a real " +
-                           "difference and keeps me motivated. Thank you for being awesome! 🎵",
+                    text = "GlyphBeat is ad-free and built with love. Enjoying it? Buy me a coffee to power new features, every bit helps. Thanks! \uD83C\uDFB5 \uD83E\uDD0D",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp)
