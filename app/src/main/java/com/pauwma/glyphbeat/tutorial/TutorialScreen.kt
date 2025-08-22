@@ -75,17 +75,21 @@ fun TutorialScreen(
                 modifier = Modifier.weight(1f)
             ) { page ->
                 Box(modifier = Modifier.fillMaxSize()) {
+                    val isCurrentPage = page == pagerState.currentPage
                     when (page) {
                     0 -> WelcomePage(
+                        isVisible = isCurrentPage,
                         onGetStarted = onNextPage,
                         modifier = Modifier.fillMaxSize()
                     )
                     1 -> ThemeGuidePage(
+                        isVisible = isCurrentPage,
                         onContinue = onNextPage,
                         onBack = onPreviousPage,
                         modifier = Modifier.fillMaxSize()
                     )
                     2 -> PermissionsPage(
+                        isVisible = isCurrentPage,
                         permissionsGranted = state.permissionsGranted,
                         deviceManufacturer = state.deviceManufacturer,
                         deviceModel = state.deviceModel,
@@ -103,6 +107,7 @@ fun TutorialScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                     3 -> CompletionPage(
+                        isVisible = isCurrentPage,
                         onStartApp = onCompleteTutorial,
                         modifier = Modifier.fillMaxSize()
                     )

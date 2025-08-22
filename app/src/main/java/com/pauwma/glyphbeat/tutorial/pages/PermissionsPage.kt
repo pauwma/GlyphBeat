@@ -35,6 +35,7 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun PermissionsPage(
+    isVisible: Boolean = true,
     permissionsGranted: Map<String, Boolean>,
     deviceManufacturer: String = "",
     deviceModel: String = "",
@@ -53,9 +54,15 @@ fun PermissionsPage(
     val glyphGranted = permissionsGranted[TutorialViewModel.PERMISSION_GLYPH] ?: false
     val allGranted = notificationGranted && (glyphGranted || !isNothingDevice)
     
-    LaunchedEffect(Unit) {
-        delay(100)
-        animationStarted = true
+    // Trigger animation when page becomes visible
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            animationStarted = false
+            delay(100)
+            animationStarted = true
+        } else {
+            animationStarted = false
+        }
     }
     
     Column(

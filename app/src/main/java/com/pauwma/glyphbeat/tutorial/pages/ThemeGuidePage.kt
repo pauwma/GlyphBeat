@@ -37,6 +37,7 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun ThemeGuidePage(
+    isVisible: Boolean = true,
     onContinue: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
@@ -44,9 +45,15 @@ fun ThemeGuidePage(
     var animationStarted by remember { mutableStateOf(false) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
     
-    LaunchedEffect(Unit) {
-        delay(100)
-        animationStarted = true
+    // Trigger animation when page becomes visible
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            animationStarted = false
+            delay(100)
+            animationStarted = true
+        } else {
+            animationStarted = false
+        }
     }
     
     Column(
