@@ -499,8 +499,8 @@ object PixelFont {
         ),
         'g' to arrayOf(
             booleanArrayOf(false, false, false, false, false),
+            booleanArrayOf(false, false, false, false, false),
             booleanArrayOf(false, true, true, true, true),
-            booleanArrayOf(true, false, false, false, true),
             booleanArrayOf(true, false, false, false, true),
             booleanArrayOf(false, true, true, true, true),
             booleanArrayOf(false, false, false, false, true),
@@ -661,10 +661,10 @@ object PixelFont {
         ),
         'y' to arrayOf(
             booleanArrayOf(false, false, false, false, false),
+            booleanArrayOf(false, false, false, false, false),
             booleanArrayOf(true, false, false, false, true),
             booleanArrayOf(true, false, false, false, true),
             booleanArrayOf(false, true, true, true, true),
-            booleanArrayOf(false, false, false, false, true),
             booleanArrayOf(false, false, false, false, true),
             booleanArrayOf(false, true, true, true, false)
         ),
