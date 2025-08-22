@@ -22,6 +22,7 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
     companion object {
         private const val LOG_TAG = "ScrollTheme"
         private const val DEFAULT_TEXT = "GlyphBeat Music Player"
+        private const val OFFLINE_TEXT = "Nothing Playing"
         private const val SEPARATOR = " - "
         private const val TEXT_REPEAT_GAP = 20 // Pixels between text repeats
     }
@@ -36,6 +37,11 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
     private var pausedScrollPosition = 0
     private var currentText = DEFAULT_TEXT
     private var lastTrackInfo: MediaControlHelper.TrackInfo? = null
+    
+    // Offline scroll state
+    private var offlineScrollPosition = 0
+    private var lastOfflineFrameTime = System.currentTimeMillis()
+    private var accumulatedOfflineScrollTime = 0f
     
     // Time-based scrolling to prevent multiple callers from affecting speed
     private var lastFrameTime = System.currentTimeMillis()
@@ -94,32 +100,35 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
     // STATE-SPECIFIC FRAMES
     // =================================================================================
 
-    // Offline frame shows "?" icon - static frame (625 elements for 25x25 matrix)
-    override val offlineFrame: IntArray by lazy {
-        // Start with the exact MinimalTheme offline frame pattern (shaped format)
-        val minimalOfflineFrameShaped = intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-
-        // Convert shaped data to flat 25x25 array with circular masking (same as MinimalTheme.generateFrame)
-        val flatArray = IntArray(625) { 0 }
-        val centerX = 12.0
-        val centerY = 12.0
-        var shapedIndex = 0
-
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                // Check if this pixel is within the circular matrix shape
-                if (distance <= 12.5 && shapedIndex < minimalOfflineFrameShaped.size) {
-                    flatArray[flatIndex] = minimalOfflineFrameShaped[shapedIndex]
-                    shapedIndex++
+    // Offline frame shows scrolling "Nothing Playing" text with reduced brightness
+    override val offlineFrame: IntArray
+        get() {
+            val currentTime = System.currentTimeMillis()
+            val elapsedTime = (currentTime - lastOfflineFrameTime).toFloat()
+            
+            // Update offline scroll position with slow speed
+            if (elapsedTime > 0) {
+                // Use very slow scroll speed for offline text
+                val offlinePixelsPerMs = 0.015f // Slower than the slowest normal speed
+                accumulatedOfflineScrollTime += elapsedTime * offlinePixelsPerMs
+                
+                val pixelsToMove = accumulatedOfflineScrollTime.toInt()
+                if (pixelsToMove > 0) {
+                    offlineScrollPosition += pixelsToMove
+                    accumulatedOfflineScrollTime -= pixelsToMove.toFloat()
                 }
+                
+                lastOfflineFrameTime = currentTime
             }
+            
+            // Render "Nothing Playing" with reduced brightness
+            return TextRenderer.renderTextToMatrix(
+                OFFLINE_TEXT,
+                scrollOffset = offlineScrollPosition,
+                spacing = currentTextSpacing,
+                brightness = currentBrightness * currentPausedOpacity // Use paused opacity for offline
+            )
         }
-
-        flatArray
-    }
 
     // Override pausedFrame property to generate the paused frame dynamically
     override val pausedFrame: IntArray
@@ -303,6 +312,8 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
                         separator = SEPARATOR
                     )
                 } else {
+                    // Use OFFLINE_TEXT when no media is available
+                    // This is handled separately in offlineFrame getter
                     DEFAULT_TEXT
                 }
 
@@ -481,12 +492,15 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
     fun onActivate() {
         scrollPosition = 0
         pausedScrollPosition = 0
+        offlineScrollPosition = 0
         lastTrackInfo = null
         needsTextUpdate = true
         updateTextIfNeeded()
         // Initialize time tracking for consistent scrolling
         lastFrameTime = System.currentTimeMillis()
+        lastOfflineFrameTime = System.currentTimeMillis()
         accumulatedScrollTime = 0f
+        accumulatedOfflineScrollTime = 0f
         Log.d(LOG_TAG, "Theme activated")
     }
 
