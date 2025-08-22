@@ -3,6 +3,7 @@ package com.pauwma.glyphbeat.sound
 import android.content.ComponentName
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
@@ -13,8 +14,14 @@ import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
+import android.net.Uri
 import android.util.Log
+import android.os.Handler
+import android.os.Looper
 import com.pauwma.glyphbeat.services.notification.MediaNotificationListenerService
+import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlin.math.pow
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -53,6 +60,11 @@ class MediaControlHelper(private val context: Context) {
     // Cached state to avoid unnecessary callbacks
     private var cachedIsPlaying = false
     private var cachedHasActiveMedia = false
+    
+    // Simple memory cache for loaded URI bitmaps (URI -> Bitmap)
+    // Limited to 5 entries to avoid excessive memory usage
+    private val uriImageCache = mutableMapOf<String, Bitmap>()
+    private val maxCacheSize = 5
     
     /**
      * Register a callback to receive immediate state change notifications
@@ -217,9 +229,24 @@ class MediaControlHelper(private val context: Context) {
                     }
                 }
                 
-                controller.registerCallback(callback)
-                activeControllerCallback = callback
-                Log.d(LOG_TAG, "Registered callback on controller: ${controller.packageName}")
+                // Ensure callback registration happens on the main thread
+                if (Looper.myLooper() == Looper.getMainLooper()) {
+                    controller.registerCallback(callback)
+                    activeControllerCallback = callback
+                    Log.d(LOG_TAG, "Registered callback on controller: ${controller.packageName}")
+                } else {
+                    // Post to main thread if not already on it
+                    Handler(Looper.getMainLooper()).post {
+                        try {
+                            controller.registerCallback(callback)
+                            activeControllerCallback = callback
+                            Log.d(LOG_TAG, "Registered callback on controller (via main thread): ${controller.packageName}")
+                        } catch (e: Exception) {
+                            Log.w(LOG_TAG, "Failed to register callback on main thread: ${e.message}")
+                            activeControllerCallback = null
+                        }
+                    }
+                }
                 
             } catch (e: Exception) {
                 Log.w(LOG_TAG, "Failed to register callback on controller: ${e.message}")
@@ -235,6 +262,7 @@ class MediaControlHelper(private val context: Context) {
         stateChangeCallbacks.clear()
         activeControllerCallback = null
         activeController = null
+        uriImageCache.clear() // Clear image cache to free memory
         Log.d(LOG_TAG, "MediaControlHelper cleaned up")
     }
     
@@ -397,10 +425,22 @@ class MediaControlHelper(private val context: Context) {
         val metadata = controller.metadata ?: return null
         
         return try {
-            // Get full resolution album art
-            val albumArt = metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
+            // Get full resolution album art - first try Bitmap metadata
+            var albumArt = metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
                 ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_ART)
                 ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
+            
+            // If no Bitmap found, try URI-based metadata
+            if (albumArt == null) {
+                val artUri = metadata.getString(MediaMetadata.METADATA_KEY_ART_URI)
+                    ?: metadata.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
+                    ?: metadata.getString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI)
+                
+                if (artUri != null) {
+                    Log.d(LOG_TAG, "Loading full resolution album art from URI: $artUri")
+                    albumArt = loadBitmapFromUri(artUri)
+                }
+            }
             
             TrackInfo(
                 title = metadata.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "Unknown",
@@ -417,15 +457,28 @@ class MediaControlHelper(private val context: Context) {
     
     /**
      * Extract album art from media metadata.
+     * Supports both Bitmap metadata and URI-based metadata.
      * @param metadata MediaMetadata object containing track information
      * @return Bitmap of album art or null if not available
      */
     private fun extractAlbumArt(metadata: MediaMetadata): Bitmap? {
         return try {
-            // Try to get album art from metadata
-            val bitmap = metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
+            // First try to get album art from Bitmap metadata (fastest)
+            var bitmap = metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
                 ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_ART)
                 ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
+            
+            // If no Bitmap found, try URI-based metadata
+            if (bitmap == null) {
+                val artUri = metadata.getString(MediaMetadata.METADATA_KEY_ART_URI)
+                    ?: metadata.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
+                    ?: metadata.getString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI)
+                
+                if (artUri != null) {
+                    Log.d(LOG_TAG, "Found album art URI: $artUri")
+                    bitmap = loadBitmapFromUri(artUri)
+                }
+            }
             
             bitmap?.let { originalBitmap ->
                 // Downsample to 25x25 for the Glyph Matrix
@@ -433,6 +486,145 @@ class MediaControlHelper(private val context: Context) {
             }
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Error extracting album art: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Load bitmap from URI string.
+     * Supports content:// URIs (local media) and http/https URLs (network images).
+     * Uses caching to avoid repeated loads of the same image.
+     * @param uriString URI string pointing to the image
+     * @return Bitmap or null if loading fails
+     */
+    private fun loadBitmapFromUri(uriString: String): Bitmap? {
+        // Check cache first
+        uriImageCache[uriString]?.let { cachedBitmap ->
+            Log.d(LOG_TAG, "Using cached bitmap for URI: ${uriString.take(50)}...")
+            return cachedBitmap
+        }
+        
+        val bitmap = try {
+            when {
+                // Handle SoundCloud's special content URI format
+                uriString.contains("com.soundcloud.android.imageProvider") -> {
+                    extractAndLoadSoundCloudImage(uriString)
+                }
+                // Handle content:// URIs (local media)
+                uriString.startsWith("content://") -> {
+                    loadLocalBitmap(uriString)
+                }
+                // Handle http/https URLs (network images)
+                uriString.startsWith("http://") || uriString.startsWith("https://") -> {
+                    loadNetworkBitmap(uriString)
+                }
+                // Handle file:// URIs
+                uriString.startsWith("file://") -> {
+                    val path = Uri.parse(uriString).path
+                    if (path != null) {
+                        BitmapFactory.decodeFile(path)
+                    } else null
+                }
+                else -> {
+                    Log.w(LOG_TAG, "Unsupported URI scheme: $uriString")
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error loading bitmap from URI: ${e.message}")
+            null
+        }
+        
+        // Add to cache if successful
+        bitmap?.let {
+            // Ensure cache doesn't grow too large
+            if (uriImageCache.size >= maxCacheSize) {
+                // Remove oldest entry (first in map)
+                val oldestKey = uriImageCache.keys.firstOrNull()
+                oldestKey?.let { key ->
+                    uriImageCache.remove(key)
+                    Log.d(LOG_TAG, "Removed oldest cache entry: ${key.take(50)}...")
+                }
+            }
+            uriImageCache[uriString] = it
+            Log.d(LOG_TAG, "Cached bitmap for URI: ${uriString.take(50)}...")
+        }
+        
+        return bitmap
+    }
+    
+    /**
+     * Extract the real URL from SoundCloud's special content URI format and load the image.
+     * SoundCloud encodes the actual image URL in query parameters.
+     * Example: content://com.soundcloud.android.imageProvider/artworks-000142004856-njango-t500x500.jpg?_HOST_=i1.sndcdn.com&_PROTOCOL_=https
+     * Becomes: https://i1.sndcdn.com/artworks-000142004856-njango-t500x500.jpg
+     * @param uriString The SoundCloud content URI
+     * @return Bitmap or null if loading fails
+     */
+    private fun extractAndLoadSoundCloudImage(uriString: String): Bitmap? {
+        return try {
+            val uri = Uri.parse(uriString)
+            val host = uri.getQueryParameter("_HOST_")
+            val protocol = uri.getQueryParameter("_PROTOCOL_") ?: "https"
+            val path = uri.path
+            
+            if (host != null && path != null) {
+                val realUrl = "$protocol://$host$path"
+                Log.d(LOG_TAG, "Extracted SoundCloud image URL: $realUrl")
+                loadNetworkBitmap(realUrl)
+            } else {
+                Log.w(LOG_TAG, "Could not extract URL from SoundCloud URI: $uriString")
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error extracting SoundCloud image URL: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Load bitmap from local content:// URI.
+     * @param uriString Content URI string
+     * @return Bitmap or null if loading fails
+     */
+    private fun loadLocalBitmap(uriString: String): Bitmap? {
+        return try {
+            val uri = Uri.parse(uriString)
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                BitmapFactory.decodeStream(inputStream)
+            }
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error loading local bitmap: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Load bitmap from network URL.
+     * Uses synchronous loading for simplicity, with timeout protection.
+     * @param urlString HTTP/HTTPS URL string
+     * @return Bitmap or null if loading fails
+     */
+    private fun loadNetworkBitmap(urlString: String): Bitmap? {
+        return try {
+            val url = URL(urlString)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.apply {
+                doInput = true
+                connectTimeout = 5000 // 5 second timeout
+                readTimeout = 5000 // 5 second timeout
+                connect()
+            }
+            
+            val input: InputStream = connection.inputStream
+            val bitmap = BitmapFactory.decodeStream(input)
+            input.close()
+            connection.disconnect()
+            
+            Log.d(LOG_TAG, "Successfully loaded network image from: ${urlString.take(50)}...")
+            bitmap
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error loading network bitmap: ${e.message}")
             null
         }
     }

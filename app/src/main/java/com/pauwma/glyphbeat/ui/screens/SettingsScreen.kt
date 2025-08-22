@@ -276,11 +276,11 @@ private fun getAppBrandColor(packageName: String): Color? {
     return when {
         packageName.contains("spotify", ignoreCase = true) -> Color(0xFF1DB954) // Spotify Green
         packageName.contains("youtube", ignoreCase = true) -> Color(0xFFFF0000) // YouTube Red
-        packageName.contains("apple", ignoreCase = true) -> Color(0xFFFA243C) // Apple Music Red
+        packageName.contains("apple", ignoreCase = true) -> Color(0xFFFA2461) // Apple Music Red
         packageName.contains("amazon", ignoreCase = true) -> Color(0xFF00A8E1) // Amazon Music Blue
         packageName.contains("soundcloud", ignoreCase = true) -> Color(0xFFFF5500) // SoundCloud Orange
         packageName.contains("tidal", ignoreCase = true) -> Color(0xFF000000) // Tidal Black
-        packageName.contains("deezer", ignoreCase = true) -> Color(0xFFFF6D3A) // Deezer Orange
+        packageName.contains("deezer", ignoreCase = true) -> Color(0xFFA237FF) // Deezer Orange
         packageName.contains("pandora", ignoreCase = true) -> Color(0xFF224099) // Pandora Blue
         else -> null
     }

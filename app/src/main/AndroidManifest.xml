@@ -14,6 +14,9 @@
     
     <!-- Permission to keep CPU awake for shake detection when screen is locked -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    
+    <!-- Permission to load album art from network URLs (e.g., SoundCloud, YouTube Music) -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
