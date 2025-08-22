@@ -34,11 +34,12 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
     // Scroll state
     private var scrollPosition = 0
     private var pausedScrollPosition = 0
-    private var scrollSpeed = 1 // Pixels to move when triggered
-    private var frameCounter = 0 // Frame counter for sub-pixel scrolling
-    private var framesPerPixel = 1 // How many frames before moving 1 pixel
     private var currentText = DEFAULT_TEXT
     private var lastTrackInfo: MediaControlHelper.TrackInfo? = null
+    
+    // Time-based scrolling to prevent multiple callers from affecting speed
+    private var lastFrameTime = System.currentTimeMillis()
+    private var accumulatedScrollTime = 0f // For sub-pixel precision
 
     // Pause state tracking
     private var isPaused = false
@@ -47,7 +48,7 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
     // Settings-driven properties
     private var currentBrightness = 1.0f
     private var currentPausedOpacity = 0.5f
-    private var currentScrollSpeed = 5 // 1-10 setting
+    private var currentScrollSpeed = 6 // 1-10 setting, 6 is medium speed
     private var currentShowArtist = true
     private var currentShowAlbum = true
     private var currentTextSpacing = 1
@@ -140,6 +141,9 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
     override fun getFrameCount(): Int = 100 // Virtual frame count for continuous scrolling
 
     override fun generateFrame(frameIndex: Int): IntArray {
+        val currentTime = System.currentTimeMillis()
+        val elapsedTime = (currentTime - lastFrameTime).toFloat()
+        
         // Sync pause state with actual media state
         val isMediaPlaying = try {
             mediaHelper.isPlaying()
@@ -155,13 +159,18 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
             // Transition from playing to paused
             isPaused = true
             pausedScrollPosition = scrollPosition
+            // Reset timing when pausing
+            lastFrameTime = currentTime
+            accumulatedScrollTime = 0f
         } else if (!wasPlaying && !shouldBePaused) {
             // Transition from paused to playing
             isPaused = false
             if (currentPauseMode == "freeze") {
                 scrollPosition = pausedScrollPosition
             }
-            frameCounter = 0
+            // Reset timing when resuming
+            lastFrameTime = currentTime
+            accumulatedScrollTime = 0f
         }
 
         // Update text if needed
@@ -172,29 +181,51 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
             updateScrollSpeed()
         }
 
-        // Handle scrolling based on pause state
-        if (!isPaused) {
-            // Normal scrolling when playing
-            if (currentScrollSpeed <= 4) {
-                // For slow speeds, use frame counting
-                frameCounter++
-                if (frameCounter >= framesPerPixel) {
-                    scrollPosition += 1 // Move 1 pixel
-                    frameCounter = 0
-                }
-            } else {
-                // For faster speeds, move multiple pixels per frame
-                scrollPosition += scrollSpeed
+        // Handle time-based scrolling (only advances based on elapsed time, not call frequency)
+        if (!isPaused && elapsedTime > 0) {
+            // Calculate pixels per millisecond based on current speed setting
+            // More granular speed control with slower options
+            val pixelsPerMs = when (currentScrollSpeed) {
+                1 -> 0.005f  // Ultra slow
+                2 -> 0.008f  // Very slow
+                3 -> 0.012f  // Slow
+                4 -> 0.016f  // Slow-medium
+                5 -> 0.020f  // Medium-slow
+                6 -> 0.025f  // Medium
+                7 -> 0.030f  // Medium-fast
+                8 -> 0.040f  // Fast
+                9 -> 0.055f  // Very fast
+                10 -> 0.075f // Ultra fast
+                else -> 0.025f
             }
-        } else if (currentPauseMode == "slow_motion") {
+            
+            // Accumulate scroll time
+            accumulatedScrollTime += elapsedTime * pixelsPerMs
+            
+            // Move whole pixels only
+            val pixelsToMove = accumulatedScrollTime.toInt()
+            if (pixelsToMove > 0) {
+                scrollPosition += pixelsToMove
+                accumulatedScrollTime -= pixelsToMove.toFloat()
+            }
+            
+            lastFrameTime = currentTime
+        } else if (currentPauseMode == "slow_motion" && elapsedTime > 0) {
             // In slow motion mode, scroll very slowly when paused
-            frameCounter++
-            if (frameCounter >= framesPerPixel * 3) { // 3x slower than normal
-                scrollPosition += 1
-                frameCounter = 0
+            val slowPixelsPerMs = 0.01f // Very slow scrolling
+            accumulatedScrollTime += elapsedTime * slowPixelsPerMs
+            
+            val pixelsToMove = accumulatedScrollTime.toInt()
+            if (pixelsToMove > 0) {
+                scrollPosition += pixelsToMove
+                accumulatedScrollTime -= pixelsToMove.toFloat()
             }
+            
+            lastFrameTime = currentTime
+        } else if (isPaused) {
+            // Keep updating lastFrameTime when paused to prevent large jumps when resuming
+            lastFrameTime = currentTime
         }
-        // If paused and freeze mode, don't update scrollPosition at all
 
         // Calculate brightness based on pause state
         val effectiveBrightness = if (isPaused) {
@@ -218,6 +249,9 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
     fun onPause() {
         isPaused = true
         pausedScrollPosition = scrollPosition
+        // Reset time tracking to prevent jumps
+        lastFrameTime = System.currentTimeMillis()
+        accumulatedScrollTime = 0f
     }
 
     /**
@@ -229,8 +263,9 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
             // In freeze mode, restore the exact position
             scrollPosition = pausedScrollPosition
         }
-        // In slow_motion mode, continue from current position
-        frameCounter = 0 // Reset frame counter on resume
+        // Reset time tracking to prevent jumps when resuming
+        lastFrameTime = System.currentTimeMillis()
+        accumulatedScrollTime = 0f
     }
 
     // =================================================================================
@@ -298,37 +333,13 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
      */
     private fun updateScrollSpeed() {
         needsTextUpdate = false
-
-        // Map speed setting to appropriate scrolling behavior
-        when (currentScrollSpeed) {
-            1 -> {
-                framesPerPixel = 5  // Slowest
-                scrollSpeed = 1
-            }
-            2 -> {
-                framesPerPixel = 4
-                scrollSpeed = 1
-            }
-            3 -> {
-                framesPerPixel = 3
-                scrollSpeed = 1
-            }
-            4 -> {
-                framesPerPixel = 2
-                scrollSpeed = 1
-            }
-            5 -> {
-                framesPerPixel = 1
-                scrollSpeed = 1
-            }
-            else -> {
-                framesPerPixel = 1
-                scrollSpeed = 1
-            }
-        }
-
-        // Reset frame counter when speed changes
-        frameCounter = 0
+        
+        // Reset time tracking when speed changes to apply new speed immediately
+        lastFrameTime = System.currentTimeMillis()
+        accumulatedScrollTime = 0f
+        
+        // Note: The actual speed is now handled in generateFrame() based on currentScrollSpeed
+        // This method primarily resets the timing state
     }
 
     /**
@@ -352,10 +363,10 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
             .addSliderSetting(
                 id = "scroll_speed",
                 displayName = "Scroll Speed",
-                description = "Text scrolling speed",
-                defaultValue = 3,
+                description = "Text scrolling speed (1=slowest, 10=fastest)",
+                defaultValue = 6,
                 minValue = 1,
-                maxValue = 5,
+                maxValue = 10,
                 stepSize = 1,
                 category = SettingCategories.ANIMATION
             )
@@ -427,7 +438,7 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
         currentPausedOpacity = settings.getSliderValueFloat("paused_opacity", 0.5f)
 
         // Apply scroll speed
-        currentScrollSpeed = settings.getSliderValueInt("scroll_speed", 3)
+        currentScrollSpeed = settings.getSliderValueInt("scroll_speed", 6)
         updateScrollSpeed() // Update the scroll speed with new setting
 
         // Apply pause mode
@@ -473,6 +484,9 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
         lastTrackInfo = null
         needsTextUpdate = true
         updateTextIfNeeded()
+        // Initialize time tracking for consistent scrolling
+        lastFrameTime = System.currentTimeMillis()
+        accumulatedScrollTime = 0f
         Log.d(LOG_TAG, "Theme activated")
     }
 
