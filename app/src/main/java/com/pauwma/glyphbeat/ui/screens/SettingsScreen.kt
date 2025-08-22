@@ -366,7 +366,7 @@ fun SettingsScreen(
             shakeSensitivity = prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM)
             shakeSkipWhenPaused = prefs.getBoolean("shake_skip_when_paused", false)
             shakeSkipWhenUnlocked = prefs.getBoolean("shake_skip_when_unlocked", false)
-            hapticFeedbackWhenShaked = prefs.getBoolean("haptic_feedback_when_shaked", true)
+            hapticFeedbackWhenShaked = prefs.getBoolean("feedback_when_shaked", true)
             skipDelay = prefs.getLong("shake_skip_delay", 3500L)
         }
     }
