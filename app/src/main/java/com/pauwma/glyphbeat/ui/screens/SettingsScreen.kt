@@ -543,15 +543,24 @@ fun SettingsScreen(
                                 }
                             }
                         },
+                        enabled = notificationAccessGranted,
                         modifier = Modifier.height(40.dp).width(48.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.error
+                            containerColor = if (notificationAccessGranted) 
+                                MaterialTheme.colorScheme.error 
+                            else 
+                                MaterialTheme.colorScheme.surfaceVariant,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) {
                         Icon(
                             imageVector = Icons.Default.Audiotrack,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(18.dp),
+                            tint = if (notificationAccessGranted) 
+                                MaterialTheme.colorScheme.onError 
+                            else 
+                                MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
