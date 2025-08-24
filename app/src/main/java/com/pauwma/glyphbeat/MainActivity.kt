@@ -55,6 +55,13 @@ class MainActivity : ComponentActivity() {
             }
         }
         
+        // Start auto-start service if enabled
+        val prefs = getSharedPreferences("glyph_settings", MODE_PRIVATE)
+        val isAutoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
+        if (isAutoStartEnabled) {
+            com.pauwma.glyphbeat.services.autostart.MusicDetectionService.start(this)
+        }
+        
         setContent {
             NothingAndroidSDKDemoTheme {
                 val navController = rememberNavController()

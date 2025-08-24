@@ -30,6 +30,7 @@ class MediaControlHelper(private val context: Context) {
     // State change callback interface
     interface StateChangeCallback {
         fun onPlaybackStateChanged(isPlaying: Boolean, hasActiveMedia: Boolean)
+        fun onActiveAppChanged(packageName: String?, appName: String?)
     }
     
     private val mediaSessionManager: MediaSessionManager by lazy {
@@ -60,6 +61,7 @@ class MediaControlHelper(private val context: Context) {
     // Cached state to avoid unnecessary callbacks
     private var cachedIsPlaying = false
     private var cachedHasActiveMedia = false
+    private var cachedActiveApp: String? = null
     
     // Simple memory cache for loaded URI bitmaps (URI -> Bitmap)
     // Limited to 5 entries to avoid excessive memory usage
@@ -85,18 +87,54 @@ class MediaControlHelper(private val context: Context) {
     /**
      * Notify all registered callbacks of state changes
      */
-    private fun notifyStateChange(isPlaying: Boolean, hasActiveMedia: Boolean) {
-        if (isPlaying != cachedIsPlaying || hasActiveMedia != cachedHasActiveMedia) {
+    private fun notifyStateChange(isPlaying: Boolean, hasActiveMedia: Boolean, activeApp: String? = null) {
+        val stateChanged = isPlaying != cachedIsPlaying || hasActiveMedia != cachedHasActiveMedia
+        val appChanged = activeApp != cachedActiveApp
+        
+        if (stateChanged || appChanged) {
             cachedIsPlaying = isPlaying
             cachedHasActiveMedia = hasActiveMedia
+            cachedActiveApp = activeApp
             
-            Log.d(LOG_TAG, "State changed - playing: $isPlaying, hasMedia: $hasActiveMedia, notifying ${stateChangeCallbacks.size} callbacks")
+            Log.d(LOG_TAG, "State changed - playing: $isPlaying, hasMedia: $hasActiveMedia, activeApp: $activeApp, notifying ${stateChangeCallbacks.size} callbacks")
             
             stateChangeCallbacks.forEach { callback ->
                 try {
-                    callback.onPlaybackStateChanged(isPlaying, hasActiveMedia)
+                    if (stateChanged) {
+                        callback.onPlaybackStateChanged(isPlaying, hasActiveMedia)
+                    }
+                    if (appChanged) {
+                        val appName = activeApp?.let { getAppNameFromPackage(it) }
+                        callback.onActiveAppChanged(activeApp, appName)
+                    }
                 } catch (e: Exception) {
                     Log.w(LOG_TAG, "Error in state change callback: ${e.message}")
+                }
+            }
+        }
+    }
+    
+    /**
+     * Get app name from package name
+     */
+    fun getAppNameFromPackage(packageName: String): String {
+        return try {
+            val packageManager = context.packageManager
+            val appInfo = packageManager.getApplicationInfo(packageName, 0)
+            packageManager.getApplicationLabel(appInfo).toString()
+        } catch (e: Exception) {
+            // Fallback to beautifying the package name
+            when {
+                packageName.contains("spotify", ignoreCase = true) -> "Spotify"
+                packageName.contains("youtube", ignoreCase = true) -> "YouTube Music"
+                packageName.contains("amazon", ignoreCase = true) -> "Amazon Music"
+                packageName.contains("apple", ignoreCase = true) -> "Apple Music"
+                packageName.contains("tidal", ignoreCase = true) -> "Tidal"
+                packageName.contains("deezer", ignoreCase = true) -> "Deezer"
+                packageName.contains("soundcloud", ignoreCase = true) -> "SoundCloud"
+                packageName.contains("pandora", ignoreCase = true) -> "Pandora"
+                else -> packageName.substringAfterLast('.').replaceFirstChar { 
+                    if (it.isLowerCase()) it.titlecase() else it.toString() 
                 }
             }
         }
@@ -169,7 +207,7 @@ class MediaControlHelper(private val context: Context) {
             // Notify state changes based on current controller state
             val isPlaying = currentState == PlaybackState.STATE_PLAYING
             val hasActiveMedia = activeController != null
-            notifyStateChange(isPlaying, hasActiveMedia)
+            notifyStateChange(isPlaying, hasActiveMedia, currentPackage)
             
             return activeController
         } catch (e: SecurityException) {
@@ -180,6 +218,45 @@ class MediaControlHelper(private val context: Context) {
             return null
         } catch (e: Exception) {
             Log.e(LOG_TAG, "Error getting media sessions: ${e.message}", e)
+            return null
+        }
+    }
+    
+    /**
+     * Get active media controller excluding specific packages
+     */
+    fun getActiveMediaControllerExcluding(excludedPackages: Set<String>): MediaController? {
+        try {
+            val componentName = ComponentName(context, MediaNotificationListenerService::class.java)
+            val activeSessions = mediaSessionManager.getActiveSessions(componentName)
+            
+            // Filter out excluded packages
+            val filteredSessions = activeSessions.filter { controller ->
+                !excludedPackages.contains(controller.packageName)
+            }
+            
+            // First try to find actively playing sessions from non-excluded packages
+            val activeController = filteredSessions.firstOrNull { controller ->
+                val state = controller.playbackState?.state
+                state == PlaybackState.STATE_PLAYING
+            }
+            
+            // If no playing sessions, look for recently active ones (paused/buffering with recent activity)
+            return activeController ?: filteredSessions.firstOrNull { controller ->
+                val state = controller.playbackState?.state
+                val hasMetadata = controller.metadata != null
+                val hasValidTitle = controller.metadata?.getString(MediaMetadata.METADATA_KEY_TITLE)?.isNotBlank() == true
+                
+                // Only consider paused/buffering sessions that have actual media content
+                (state == PlaybackState.STATE_PAUSED || state == PlaybackState.STATE_BUFFERING) && 
+                hasMetadata && hasValidTitle
+            }
+            
+        } catch (e: SecurityException) {
+            Log.w(LOG_TAG, "Media control requires notification access permission")
+            return null
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Error getting filtered media sessions: ${e.message}", e)
             return null
         }
     }
@@ -212,7 +289,7 @@ class MediaControlHelper(private val context: Context) {
                             lastCallbackLogState = state?.state
                         }
                         
-                        notifyStateChange(isPlaying, hasActiveMedia)
+                        notifyStateChange(isPlaying, hasActiveMedia, activeController?.packageName)
                     }
                     
                     override fun onMetadataChanged(metadata: MediaMetadata?) {
@@ -225,7 +302,7 @@ class MediaControlHelper(private val context: Context) {
                             lastMetadataLogHasMedia = hasActiveMedia
                         }
                         
-                        notifyStateChange(cachedIsPlaying, hasActiveMedia)
+                        notifyStateChange(cachedIsPlaying, hasActiveMedia, activeController?.packageName)
                     }
                 }
                 
@@ -280,6 +357,39 @@ class MediaControlHelper(private val context: Context) {
         }
         
         return playing
+    }
+    
+    /**
+     * Check if there are any active media sessions available
+     */
+    fun hasActiveMediaSession(blacklistedPackages: Set<String> = emptySet()): Boolean {
+        return try {
+            val componentName = ComponentName(context, MediaNotificationListenerService::class.java)
+            val sessions = mediaSessionManager.getActiveSessions(componentName)
+            
+            // Filter out blacklisted packages
+            val relevantSessions = sessions.filter { controller ->
+                val packageName = controller.packageName
+                !blacklistedPackages.contains(packageName) && (controller.playbackState != null || controller.metadata != null)
+            }
+            
+            val hasMedia = relevantSessions.isNotEmpty()
+            
+            if (blacklistedPackages.isNotEmpty()) {
+                val blacklistedSessions = sessions.filter { blacklistedPackages.contains(it.packageName) }
+                Log.v(LOG_TAG, "hasActiveMediaSession check: ${sessions.size} total sessions, ${blacklistedSessions.size} blacklisted, ${relevantSessions.size} relevant, hasMedia: $hasMedia")
+                if (blacklistedSessions.isNotEmpty()) {
+                    Log.d(LOG_TAG, "Ignored blacklisted packages: ${blacklistedSessions.map { it.packageName }}")
+                }
+            } else {
+                Log.v(LOG_TAG, "hasActiveMediaSession check: ${sessions.size} sessions, hasMedia: $hasMedia")
+            }
+            
+            hasMedia
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Error checking for active media sessions: ${e.message}")
+            false
+        }
     }
     
     fun togglePlayPause(): Boolean {

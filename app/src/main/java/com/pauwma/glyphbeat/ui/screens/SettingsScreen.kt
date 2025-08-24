@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -14,12 +15,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.ExpandMore
@@ -31,12 +32,19 @@ import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.MusicOff
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Pix
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.ui.draw.rotate
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.pauwma.glyphbeat.services.shake.ShakeDetector
+import com.pauwma.glyphbeat.services.autostart.MusicAppWhitelistManager
+import com.pauwma.glyphbeat.services.autostart.MusicDetectionService
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +70,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import com.pauwma.glyphbeat.theme.NothingRed
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.pauwma.glyphbeat.R
@@ -350,8 +359,84 @@ fun SettingsScreen(
     // Use rememberSaveable to persist collapse state during navigation, but defaults to false on app restart
     var shakeControlsExpanded by rememberSaveable { mutableStateOf(false) }
     
+    // Auto-start settings state
+    var autoStartEnabled by remember { mutableStateOf(false) }
+    var autoStartDelay by remember { mutableStateOf(1000L) }
+    var autoStopDelay by remember { mutableStateOf(3000L) }
+    var autoStartControlsExpanded by rememberSaveable { mutableStateOf(false) }
+    var musicApps by remember { mutableStateOf<List<MusicAppWhitelistManager.MusicAppInfo>>(emptyList()) }
+    var isLoadingMusicApps by remember { mutableStateOf(true) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    
+    // App priority for sorting (most popular apps first)
+    val appPriority = mapOf(
+        "com.spotify.music"                       to 1,
+        "com.google.android.apps.youtube.music"   to 2,
+        "com.google.android.youtube"              to 3,
+        "com.amazon.mp3"                         to 4,
+        "com.apple.android.music"                to 5,
+        "com.soundcloud.android"                 to 6,
+        "com.tidal.android"                      to 7,
+        "com.deezer.android.app"                 to 8,
+        "com.pandora.android"                    to 9,
+        "com.shazam.android"                     to 10,
+        "com.clearchannel.iheartradio.controller" to 11,
+        "com.maxmpz.audioplayer"                 to 12,
+        "in.krosbits.musicolet"                  to 13,
+        "org.videolan.vlc"                       to 14,
+        "com.jetappfactory.jetaudio"             to 15,
+        "com.aimp.player"                        to 16,
+        "com.tbig.playerprotrial"                to 17,
+        "com.musicplayer.blackplayerfree"        to 18,
+        "com.foobar2000.foobar2000"              to 19,
+        "com.jrtstudio.AnotherMusicPlayer"       to 20,
+        "com.gaana"                               to 21,
+        "com.jio.media.jiobeats"                 to 22,
+        "com.bsbportal.music"                    to 23,
+        "com.hungama.myplay.activity"            to 24,
+        "com.skysoft.kkbox.android"              to 25,
+        "com.tencent.qqmusic"                    to 26,
+        "com.tencent.ibg.joox"                   to 27,
+        "com.netease.cloudmusic"                 to 28,
+        "ru.yandex.music"                        to 29,
+        "com.bandcamp.android"                   to 30,
+        "com.napster.android"                    to 31,
+        "com.moonvideo.android.resso"            to 32,
+        "com.audiomack"                           to 33
+    )
+    val whitelistManager = remember { MusicAppWhitelistManager.getInstance(context) }
+    
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    
+    // Function to load and sort music apps
+    fun loadMusicApps() {
+        coroutineScope.launch {
+            isLoadingMusicApps = true
+            withContext(Dispatchers.IO) {
+                try {
+                    whitelistManager.debugAppDetection()
+                    val apps = whitelistManager.getInstalledMusicApps()
+                        .filter { it.isInstalled }
+                        .sortedWith(
+                            compareBy(
+                                { !it.isWhitelisted },  // Whitelisted first
+                                { appPriority[it.packageName] ?: 999 },  // Then by priority
+                                { it.appName.lowercase() }  // Then alphabetically
+                            )
+                        )
+                    musicApps = apps
+                    Log.d("SettingsScreen", "Loaded ${apps.size} music apps:")
+                    apps.take(5).forEach { app ->
+                        Log.d("SettingsScreen", "  - ${app.appName}: installed=${app.isInstalled}, whitelisted=${app.isWhitelisted}")
+                    }
+                } catch (e: Exception) {
+                    Log.e("SettingsScreen", "Failed to load music apps", e)
+                }
+            }
+            isLoadingMusicApps = false
+        }
+    }
     
     // Load initial values asynchronously
     LaunchedEffect(Unit) {
@@ -368,6 +453,14 @@ fun SettingsScreen(
             shakeSkipWhenUnlocked = prefs.getBoolean("shake_skip_when_unlocked", false)
             hapticFeedbackWhenShaked = prefs.getBoolean("feedback_when_shaked", true)
             skipDelay = prefs.getLong("shake_skip_delay", 3500L)
+            
+            // Load auto-start preferences
+            autoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
+            autoStartDelay = 0L // Instant trigger
+            autoStopDelay = prefs.getLong("auto_stop_delay", 3000L)
+            
+            // Load music apps
+            loadMusicApps()
         }
     }
     
@@ -658,6 +751,323 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Glyph Toys")
                 }
+            }
+        }
+
+        // Auto-Start Service Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF1A1A1A)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Clickable header with expand/collapse icon
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { autoStartControlsExpanded = !autoStartControlsExpanded },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Auto-Start Service",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = customFont
+                            ),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+
+                        Text(
+                            text = "Automatically activate service when music starts playing",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        )
+                    }
+                    
+                    // Animated expand/collapse icon
+                    val autoStartRotationAngle by animateFloatAsState(
+                        targetValue = if (autoStartControlsExpanded) 180f else 0f,
+                        label = "autoStartExpandIcon"
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ExpandMore,
+                        contentDescription = if (autoStartControlsExpanded) "Collapse" else "Expand",
+                        modifier = Modifier
+                            .size(24.dp)
+                            .rotate(autoStartRotationAngle),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Enable/Disable switch (always visible)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Auto-Start",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    
+                    Switch(
+                        checked = autoStartEnabled,
+                        onCheckedChange = { enabled ->
+                            autoStartEnabled = enabled
+                            prefs.edit().putBoolean("auto_start_enabled", enabled).apply()
+                            
+                            // Start/stop the detection service
+                            if (enabled) {
+                                MusicDetectionService.start(context)
+                            } else {
+                                MusicDetectionService.stop(context)
+                            }
+                            
+                            Log.d("SettingsScreen", "Auto-start service: $enabled")
+                            
+                            // Auto-expand when enabling, auto-collapse when disabling
+                            if (enabled && !autoStartControlsExpanded) {
+                                autoStartControlsExpanded = true
+                            } else if (!enabled && autoStartControlsExpanded) {
+                                autoStartControlsExpanded = false
+                            }
+                        }
+                    )
+                }
+
+                // Animated visibility for detailed settings
+                AnimatedVisibility(
+                    visible = autoStartControlsExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Divider between header and settings
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 0.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                        )
+                        
+                        
+                        // Music Apps List
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = "Installed Music Apps",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                                
+                                val refreshRotation by animateFloatAsState(
+                                    targetValue = if (isLoadingMusicApps) 360f else 0f,
+                                    animationSpec = tween(1000),
+                                    label = "refreshRotation"
+                                )
+                                
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null
+                                        ) {
+                                            if (!isLoadingMusicApps) {
+                                                loadMusicApps()
+                                            }
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "Refresh music apps",
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .rotate(refreshRotation),
+                                        tint = if (isLoadingMusicApps) 
+                                            MaterialTheme.colorScheme.primary 
+                                        else 
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                            
+                            Text(
+                                text = "Select which apps should trigger auto-start when music playback is detected.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
+                            )
+                            
+                            if (isLoadingMusicApps) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(60.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            } else {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    musicApps.forEach { app ->
+                                        val iconRotation by animateFloatAsState(
+                                            targetValue = if (app.isWhitelisted) 45f else 0f,
+                                            animationSpec = tween(300),
+                                            label = "iconRotation"
+                                        )
+                                        
+                                        val iconColor by animateColorAsState(
+                                            targetValue = if (app.isWhitelisted) NothingRed else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            animationSpec = tween(300),
+                                            label = "iconColor"
+                                        )
+                                        
+                                        var appIcon by remember(app.packageName) { mutableStateOf<android.graphics.Bitmap?>(null) }
+                                        
+                                        // Load app icon asynchronously
+                                        LaunchedEffect(app.packageName) {
+                                            withContext(Dispatchers.IO) {
+                                                appIcon = getAppIcon(context, app.packageName)
+                                            }
+                                        }
+                                        
+                                        OutlinedCard(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    val wasWhitelisted = app.isWhitelisted
+                                                    whitelistManager.toggleWhitelist(app.packageName)
+                                                    
+                                                    // Update only this item instead of refreshing entire list
+                                                    musicApps = musicApps.map { appInfo ->
+                                                        if (appInfo.packageName == app.packageName) {
+                                                            appInfo.copy(isWhitelisted = !appInfo.isWhitelisted)
+                                                        } else {
+                                                            appInfo
+                                                        }
+                                                    }
+                                                    
+                                                    // Live update: If app was whitelisted and now disabled, 
+                                                    // and service is running, notify service to check if this app is currently active
+                                                    if (wasWhitelisted && !app.isWhitelisted && autoStartEnabled) {
+                                                        Log.d("SettingsScreen", "App ${app.appName} disabled - sending update to running service")
+                                                        
+                                                        // Send broadcast to notify service that whitelist changed
+                                                        val updateIntent = Intent("com.pauwma.glyphbeat.WHITELIST_CHANGED")
+                                                        updateIntent.putExtra("changed_package", app.packageName)
+                                                        updateIntent.putExtra("is_whitelisted", false)
+                                                        context.sendBroadcast(updateIntent)
+                                                    } else if (!wasWhitelisted && app.isWhitelisted && autoStartEnabled) {
+                                                        Log.d("SettingsScreen", "App ${app.appName} enabled - sending update to running service")
+                                                        
+                                                        // Send broadcast to notify service of new whitelisted app
+                                                        val updateIntent = Intent("com.pauwma.glyphbeat.WHITELIST_CHANGED")
+                                                        updateIntent.putExtra("changed_package", app.packageName)
+                                                        updateIntent.putExtra("is_whitelisted", true)
+                                                        context.sendBroadcast(updateIntent)
+                                                    }
+                                                },
+                                            colors = CardDefaults.outlinedCardColors(
+                                                containerColor = Color.Transparent
+                                            ),
+                                            border = BorderStroke(
+                                                width = if (app.isWhitelisted) 2.dp else 1.dp,
+                                                color = if (app.isWhitelisted) NothingRed else MaterialTheme.colorScheme.outline
+                                            )
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                            ) {
+                                                // App icon
+                                                Box(
+                                                    modifier = Modifier.size(40.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    appIcon?.let { icon ->
+                                                        Image(
+                                                            bitmap = icon.asImageBitmap(),
+                                                            contentDescription = "${app.appName} icon",
+                                                            modifier = Modifier
+                                                                .size(32.dp)
+                                                                .clip(RoundedCornerShape(8.dp))
+                                                        )
+                                                    } ?: Icon(
+                                                        imageVector = Icons.Default.MusicNote,
+                                                        contentDescription = "Music app",
+                                                        modifier = Modifier.size(32.dp),
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                                    )
+                                                }
+                                                
+                                                // App info
+                                                Column(
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Text(
+                                                        text = app.appName,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    Text(
+                                                        text = app.packageName,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                                
+                                                // Add/Remove icon with rotation animation
+                                                Icon(
+                                                    imageVector = Icons.Default.Add,
+                                                    contentDescription = if (app.isWhitelisted) "Remove from whitelist" else "Add to whitelist",
+                                                    modifier = Modifier
+                                                        .size(24.dp)
+                                                        .rotate(iconRotation),
+                                                    tint = iconColor
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } // End of AnimatedVisibility Column
+                } // End of AnimatedVisibility
             }
         }
 

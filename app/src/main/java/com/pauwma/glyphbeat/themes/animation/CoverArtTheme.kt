@@ -135,6 +135,11 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
                 override fun onPlaybackStateChanged(isPlaying: Boolean, hasActiveMedia: Boolean) {
                     handlePlaybackStateChange(isPlaying, hasActiveMedia)
                 }
+                
+                override fun onActiveAppChanged(packageName: String?, appName: String?) {
+                    // Track info will update through onPlaybackStateChanged when media changes
+                    Log.v(LOG_TAG, "Active app changed to: $appName ($packageName)")
+                }
             })
             
             // Check initial media state and adjust rotation state if needed

@@ -17,6 +17,68 @@
     
     <!-- Permission to load album art from network URLs (e.g., SoundCloud, YouTube Music) -->
     <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- Permission to start services on boot for auto-start functionality -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    
+    <!-- Permission for foreground service -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    
+    <!-- Permission for notifications (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Package queries for music app detection (Android 11+ requirement) -->
+    <queries>
+        <!-- Popular music streaming apps -->
+        <package android:name="com.spotify.music" />
+        <package android:name="com.spotify.lite" />
+        <package android:name="com.google.android.apps.youtube.music" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.amazon.mp3" />
+        <package android:name="com.apple.android.music" />
+        <package android:name="com.tidal.android" />
+        <package android:name="com.aspiro.tidal" />
+        <package android:name="com.deezer.android.app" />
+        <package android:name="com.soundcloud.android" />
+        <package android:name="com.pandora.android" />
+        <package android:name="com.bandcamp.android" />
+        <package android:name="com.gaana" />
+        <package android:name="com.jio.media.jiobeats" />
+        <package android:name="com.shazam.android" />
+        <package android:name="com.mixcloud.player" />
+        <package android:name="com.audiomack" />
+        <package android:name="com.qobuz.music" />
+        <package android:name="com.napster.android" />
+        <package android:name="com.anghami" />
+        <package android:name="com.bsbportal.music" />
+        <package android:name="com.clearchannel.iheartradio.controller" />
+        <package android:name="tunein.player" />
+        
+        <!-- Local music players -->
+        <package android:name="com.globaldelight.boom" />
+        <package android:name="com.musixmatch.android.lyrify" />
+        <package android:name="com.poweramp.v3" />
+        <package android:name="com.neutronmp" />
+        <package android:name="com.jetappfactory.jetaudio" />
+        <package android:name="com.maxmpz.audioplayer" />
+        <package android:name="com.google.android.music" />
+        
+        <!-- Device-specific music players -->
+        <package android:name="com.samsung.android.app.music.chn" />
+        <package android:name="com.miui.player" />
+        <package android:name="com.oppo.music" />
+        <package android:name="com.vivo.easyshare" />
+        <package android:name="com.oneplus.music" />
+        <package android:name="com.sec.android.app.music" />
+        <package android:name="com.sonyericsson.music" />
+        
+        <!-- Podcast apps -->
+        <package android:name="com.google.android.apps.podcasts" />
+        <package android:name="fm.castbox.audiobook.radio.podcast" />
+        <package android:name="com.wondery.app" />
+        <package android:name="com.audible.application" />
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -133,6 +195,27 @@
                 android:name="com.nothing.glyph.toy.longpress"
                 android:value="1" />
         </service>
+
+        <!-- Music Detection Service for Auto-Start -->
+        <service
+            android:name="com.pauwma.glyphbeat.services.autostart.MusicDetectionService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!-- Broadcast Receiver for Auto-Start -->
+        <receiver
+            android:name="com.pauwma.glyphbeat.services.autostart.AutoStartBroadcastReceiver"
+            android:exported="true">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.pauwma.glyphbeat.START_AUTO_SERVICE" />
+                <action android:name="com.pauwma.glyphbeat.STOP_AUTO_SERVICE" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

@@ -122,6 +122,10 @@ class CoverArtPreviewManager(private val context: Context) {
             override fun onPlaybackStateChanged(isPlaying: Boolean, hasActiveMedia: Boolean) {
                 handlePlaybackStateChange(isPlaying, hasActiveMedia)
             }
+            
+            override fun onActiveAppChanged(packageName: String?, appName: String?) {
+                // App changes will trigger track info updates which we'll handle through existing callbacks
+            }
         })
         
         // Start with current media state - asynchronously to avoid blocking
