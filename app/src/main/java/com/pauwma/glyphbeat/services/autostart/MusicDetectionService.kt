@@ -114,6 +114,32 @@ class MusicDetectionService : Service() {
         }
     }
     
+    // Broadcast receiver for service stop notifications
+    private val serviceStopReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                "com.pauwma.glyphbeat.SERVICE_STOPPED" -> {
+                    val serviceName = intent.getStringExtra("service_name")
+                    Log.d(LOG_TAG, "Service stop broadcast received: $serviceName")
+                    
+                    if (serviceName == "MediaPlayer-Demo" && isGlyphServiceActive) {
+                        Log.w(LOG_TAG, "MediaPlayerToyService stopped - resetting state for potential restart")
+                        
+                        // Reset state variables
+                        isGlyphServiceActive = false
+                        mediaPlayerServiceBound = false
+                        isBindingInProgress = false
+                        currentPlayingApp = null
+                        mediaPlayerServiceConnection = null
+                        
+                        // Update notification
+                        updateNotification("Monitoring for music playback")
+                    }
+                }
+            }
+        }
+    }
+    
     private fun getWhitelistedApps(): Set<String> {
         val prefs = getSharedPreferences("whitelist_settings", Context.MODE_PRIVATE)
         return prefs.getStringSet("whitelisted_apps", emptySet()) ?: emptySet()
@@ -168,14 +194,24 @@ class MusicDetectionService : Service() {
         autoStopDelay = preferences.getLong("auto_stop_delay", 3000L)
         
         // Register broadcast receiver for whitelist changes
-        val filter = IntentFilter("com.pauwma.glyphbeat.WHITELIST_CHANGED")
+        val whitelistFilter = IntentFilter("com.pauwma.glyphbeat.WHITELIST_CHANGED")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(whitelistChangeReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(whitelistChangeReceiver, whitelistFilter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(whitelistChangeReceiver, filter)
+            registerReceiver(whitelistChangeReceiver, whitelistFilter)
         }
         Log.d(LOG_TAG, "Registered whitelist change receiver")
+        
+        // Register broadcast receiver for service stop notifications
+        val serviceStopFilter = IntentFilter("com.pauwma.glyphbeat.SERVICE_STOPPED")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(serviceStopReceiver, serviceStopFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(serviceStopReceiver, serviceStopFilter)
+        }
+        Log.d(LOG_TAG, "Registered service stop receiver")
         
         // Create notification channel and start as foreground service
         try {
@@ -205,12 +241,19 @@ class MusicDetectionService : Service() {
             stopMonitoring()
             scope.cancel()
             
-            // Unregister broadcast receiver
+            // Unregister broadcast receivers
             try {
                 unregisterReceiver(whitelistChangeReceiver)
                 Log.d(LOG_TAG, "Unregistered whitelist change receiver")
             } catch (e: Exception) {
-                Log.w(LOG_TAG, "Error unregistering receiver: ${e.message}")
+                Log.w(LOG_TAG, "Error unregistering whitelist receiver: ${e.message}")
+            }
+            
+            try {
+                unregisterReceiver(serviceStopReceiver)
+                Log.d(LOG_TAG, "Unregistered service stop receiver")
+            } catch (e: Exception) {
+                Log.w(LOG_TAG, "Error unregistering service stop receiver: ${e.message}")
             }
             
             // Clean up service connection if bound
@@ -520,6 +563,7 @@ class MusicDetectionService : Service() {
         val hasActiveMedia = mediaHelper?.hasActiveMediaSession(BLACKLISTED_PACKAGES) ?: false
         val isPlaying = mediaHelper?.isPlaying() ?: false
         
+        
         Log.v(LOG_TAG, "Periodic check - hasActiveMedia: $hasActiveMedia, isPlaying: $isPlaying, serviceActive: $isGlyphServiceActive")
         
         when {
@@ -651,6 +695,7 @@ class MusicDetectionService : Service() {
             mediaPlayerServiceConnection = null
         }
     }
+    
     
     private fun updateNotification(text: String) {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)

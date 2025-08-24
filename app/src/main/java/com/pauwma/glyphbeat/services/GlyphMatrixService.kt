@@ -76,6 +76,13 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
 
     final override fun onUnbind(intent: Intent?): Boolean {
         Log.d(LOG_TAG, "$tag: onUnbind")
+        
+        // Notify MusicDetectionService that this service is stopping
+        val stopIntent = Intent("com.pauwma.glyphbeat.SERVICE_STOPPED")
+        stopIntent.putExtra("service_name", tag)
+        sendBroadcast(stopIntent)
+        Log.d(LOG_TAG, "$tag: Sent service stopped broadcast")
+        
         glyphMatrixManager?.let {
             Log.d(LOG_TAG, "$tag: onServiceDisconnected")
             performOnServiceDisconnected(applicationContext)
