@@ -933,7 +933,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             Log.i(LOG_TAG, "Skipped to next track via shake gesture")
 
             val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
-            val feedback_when_shaked = prefs.getBoolean("feedback_when_shaked", false)
+            val feedback_when_shaked = prefs.getBoolean("feedback_when_shaked", true)
 
             if (feedback_when_shaked){
                 // Provide haptic feedback for successful skip
