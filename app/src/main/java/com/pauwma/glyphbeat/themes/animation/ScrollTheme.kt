@@ -374,7 +374,7 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
             .addSliderSetting(
                 id = "scroll_speed",
                 displayName = "Scroll Speed",
-                description = "Text scrolling speed (1=slowest, 10=fastest)",
+                description = "Text scrolling speed",
                 defaultValue = 6,
                 minValue = 1,
                 maxValue = 10,
