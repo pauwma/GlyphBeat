@@ -254,10 +254,10 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
             true
             
         } catch (e: PackageManager.NameNotFoundException) {
-            Log.v(LOG_TAG, "App $packageName: not found")
+            //Log.v(LOG_TAG, "App $packageName: not found")
             false
         } catch (e: Exception) {
-            Log.w(LOG_TAG, "Error checking if $packageName is installed: ${e.message}")
+            //Log.w(LOG_TAG, "Error checking if $packageName is installed: ${e.message}")
             
             // Fallback: try to get application info directly
             try {
