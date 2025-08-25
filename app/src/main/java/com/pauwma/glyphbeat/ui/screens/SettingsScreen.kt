@@ -22,6 +22,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.ExpandMore
@@ -368,6 +369,7 @@ fun SettingsScreen(
     
     // Auto-start settings state
     var autoStartEnabled by remember { mutableStateOf(false) }
+    var autoStartPaused by remember { mutableStateOf(false) }
     var autoStartDelay by remember { mutableStateOf(1000L) }
     var autoStopDelay by remember { mutableStateOf(3000L) }
     var autoStartControlsExpanded by rememberSaveable { mutableStateOf(false) }
@@ -458,6 +460,7 @@ fun SettingsScreen(
             
             // Load auto-start preferences
             autoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
+            autoStartPaused = prefs.getBoolean("auto_start_paused", false)
             autoStartDelay = 0L // Instant trigger
             autoStopDelay = prefs.getLong("auto_stop_delay", 3000L)
             
@@ -489,6 +492,8 @@ fun SettingsScreen(
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "auto_start_enabled") {
                 autoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
+            } else if (key == "auto_start_paused") {
+                autoStartPaused = prefs.getBoolean("auto_start_paused", false)
             }
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -853,11 +858,15 @@ fun SettingsScreen(
                             .background(
                                 if (autoStartEnabled) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.surfaceVariant
-                    )
+                            )
+                            .alpha(if (autoStartPaused) 0.5f else 1.0f)
                             .clickable { 
                                 val enabled = !autoStartEnabled
                                 autoStartEnabled = enabled
-                                prefs.edit().putBoolean("auto_start_enabled", enabled).apply()
+                                prefs.edit()
+                                    .putBoolean("auto_start_enabled", enabled)
+                                    .putBoolean("auto_start_paused", false) // Clear paused state when manually toggling
+                                    .apply()
                                 
                                 // Start/stop the detection service
                                 if (enabled) {

@@ -197,9 +197,15 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         val initialFrame = generateFrame(shouldAnimate, initialPlayerState)
         val themeBrightness = currentTheme?.getBrightness() ?: 255
         uiScope.launch {
-            // Always use SDK brightness of 255 - themes now handle brightness in pixel values
-            val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, initialFrame, 255)
-            glyphMatrixManager.setMatrixFrame(matrixFrame.render())
+            // Check if auto-start is paused
+            val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+            val isPaused = prefs.getBoolean("auto_start_paused", false)
+            
+            if (!isPaused) {
+                // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, initialFrame, 255)
+                glyphMatrixManager.setMatrixFrame(matrixFrame.render())
+            }
         }
 
         backgroundScope.launch {
@@ -307,9 +313,15 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 }
 
                 uiScope.launch(Dispatchers.Main.immediate) {
-                    // Always use SDK brightness of 255 - themes now handle brightness in pixel values
-                    val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
-                    glyphMatrixManager.setMatrixFrame(matrixFrame.render())
+                    // Check if auto-start is paused
+                    val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+                    val isPaused = prefs.getBoolean("auto_start_paused", false)
+                    
+                    if (!isPaused) {
+                        // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                        val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
+                        glyphMatrixManager.setMatrixFrame(matrixFrame.render())
+                    }
                 }
 
                 // Check if theme was changed and update current theme
@@ -415,9 +427,15 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 val pixelArray = generateFrame(predictedState == PlayerState.PLAYING, predictedState)
                 val themeBrightness = currentTheme?.getBrightness() ?: 255
                 uiScope.launch(Dispatchers.Main.immediate) {
-                    // Always use SDK brightness of 255 - themes now handle brightness in pixel values
-                    val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
-                    matrixManager?.setMatrixFrame(matrixFrame.render())
+                    // Check if auto-start is paused
+                    val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+                    val isPaused = prefs.getBoolean("auto_start_paused", false)
+                    
+                    if (!isPaused) {
+                        // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                        val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
+                        matrixManager?.setMatrixFrame(matrixFrame.render())
+                    }
                 }
             }
             
@@ -639,9 +657,15 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             val pixelArray = generateFrame(isPlaying, currentPlayerState)
             val themeBrightness = currentTheme?.getBrightness() ?: 255
             uiScope.launch(Dispatchers.Main.immediate) {
-                // Always use SDK brightness of 255 - themes now handle brightness in pixel values
-                val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
-                matrixManager?.setMatrixFrame(matrixFrame.render())
+                // Check if auto-start is paused
+                val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+                val isPaused = prefs.getBoolean("auto_start_paused", false)
+                
+                if (!isPaused) {
+                    // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                    val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
+                    matrixManager?.setMatrixFrame(matrixFrame.render())
+                }
             }
         }
     }
@@ -1030,25 +1054,31 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             }
         }
         
-        // Disable auto-start service immediately
         val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
-        toggleAutoStartService(false)
         
-        Log.i(LOG_TAG, "Auto-start service disabled via shake gesture")
-        
-        // If timeout is configured, schedule re-enable after delay
         if (autoStartSettings.timeout > 0) {
+            // Timeout configured - pause temporarily but keep switch enabled
+            setAutoStartPaused(true)
+            Log.i(LOG_TAG, "Auto-start service paused via shake gesture")
+            
+            // Schedule re-enable after delay
             backgroundScope.launch {
                 delay(autoStartSettings.timeout)
-                // Double-check that shake settings haven't changed and service is still disabled
+                // Double-check that shake settings haven't changed and service is still paused
                 val currentSettings = shakeSettingsManager?.loadSettings()
                 val currentAutoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
+                val currentAutoStartPaused = prefs.getBoolean("auto_start_paused", false)
                 
-                if (currentSettings?.behavior == ShakeBehavior.AUTO_START && !currentAutoStartEnabled) {
-                    toggleAutoStartService(true)
-                    Log.i(LOG_TAG, "Auto-start service re-enabled after timeout")
+                if (currentSettings?.behavior == ShakeBehavior.AUTO_START && 
+                    currentAutoStartEnabled && currentAutoStartPaused) {
+                    setAutoStartPaused(false)
+                    Log.i(LOG_TAG, "Auto-start service resumed after timeout")
                 }
             }
+        } else {
+            // No timeout - disable completely
+            toggleAutoStartService(false)
+            Log.i(LOG_TAG, "Auto-start service disabled via shake gesture")
         }
         
         return true
@@ -1059,7 +1089,10 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
      */
     private fun toggleAutoStartService(enable: Boolean) {
         val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
-        prefs.edit().putBoolean("auto_start_enabled", enable).apply()
+        prefs.edit()
+            .putBoolean("auto_start_enabled", enable)
+            .putBoolean("auto_start_paused", false) // Clear paused state when toggling
+            .apply()
         
         // Start or stop the MusicDetectionService
         val serviceIntent = Intent(applicationContext, com.pauwma.glyphbeat.services.autostart.MusicDetectionService::class.java)
@@ -1070,6 +1103,22 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         } else {
             applicationContext.stopService(serviceIntent)
             Log.i(LOG_TAG, "Auto-start service disabled via shake")
+        }
+    }
+    
+    /**
+     * Set the auto-start service paused state without changing enabled state
+     */
+    private fun setAutoStartPaused(paused: Boolean) {
+        val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("auto_start_paused", paused).apply()
+        
+        if (paused) {
+            // Stop the Glyph matrix animation by clearing the display
+            matrixManager?.setMatrixFrame(IntArray(625) { 0 }) // All LEDs off
+            Log.i(LOG_TAG, "Auto-start service paused - Glyph matrix cleared")
+        } else {
+            Log.i(LOG_TAG, "Auto-start service resumed")
         }
     }
     
