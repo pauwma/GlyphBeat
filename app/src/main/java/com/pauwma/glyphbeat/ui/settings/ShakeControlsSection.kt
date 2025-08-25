@@ -45,8 +45,22 @@ fun ShakeControlsSection(
     var generalExpanded by rememberSaveable { mutableStateOf(true) }
     var behaviorExpanded by rememberSaveable { mutableStateOf(true) }
     
+    // Store settings for each behavior type to preserve user customizations
+    var skipSettings by remember { mutableStateOf(BehaviorSettings.SkipSettings()) }
+    var playPauseSettings by remember { mutableStateOf(BehaviorSettings.PlayPauseSettings()) }
+    var autoStartSettings by remember { mutableStateOf(BehaviorSettings.AutoStartSettings()) }
+    
     // Track if this is the initial load to avoid auto-expand on screen load
     var isInitialLoad by remember { mutableStateOf(true) }
+    
+    // Update behavior settings when they change to preserve user customizations
+    LaunchedEffect(settings.behaviorSettings) {
+        when (settings.behaviorSettings) {
+            is BehaviorSettings.SkipSettings -> skipSettings = settings.behaviorSettings
+            is BehaviorSettings.PlayPauseSettings -> playPauseSettings = settings.behaviorSettings
+            is BehaviorSettings.AutoStartSettings -> autoStartSettings = settings.behaviorSettings
+        }
+    }
     
     // Auto-collapse/expand when manually toggling, but not on initial load
     LaunchedEffect(settings.enabled) {
@@ -179,10 +193,15 @@ fun ShakeControlsSection(
                     BehaviorSelectionDropdown(
                         selectedBehavior = settings.behavior,
                         onBehaviorChange = { newBehavior ->
-                            val newSettings = ShakeControlSettings.getDefaultForBehavior(newBehavior).copy(
-                                enabled = settings.enabled,
-                                sensitivity = settings.sensitivity,
-                                hapticFeedback = settings.hapticFeedback
+                            val behaviorSettings = when (newBehavior) {
+                                ShakeBehavior.SKIP -> skipSettings
+                                ShakeBehavior.PLAY_PAUSE -> playPauseSettings
+                                ShakeBehavior.AUTO_START -> autoStartSettings
+                            }
+                            
+                            val newSettings = settings.copy(
+                                behavior = newBehavior,
+                                behaviorSettings = behaviorSettings
                             )
                             onSettingsChange(newSettings)
                         },
