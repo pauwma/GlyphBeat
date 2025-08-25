@@ -50,9 +50,6 @@ fun ShakeControlsSection(
     var playPauseSettings by remember { mutableStateOf(BehaviorSettings.PlayPauseSettings()) }
     var autoStartSettings by remember { mutableStateOf(BehaviorSettings.AutoStartSettings()) }
     
-    // Track if this is the initial load to avoid auto-expand on screen load
-    var isInitialLoad by remember { mutableStateOf(true) }
-    
     // Update behavior settings when they change to preserve user customizations
     LaunchedEffect(settings.behaviorSettings) {
         when (settings.behaviorSettings) {
@@ -62,18 +59,6 @@ fun ShakeControlsSection(
         }
     }
     
-    // Auto-collapse/expand when manually toggling, but not on initial load
-    LaunchedEffect(settings.enabled) {
-        if (!isInitialLoad) {
-            // User manually toggled the switch - auto expand/collapse
-            if (settings.enabled && !mainExpanded) {
-                mainExpanded = true
-            } else if (!settings.enabled && mainExpanded) {
-                mainExpanded = false
-            }
-        }
-        isInitialLoad = false
-    }
     
     Card(
         modifier = modifier
@@ -114,10 +99,8 @@ fun ShakeControlsSection(
 
                     Text(
                         text = "Configure different shake gesture controls",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 11.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                     )
                 }
                 
@@ -165,7 +148,14 @@ fun ShakeControlsSection(
                             else MaterialTheme.colorScheme.surfaceVariant
                         )
                         .clickable { 
-                            onSettingsChange(settings.copy(enabled = !settings.enabled))
+                            val newEnabled = !settings.enabled
+                            onSettingsChange(settings.copy(enabled = newEnabled))
+                            // Auto expand/collapse when user manually toggles the switch
+                            if (newEnabled) {
+                                mainExpanded = true
+                            } else {
+                                mainExpanded = false
+                            }
                         }
                         .padding(2.dp)
                 ) {
@@ -189,25 +179,7 @@ fun ShakeControlsSection(
                     modifier = Modifier.padding(top = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Behavior selection dropdown
-                    BehaviorSelectionDropdown(
-                        selectedBehavior = settings.behavior,
-                        onBehaviorChange = { newBehavior ->
-                            val behaviorSettings = when (newBehavior) {
-                                ShakeBehavior.SKIP -> skipSettings
-                                ShakeBehavior.PLAY_PAUSE -> playPauseSettings
-                                ShakeBehavior.AUTO_START -> autoStartSettings
-                            }
-                            
-                            val newSettings = settings.copy(
-                                behavior = newBehavior,
-                                behaviorSettings = behaviorSettings
-                            )
-                            onSettingsChange(newSettings)
-                        },
-                        enabled = settings.enabled
-                    )
-                    
+
                     // General settings section
                     SettingsSection(
                         title = "General Settings",
@@ -227,6 +199,25 @@ fun ShakeControlsSection(
                             enabled = settings.enabled
                         )
                     }
+
+                    // Behavior selection dropdown
+                    BehaviorSelectionDropdown(
+                        selectedBehavior = settings.behavior,
+                        onBehaviorChange = { newBehavior ->
+                            val behaviorSettings = when (newBehavior) {
+                                ShakeBehavior.SKIP -> skipSettings
+                                ShakeBehavior.PLAY_PAUSE -> playPauseSettings
+                                ShakeBehavior.AUTO_START -> autoStartSettings
+                            }
+                            
+                            val newSettings = settings.copy(
+                                behavior = newBehavior,
+                                behaviorSettings = behaviorSettings
+                            )
+                            onSettingsChange(newSettings)
+                        },
+                        enabled = settings.enabled
+                    )
                     
                     // Behavior-specific settings section
                     SettingsSection(
@@ -488,13 +479,13 @@ private fun PlayPauseBehaviorSettings(
         // Lock screen behavior toggle
         EnhancedToggleSetting(
             title = "Lock Screen Behavior",
-            description = "Allow play/pause control when device is locked",
+            description = "Allow play/pause when device is locked",
             checked = settings.lockScreenBehavior,
             onCheckedChange = { newValue ->
                 onSettingsChange(settings.copy(lockScreenBehavior = newValue))
             },
-            enabledLabel = "Works when locked",
-            disabledLabel = "Disabled when locked",
+            enabledLabel = "Enabled",
+            disabledLabel = "Disabled",
             useAlternateColors = true
         )
         
