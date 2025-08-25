@@ -33,8 +33,6 @@ class ShakeControlSettingsManager(private val context: Context) {
         
         // Auto-Start behavior settings
         private const val AUTO_START_TIMEOUT_KEY = "auto_start_timeout"
-        private const val AUTO_START_BATTERY_AWARENESS_KEY = "auto_start_battery_awareness"
-        private const val AUTO_START_BATTERY_THRESHOLD_KEY = "auto_start_battery_threshold"
         
         // Legacy setting keys (v1) - for migration
         private const val LEGACY_SHAKE_TO_SKIP_ENABLED_KEY = "shake_to_skip_enabled"
@@ -137,9 +135,7 @@ class ShakeControlSettingsManager(private val context: Context) {
     
     private fun loadAutoStartSettings(): BehaviorSettings.AutoStartSettings {
         return BehaviorSettings.AutoStartSettings(
-            timeout = prefs.getLong(AUTO_START_TIMEOUT_KEY, 0L),
-            batteryAwareness = prefs.getBoolean(AUTO_START_BATTERY_AWARENESS_KEY, false),
-            batteryThreshold = prefs.getInt(AUTO_START_BATTERY_THRESHOLD_KEY, 10)
+            timeout = prefs.getLong(AUTO_START_TIMEOUT_KEY, 0L)
         )
     }
     
@@ -156,8 +152,6 @@ class ShakeControlSettingsManager(private val context: Context) {
     
     private fun SharedPreferences.Editor.saveAutoStartSettings(settings: BehaviorSettings.AutoStartSettings) {
         putLong(AUTO_START_TIMEOUT_KEY, settings.timeout)
-        putBoolean(AUTO_START_BATTERY_AWARENESS_KEY, settings.batteryAwareness)
-        putInt(AUTO_START_BATTERY_THRESHOLD_KEY, settings.batteryThreshold)
     }
     
     /**
@@ -254,9 +248,7 @@ class ShakeControlSettingsManager(private val context: Context) {
                 )
                 is BehaviorSettings.AutoStartSettings -> mapOf(
                     "type" to "auto_start",
-                    "timeout" to behaviorSettings.timeout,
-                    "batteryAwareness" to behaviorSettings.batteryAwareness,
-                    "batteryThreshold" to behaviorSettings.batteryThreshold
+                    "timeout" to behaviorSettings.timeout
                 )
             }
         )

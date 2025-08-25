@@ -648,6 +648,19 @@ class MusicDetectionService : Service() {
     private fun startGlyphService(appName: String) {
         Log.i(LOG_TAG, "Auto-activating Media Player service for: $appName")
         
+        // Check battery awareness
+        val batteryAwarenessEnabled = preferences.getBoolean("battery_awareness_enabled", false)
+        if (batteryAwarenessEnabled) {
+            val batteryManager = applicationContext.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+            val batteryLevel = batteryManager.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            val batteryThreshold = preferences.getInt("battery_threshold", 10)
+            
+            if (batteryLevel < batteryThreshold) {
+                Log.d(LOG_TAG, "Battery level ($batteryLevel%) below threshold ($batteryThreshold%) - skipping auto-start activation")
+                return
+            }
+        }
+        
         // Don't bind if already bound or binding in progress
         if (mediaPlayerServiceBound || isBindingInProgress) {
             Log.d(LOG_TAG, "MediaPlayerToyService already bound/binding, skipping activation (bound: $mediaPlayerServiceBound, binding: $isBindingInProgress)")

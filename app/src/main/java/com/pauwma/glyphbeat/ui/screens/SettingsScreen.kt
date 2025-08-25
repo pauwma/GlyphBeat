@@ -86,6 +86,7 @@ import com.pauwma.glyphbeat.ui.settings.DropdownOption
 import com.pauwma.glyphbeat.ui.settings.DropdownSetting
 import com.pauwma.glyphbeat.ui.settings.SettingsDropdown
 import com.pauwma.glyphbeat.ui.settings.ShakeControlsSection
+import com.pauwma.glyphbeat.ui.settings.BatteryAwarenessSettings
 import com.pauwma.glyphbeat.data.ShakeControlSettings
 import com.pauwma.glyphbeat.data.ShakeControlSettingsManager
 
@@ -373,6 +374,8 @@ fun SettingsScreen(
     var autoStartDelay by remember { mutableStateOf(1000L) }
     var autoStopDelay by remember { mutableStateOf(3000L) }
     var autoStartControlsExpanded by rememberSaveable { mutableStateOf(false) }
+    var batteryAwarenessEnabled by remember { mutableStateOf(false) }
+    var batteryThreshold by remember { mutableStateOf(10) }
     var musicApps by remember { mutableStateOf<List<MusicAppWhitelistManager.MusicAppInfo>>(emptyList()) }
     var isLoadingMusicApps by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -463,6 +466,8 @@ fun SettingsScreen(
             autoStartPaused = prefs.getBoolean("auto_start_paused", false)
             autoStartDelay = 0L // Instant trigger
             autoStopDelay = prefs.getLong("auto_stop_delay", 3000L)
+            batteryAwarenessEnabled = prefs.getBoolean("battery_awareness_enabled", false)
+            batteryThreshold = prefs.getInt("battery_threshold", 10)
             
             // Load music apps
             loadMusicApps()
@@ -916,7 +921,6 @@ fun SettingsScreen(
                     ) {
                         // Divider between header and settings
                         HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 0.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                         )
                         
@@ -939,6 +943,22 @@ fun SettingsScreen(
                                 lineHeight = 16.sp
                             )
                         }
+
+
+                        // Battery Awareness Settings
+                        BatteryAwarenessSettings(
+                            enabled = batteryAwarenessEnabled,
+                            onEnabledChange = { newValue ->
+                                batteryAwarenessEnabled = newValue
+                                prefs.edit().putBoolean("battery_awareness_enabled", newValue).apply()
+                            },
+                            threshold = batteryThreshold,
+                            onThresholdChange = { newThreshold ->
+                                batteryThreshold = newThreshold
+                                prefs.edit().putInt("battery_threshold", newThreshold).apply()
+                            },
+                            useAlternateColors = false
+                        )
                         
                         // Music Apps List
                         Column(

@@ -540,18 +540,5 @@ private fun AutoStartBehaviorSettings(
             minLabel = "Off",
             useAlternateColors = true
         )
-        
-        // Battery awareness settings
-        BatteryAwarenessSettings(
-            enabled = settings.batteryAwareness,
-            onEnabledChange = { newValue ->
-                onSettingsChange(settings.copy(batteryAwareness = newValue))
-            },
-            threshold = settings.batteryThreshold,
-            onThresholdChange = { newThreshold ->
-                onSettingsChange(settings.copy(batteryThreshold = newThreshold))
-            },
-            useAlternateColors = true
-        )
     }
 }

@@ -36,9 +36,7 @@ sealed class BehaviorSettings {
      * Settings specific to Auto-Start behavior
      */
     data class AutoStartSettings(
-        val timeout: Long = 0L,                         // Auto-start timeout in ms (0 = disabled)
-        val batteryAwareness: Boolean = false,          // Enable battery-aware auto-start
-        val batteryThreshold: Int = 10                  // Battery percentage threshold (5-25%)
+        val timeout: Long = 0L                          // Auto-start timeout in ms (0 = disabled)
     ) : BehaviorSettings()
 }
 

@@ -1042,18 +1042,6 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
      */
     private fun handleAutoStartBehavior(): Boolean {
         val autoStartSettings = currentShakeSettings.getAutoStartSettings() ?: return false
-        
-        // Check battery awareness
-        if (autoStartSettings.batteryAwareness) {
-            val batteryManager = applicationContext.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
-            val batteryLevel = batteryManager.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            
-            if (batteryLevel < autoStartSettings.batteryThreshold) {
-                Log.d(LOG_TAG, "Battery level ($batteryLevel%) below threshold (${autoStartSettings.batteryThreshold}%) - ignoring auto-start shake")
-                return false
-            }
-        }
-        
         val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
         
         if (autoStartSettings.timeout > 0) {
