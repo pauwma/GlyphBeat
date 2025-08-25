@@ -38,6 +38,7 @@ import kotlin.math.roundToInt
 fun ShakeControlsSection(
     settings: ShakeControlSettings,
     onSettingsChange: (ShakeControlSettings) -> Unit,
+    autoStartEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
     val customFont = FontFamily(Font(R.font.ntype82regular))
@@ -62,8 +63,7 @@ fun ShakeControlsSection(
     
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF1A1A1A)
         ),
@@ -129,12 +129,9 @@ fun ShakeControlsSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Enable Shake Controls",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = customFont,
-                        fontSize = 15.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = "Shake Controls",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 
                 // Custom toggle switch
@@ -216,7 +213,8 @@ fun ShakeControlsSection(
                             )
                             onSettingsChange(newSettings)
                         },
-                        enabled = settings.enabled
+                        enabled = settings.enabled,
+                        autoStartEnabled = autoStartEnabled
                     )
                     
                     // Behavior-specific settings section
@@ -270,17 +268,29 @@ private fun BehaviorSelectionDropdown(
     selectedBehavior: ShakeBehavior,
     onBehaviorChange: (ShakeBehavior) -> Unit,
     enabled: Boolean = true,
+    autoStartEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val customFont = FontFamily(Font(R.font.ntype82regular))
     val behaviors = ShakeBehavior.entries.toTypedArray()
     
-    val dropdownOptions = behaviors.map { behavior ->
-        DropdownOption(
-            value = behavior.id,
-            label = behavior.displayName,
-            description = behavior.description
-        )
+    val dropdownOptions = behaviors.mapNotNull { behavior ->
+        // Filter out AUTO_START when auto-start is disabled, unless it's currently selected
+        if (behavior == ShakeBehavior.AUTO_START && !autoStartEnabled && selectedBehavior != ShakeBehavior.AUTO_START) {
+            null
+        } else {
+            val label = if (behavior == ShakeBehavior.AUTO_START && !autoStartEnabled) {
+                "${behavior.displayName} (Auto-Start disabled)"
+            } else {
+                behavior.displayName
+            }
+            
+            DropdownOption(
+                value = behavior.id,
+                label = label,
+                description = behavior.description
+            )
+        }
     }
     
     val dropdownSetting = DropdownSetting(
@@ -296,6 +306,11 @@ private fun BehaviorSelectionDropdown(
         currentValue = selectedBehavior.id,
         onValueChange = { newValue ->
             behaviors.find { it.id == newValue }?.let { newBehavior ->
+                // Prevent selection of AUTO_START when auto-start is disabled
+                if (newBehavior == ShakeBehavior.AUTO_START && !autoStartEnabled) {
+                    // Do nothing - ignore the selection
+                    return@let
+                }
                 onBehaviorChange(newBehavior)
             }
         },

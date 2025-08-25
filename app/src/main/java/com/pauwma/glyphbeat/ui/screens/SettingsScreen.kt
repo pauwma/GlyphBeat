@@ -491,7 +491,16 @@ fun SettingsScreen(
     DisposableEffect(Unit) {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "auto_start_enabled") {
-                autoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
+                val newAutoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
+                autoStartEnabled = newAutoStartEnabled
+                
+                // Auto-switch shake behavior from AUTO_START to SKIP when auto-start is disabled
+                if (!newAutoStartEnabled && shakeControlSettings.behavior == ShakeBehavior.AUTO_START) {
+                    val updatedSettings = shakeControlSettings.copy(behavior = ShakeBehavior.SKIP)
+                    shakeControlSettings = updatedSettings
+                    shakeSettingsManager.saveSettings(updatedSettings)
+                    Log.d("SettingsScreen", "Auto-switched shake behavior from AUTO_START to SKIP (auto-start disabled)")
+                }
             } else if (key == "auto_start_paused") {
                 autoStartPaused = prefs.getBoolean("auto_start_paused", false)
             }
@@ -804,7 +813,7 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "Auto-Start Service",
+                            text = "Auto-Start",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontFamily = customFont
                             ),
@@ -841,7 +850,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Auto-Start",
+                        text = "Auto-Start Service",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -1144,6 +1153,7 @@ fun SettingsScreen(
                 shakeSettingsManager.saveSettings(newSettings)
                 Log.d("SettingsScreen", "Shake control settings updated: ${newSettings.behavior.id}, enabled=${newSettings.enabled}")
             },
+            autoStartEnabled = autoStartEnabled,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
