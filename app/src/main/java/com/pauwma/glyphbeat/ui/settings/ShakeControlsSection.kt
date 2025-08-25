@@ -516,8 +516,8 @@ private fun AutoStartBehaviorSettings(
     ) {
         // Timeout slider
         TimeoutSlider(
-            label = "Auto-Start Timeout",
-            description = "How long to wait before automatically toggling auto-start",
+            label = "Re-enable Delay",
+            description = "Pause duration before re-enabling auto-start service",
             currentValue = settings.timeout,
             onValueChange = { newTimeout ->
                 onSettingsChange(settings.copy(timeout = newTimeout))

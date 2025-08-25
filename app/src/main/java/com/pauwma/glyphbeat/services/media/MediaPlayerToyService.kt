@@ -1030,27 +1030,27 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             }
         }
         
-        // Toggle auto-start service
+        // Disable auto-start service immediately
         val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
-        val currentAutoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
-        val newAutoStartState = !currentAutoStartEnabled
+        toggleAutoStartService(false)
         
-        // Apply timeout if configured
+        Log.i(LOG_TAG, "Auto-start service disabled via shake gesture")
+        
+        // If timeout is configured, schedule re-enable after delay
         if (autoStartSettings.timeout > 0) {
             backgroundScope.launch {
                 delay(autoStartSettings.timeout)
-                // Double-check that shake settings haven't changed
+                // Double-check that shake settings haven't changed and service is still disabled
                 val currentSettings = shakeSettingsManager?.loadSettings()
-                if (currentSettings?.behavior == ShakeBehavior.AUTO_START) {
-                    toggleAutoStartService(newAutoStartState)
+                val currentAutoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
+                
+                if (currentSettings?.behavior == ShakeBehavior.AUTO_START && !currentAutoStartEnabled) {
+                    toggleAutoStartService(true)
+                    Log.i(LOG_TAG, "Auto-start service re-enabled after timeout")
                 }
             }
-        } else {
-            // Immediate toggle
-            toggleAutoStartService(newAutoStartState)
         }
         
-        Log.i(LOG_TAG, "Auto-start toggle scheduled via shake gesture: $newAutoStartState")
         return true
     }
     

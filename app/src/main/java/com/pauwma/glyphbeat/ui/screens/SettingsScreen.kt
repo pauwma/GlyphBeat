@@ -1,6 +1,7 @@
 package com.pauwma.glyphbeat.ui.screens
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
@@ -53,6 +54,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -75,6 +77,7 @@ import com.pauwma.glyphbeat.theme.NothingRed
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.pauwma.glyphbeat.R
+import com.pauwma.glyphbeat.data.ShakeBehavior
 import com.pauwma.glyphbeat.isNotificationAccessGranted
 import com.pauwma.glyphbeat.isMediaControlServiceWorking
 import com.pauwma.glyphbeat.openNotificationAccessSettings
@@ -481,6 +484,20 @@ fun SettingsScreen(
         }
     }
     
+    // Live update auto-start switch when changed by shake controls or other sources
+    DisposableEffect(Unit) {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "auto_start_enabled") {
+                autoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        
+        onDispose {
+            prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+    
     // Clear test result after 5 seconds
     LaunchedEffect(showTestResult) {
         if (showTestResult) {
@@ -825,6 +842,9 @@ fun SettingsScreen(
                     )
                     
                     // Custom toggle switch to match shake controls style
+                    val isControlledByShake = shakeControlSettings.enabled && 
+                                            shakeControlSettings.behavior == ShakeBehavior.AUTO_START
+                    
                     Box(
                         modifier = Modifier
                             .width(56.dp)
@@ -833,7 +853,7 @@ fun SettingsScreen(
                             .background(
                                 if (autoStartEnabled) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.surfaceVariant
-                            )
+                    )
                             .clickable { 
                                 val enabled = !autoStartEnabled
                                 autoStartEnabled = enabled
