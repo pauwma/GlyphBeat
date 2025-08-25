@@ -36,7 +36,7 @@ sealed class BehaviorSettings {
      * Settings specific to Auto-Start behavior
      */
     data class AutoStartSettings(
-        val timeout: Long = 0L                          // Auto-start timeout in ms (0 = disabled)
+        val timeout: Long = 5000L                       // Auto-start timeout in ms (0 = disabled, default = 5s)
     ) : BehaviorSettings()
 }
 

@@ -135,7 +135,7 @@ class ShakeControlSettingsManager(private val context: Context) {
     
     private fun loadAutoStartSettings(): BehaviorSettings.AutoStartSettings {
         return BehaviorSettings.AutoStartSettings(
-            timeout = prefs.getLong(AUTO_START_TIMEOUT_KEY, 0L)
+            timeout = prefs.getLong(AUTO_START_TIMEOUT_KEY, 5000L)
         )
     }
     
