@@ -50,6 +50,12 @@ class MusicDetectionService : Service() {
     private var autoStartDelay = 0L // Default instant activation
     private var autoStopDelay = 3000L // Default 3 second delay before stopping
     
+    // Glyph suspension management
+    private var isSuspendedForGlyph = false
+    private var suspensionStartTime = 0L
+    private val glyphSuspensionDuration = 10000L // 10 seconds suspension when Glyph activity detected
+    private val glyphCheckInterval = 5000L // Check every 5 seconds if we can resume
+    
     // Service connection for MediaPlayerToyService
     private var mediaPlayerServiceConnection: ServiceConnection? = null
     private var mediaPlayerServiceBound = false
@@ -140,6 +146,24 @@ class MusicDetectionService : Service() {
         }
     }
     
+    // Broadcast receiver for Glyph button press detection
+    private val glyphButtonReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                "com.pauwma.glyphbeat.GLYPH_BUTTON_PRESSED" -> {
+                    // Check if this broadcast is from our own auto-started service
+                    if (isGlyphServiceActive && !isBindingInProgress) {
+                        Log.d(LOG_TAG, "Received Glyph broadcast from own auto-started service - ignoring")
+                        return
+                    }
+                    
+                    Log.w(LOG_TAG, "External Glyph activity detected - suspending auto-start service")
+                    suspendForGlyphActivity()
+                }
+            }
+        }
+    }
+    
     private fun getWhitelistedApps(): Set<String> {
         val prefs = getSharedPreferences("whitelist_settings", Context.MODE_PRIVATE)
         return prefs.getStringSet("whitelisted_apps", emptySet()) ?: emptySet()
@@ -213,6 +237,16 @@ class MusicDetectionService : Service() {
         }
         Log.d(LOG_TAG, "Registered service stop receiver")
         
+        // Register broadcast receiver for Glyph button press detection
+        val glyphButtonFilter = IntentFilter("com.pauwma.glyphbeat.GLYPH_BUTTON_PRESSED")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(glyphButtonReceiver, glyphButtonFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(glyphButtonReceiver, glyphButtonFilter)
+        }
+        Log.d(LOG_TAG, "Registered Glyph button receiver")
+        
         // Create notification channel and start as foreground service
         try {
             createNotificationChannel()
@@ -254,6 +288,13 @@ class MusicDetectionService : Service() {
                 Log.d(LOG_TAG, "Unregistered service stop receiver")
             } catch (e: Exception) {
                 Log.w(LOG_TAG, "Error unregistering service stop receiver: ${e.message}")
+            }
+            
+            try {
+                unregisterReceiver(glyphButtonReceiver)
+                Log.d(LOG_TAG, "Unregistered Glyph button receiver")
+            } catch (e: Exception) {
+                Log.w(LOG_TAG, "Error unregistering Glyph button receiver: ${e.message}")
             }
             
             // Clean up service connection if bound
@@ -357,7 +398,13 @@ class MusicDetectionService : Service() {
      */
     private fun handlePlaybackStateChange(isPlaying: Boolean, hasActiveMedia: Boolean) {
         val currentTime = System.currentTimeMillis()
-        Log.d(LOG_TAG, "CALLBACK RECEIVED - isPlaying: $isPlaying, hasActiveMedia: $hasActiveMedia, serviceActive: $isGlyphServiceActive")
+        Log.d(LOG_TAG, "CALLBACK RECEIVED - isPlaying: $isPlaying, hasActiveMedia: $hasActiveMedia, serviceActive: $isGlyphServiceActive, suspended: $isSuspendedForGlyph")
+        
+        // Skip handling if suspended for Glyph activity
+        if (isSuspendedForGlyph) {
+            Log.d(LOG_TAG, "Skipping playback state handling - suspended for Glyph activity")
+            return
+        }
         
         when {
             // Music started playing - check if from whitelisted app
@@ -422,7 +469,13 @@ class MusicDetectionService : Service() {
      * Handle active app changes from MediaControlHelper callbacks
      */
     private fun handleActiveAppChange(packageName: String?, appName: String?) {
-        Log.d(LOG_TAG, "CALLBACK RECEIVED - Active app changed to: $appName ($packageName)")
+        Log.d(LOG_TAG, "CALLBACK RECEIVED - Active app changed to: $appName ($packageName), suspended: $isSuspendedForGlyph")
+        
+        // Skip handling if suspended for Glyph activity
+        if (isSuspendedForGlyph) {
+            Log.d(LOG_TAG, "Skipping app change handling - suspended for Glyph activity")
+            return
+        }
         
         // If new app is playing and whitelisted, activate service or update current app
         if (packageName != null && whitelistManager.isAppWhitelisted(packageName)) {
@@ -696,6 +749,59 @@ class MusicDetectionService : Service() {
         }
     }
     
+    /**
+     * Suspend auto-start service when Glyph button activity is detected
+     */
+    private fun suspendForGlyphActivity() {
+        isSuspendedForGlyph = true
+        suspensionStartTime = System.currentTimeMillis()
+        
+        // Stop the Glyph service immediately if it's active
+        if (isGlyphServiceActive) {
+            Log.i(LOG_TAG, "Stopping MediaPlayer service due to Glyph activity")
+            stopGlyphService()
+            updateNotification("Suspended - Glyph interface in use")
+        } else {
+            updateNotification("Monitoring suspended - Glyph interface active")
+        }
+        
+        // Schedule resume check
+        handler.postDelayed({
+            checkResumeFromSuspension()
+        }, glyphCheckInterval)
+    }
+    
+    /**
+     * Check if we can resume from Glyph suspension
+     */
+    private fun checkResumeFromSuspension() {
+        val currentTime = System.currentTimeMillis()
+        
+        if (isSuspendedForGlyph && (currentTime - suspensionStartTime >= glyphSuspensionDuration)) {
+            Log.i(LOG_TAG, "Glyph suspension period ended - checking if we can resume")
+            
+            // Check if music is still playing and should restart service
+            val isPlaying = mediaHelper?.isPlaying() ?: false
+            val activeController = mediaHelper?.getActiveMediaController()
+            val packageName = activeController?.packageName
+            
+            if (isPlaying && packageName != null && whitelistManager.isAppWhitelisted(packageName)) {
+                Log.i(LOG_TAG, "Music still playing after suspension - resuming auto-start for: $packageName")
+                isSuspendedForGlyph = false
+                currentPlayingApp = packageName
+                startGlyphService(packageName)
+            } else {
+                Log.d(LOG_TAG, "No music playing after suspension - resuming monitoring only")
+                isSuspendedForGlyph = false
+                updateNotification("Monitoring for music playback")
+            }
+        } else if (isSuspendedForGlyph) {
+            // Schedule another check
+            handler.postDelayed({
+                checkResumeFromSuspension()
+            }, glyphCheckInterval)
+        }
+    }
     
     private fun updateNotification(text: String) {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)

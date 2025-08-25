@@ -2,6 +2,7 @@ package com.pauwma.glyphbeat.services.media
 
 import android.app.KeyguardManager
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
@@ -141,6 +142,11 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         
         // Store reference to matrix manager for immediate updates
         this.matrixManager = glyphMatrixManager
+        
+        // Always send Glyph activity broadcast when service starts
+        // The MusicDetectionService will determine if it should suspend based on its own state
+        Log.i(LOG_TAG, "MediaPlayerToyService activated - sending Glyph activity notification")
+        sendGlyphActivityBroadcast()
         
         // Initialize components
         mediaHelper = MediaControlHelper(context)
@@ -1015,6 +1021,21 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     updateShakeSettings(enabled, sensitivity, skipDelay)
                 }
             }
+        }
+    }
+    
+    /**
+     * Send broadcast to notify that manual Glyph activity is happening
+     */
+    private fun sendGlyphActivityBroadcast() {
+        try {
+            val intent = Intent("com.pauwma.glyphbeat.GLYPH_BUTTON_PRESSED")
+            intent.putExtra("service_name", "MediaPlayer-Demo")
+            intent.putExtra("activation_time", System.currentTimeMillis())
+            sendBroadcast(intent)
+            Log.d(LOG_TAG, "Sent Glyph activity broadcast")
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "Failed to send Glyph activity broadcast: ${e.message}")
         }
     }
 
