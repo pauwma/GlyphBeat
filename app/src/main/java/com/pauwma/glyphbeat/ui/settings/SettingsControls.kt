@@ -50,7 +50,7 @@ fun SettingsSlider(
                 text = setting.displayName,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontFamily = customFont,
-                    fontSize = 14.sp
+                    fontSize = 15.sp
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -71,7 +71,7 @@ fun SettingsSlider(
                     text = valueText,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = customFont,
-                        fontSize = 14.sp
+                        fontSize = 15.sp
                     ),
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -84,8 +84,7 @@ fun SettingsSlider(
         Text(
             text = setting.description,
             style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = customFont,
-                fontSize = 12.sp
+                fontSize = 11.sp
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )
@@ -191,7 +190,7 @@ fun SettingsToggle(
                     text = setting.displayName,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = customFont,
-                        fontSize = 14.sp
+                        fontSize = 15.sp
                     ),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -201,8 +200,7 @@ fun SettingsToggle(
                 Text(
                     text = setting.description,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = customFont,
-                        fontSize = 12.sp
+                        fontSize = 11.sp
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
@@ -275,7 +273,7 @@ fun SettingsDropdown(
             text = setting.displayName,
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontFamily = customFont,
-                fontSize = 14.sp
+                fontSize = 15.sp
             ),
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -286,8 +284,7 @@ fun SettingsDropdown(
         Text(
             text = setting.description,
             style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = customFont,
-                fontSize = 12.sp
+                fontSize = 11.sp
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )
@@ -315,7 +312,7 @@ fun SettingsDropdown(
                     .background(MaterialTheme.colorScheme.surface)
                     .menuAnchor()
                     .clickable { expanded = true }
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Row(
@@ -326,7 +323,6 @@ fun SettingsDropdown(
                     Text(
                         text = currentOption?.label ?: currentValue,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = customFont,
                             fontSize = 14.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurface
@@ -353,7 +349,6 @@ fun SettingsDropdown(
                                 Text(
                                     text = option.label,
                                     style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontFamily = customFont,
                                         fontSize = 14.sp
                                     ),
                                     color = if (option.value == currentValue)
@@ -366,7 +361,6 @@ fun SettingsDropdown(
                                     Text(
                                         text = desc,
                                         style = MaterialTheme.typography.bodySmall.copy(
-                                            fontFamily = customFont,
                                             fontSize = 11.sp
                                         ),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)

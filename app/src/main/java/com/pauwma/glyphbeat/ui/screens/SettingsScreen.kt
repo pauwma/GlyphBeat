@@ -78,6 +78,9 @@ import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.isNotificationAccessGranted
 import com.pauwma.glyphbeat.isMediaControlServiceWorking
 import com.pauwma.glyphbeat.openNotificationAccessSettings
+import com.pauwma.glyphbeat.ui.settings.DropdownOption
+import com.pauwma.glyphbeat.ui.settings.DropdownSetting
+import com.pauwma.glyphbeat.ui.settings.SettingsDropdown
 
 @Composable
 private fun TestResultCard(
@@ -352,6 +355,7 @@ fun SettingsScreen(
     
     // Shake settings state - initialize with defaults, load actual values asynchronously
     var shakeEnabled by remember { mutableStateOf(false) }
+    var behaviour by remember { mutableStateOf("skip") }
     var shakeSensitivity by remember { mutableStateOf(ShakeDetector.SENSITIVITY_MEDIUM) }
     var shakeSkipWhenPaused by remember { mutableStateOf(false) }
     var shakeSkipWhenUnlocked by remember { mutableStateOf(false) }
@@ -879,7 +883,7 @@ fun SettingsScreen(
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                             )
                             Text(
-                                text = "Note: Touch controls (long press for play/pause) are not available when auto-started. Shake to skip still does.",
+                                text = "Note: Glyph button controls are not available when auto-started. Shake controls still works.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                 lineHeight = 16.sp
@@ -1157,7 +1161,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Shake to Skip",
+                        text = "Shake Controls",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -1191,6 +1195,23 @@ fun SettingsScreen(
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 4.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                        )
+
+                        // Behaviour Dropdown
+                        SettingsDropdown(
+                            setting = DropdownSetting(
+                                id = "behaviour",
+                                displayName = "Control Behaviour",
+                                description = "Choose the function of the shake gesture",
+                                defaultValue = "skip",
+                                options = listOf(
+                                    DropdownOption("skip", "Skip", "Skip to the next song"),
+                                    DropdownOption("pause", "Play/Pause", "Toggle Pause/Resume playback"),
+                                    DropdownOption("auto", "Auto-Start", "Toggle auto-start of the service")
+                                )
+                            ),
+                            currentValue = behaviour,
+                            onValueChange = { behaviour = it }
                         )
                         
                         // Sensitivity slider
