@@ -20,6 +20,13 @@ import com.pauwma.glyphbeat.themes.base.FrameTransitionSequence
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
+import com.pauwma.glyphbeat.data.ShakeControlSettings
+import com.pauwma.glyphbeat.data.ShakeControlSettingsManager
+import com.pauwma.glyphbeat.data.ShakeBehavior
+import com.pauwma.glyphbeat.data.BehaviorSettings
+import com.pauwma.glyphbeat.data.getSkipSettings
+import com.pauwma.glyphbeat.data.getPlayPauseSettings
+import com.pauwma.glyphbeat.data.getAutoStartSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -79,10 +86,10 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private lateinit var audioAnalyzer: AudioAnalyzer
     private var matrixManager: GlyphMatrixManager? = null
     
-    // Shake detection
+    // Enhanced shake detection with behavior system
     private var shakeDetector: ShakeDetector? = null
-    private var isShakeEnabled = false
-    private var shakeSensitivity = ShakeDetector.SENSITIVITY_MEDIUM
+    private var shakeSettingsManager: ShakeControlSettingsManager? = null
+    private var currentShakeSettings = ShakeControlSettings()
     private var shakePreferences: SharedPreferences? = null
     private val shakePreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         handleShakePreferenceChange(key)
@@ -855,26 +862,38 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     }
 
     /**
-     * Initialize shake detection based on user preferences
+     * Initialize shake detection based on enhanced user preferences
      */
     private fun initializeShakeDetection(context: Context) {
         try {
-            // Load shake preferences
-            val prefs = context.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
-            isShakeEnabled = prefs.getBoolean("shake_to_skip_enabled", false)
-            val sensitivityValue = prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM)
-            shakeSensitivity = sensitivityValue
-            val skipDelay = prefs.getLong("shake_skip_delay", 2000L)
+            // Initialize settings manager
+            if (shakeSettingsManager == null) {
+                shakeSettingsManager = ShakeControlSettingsManager(context)
+            }
             
-            if (isShakeEnabled) {
-                Log.d(LOG_TAG, "Initializing shake detection - enabled: $isShakeEnabled, sensitivity: $shakeSensitivity, delay: ${skipDelay}ms")
+            // Load current shake settings
+            currentShakeSettings = shakeSettingsManager!!.loadSettings()
+            
+            if (currentShakeSettings.enabled) {
+                Log.d(LOG_TAG, "Initializing shake detection - enabled: ${currentShakeSettings.enabled}, behavior: ${currentShakeSettings.behavior.id}, sensitivity: ${currentShakeSettings.sensitivity}")
                 
                 // Create and configure shake detector
                 shakeDetector = ShakeDetector(context)
                 shakeDetector?.apply {
                     initialize()
-                    setSensitivity(shakeSensitivity)
-                    setCooldown(skipDelay)
+                    setSensitivity(currentShakeSettings.sensitivity)
+                    
+                    // Set cooldown based on behavior
+                    val cooldown = when (currentShakeSettings.behavior) {
+                        ShakeBehavior.SKIP -> {
+                            val skipSettings = currentShakeSettings.getSkipSettings()
+                            skipSettings?.skipDelay ?: 2000L
+                        }
+                        ShakeBehavior.PLAY_PAUSE -> 1000L // Shorter cooldown for play/pause
+                        ShakeBehavior.AUTO_START -> 3000L // Longer cooldown for auto-start toggle
+                    }
+                    setCooldown(cooldown)
+                    
                     setOnShakeListener(object : ShakeDetector.OnShakeListener {
                         override fun onShake(force: Float) {
                             handleShakeDetected(force)
@@ -883,7 +902,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     startListening()
                 }
                 
-                Log.i(LOG_TAG, "Shake detection started with sensitivity: $shakeSensitivity, cooldown: ${skipDelay}ms")
+                Log.i(LOG_TAG, "Shake detection started - behavior: ${currentShakeSettings.behavior.displayName}, sensitivity: ${currentShakeSettings.sensitivity}")
             } else {
                 Log.d(LOG_TAG, "Shake detection disabled by user preference")
             }
@@ -893,88 +912,175 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     }
     
     /**
-     * Handle shake event - skip to next track
+     * Handle shake event - execute configured behavior
      */
     private fun handleShakeDetected(force: Float) {
-        Log.d(LOG_TAG, "Shake detected with force: $force")
+        Log.d(LOG_TAG, "Shake detected with force: $force, behavior: ${currentShakeSettings.behavior.displayName}")
         
-        // Check if we have active media
-        if (!hasActiveMedia) {
-            Log.d(LOG_TAG, "Shake detected but no active media to control")
-            return
+        // Execute behavior-specific action
+        val success = when (currentShakeSettings.behavior) {
+            ShakeBehavior.SKIP -> handleSkipBehavior()
+            ShakeBehavior.PLAY_PAUSE -> handlePlayPauseBehavior()
+            ShakeBehavior.AUTO_START -> handleAutoStartBehavior()
         }
         
-        // Check if media is paused and whether we should skip when paused
-        if (currentPlayerState == PlayerState.PAUSED) {
-            val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
-            val skipWhenPaused = prefs.getBoolean("shake_skip_when_paused", false)
-
-            if (!skipWhenPaused) {
-                Log.d(LOG_TAG, "Media is paused and skip when paused is disabled - ignoring shake")
-                return
-            }
-
-            Log.d(LOG_TAG, "Media is paused but skip when paused is enabled - proceeding with skip")
-        }
-
-        val myKM = applicationContext.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-        val isPhoneLocked = myKM.inKeyguardRestrictedInputMode()
-
-        // Check if phone is unlocked and whether we should skip when unlocked
-        if (!isPhoneLocked) {
-            val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
-            val skipWhenUnlocked = prefs.getBoolean("shake_skip_when_unlocked", false)
-
-            if (!skipWhenUnlocked) {
-                Log.d(LOG_TAG, "Phone is unlocked and skip when unlocked is disabled - ignoring shake")
-                return
-            }
-
-            Log.d(LOG_TAG, "Phone is unlocked but skip when unlocked is enabled - proceeding with skip")
-        }
-
-        // Proceed with skip
-        val success = mediaHelper.skipToNext()
-        if (success) {
-            Log.i(LOG_TAG, "Skipped to next track via shake gesture")
-
-            val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
-            val feedback_when_shaked = prefs.getBoolean("feedback_when_shaked", true)
-
-            if (feedback_when_shaked){
-                // Provide haptic feedback for successful skip
-                shakeDetector?.provideHapticFeedback()
-            }
-
-            // Optional: Provide visual feedback via Glyph animation
-            // Could show a brief "skip" animation here
-        } else {
-            Log.w(LOG_TAG, "Failed to skip to next track")
+        // Provide haptic feedback if enabled and action was successful
+        if (success && currentShakeSettings.hapticFeedback) {
+            shakeDetector?.provideHapticFeedback()
         }
     }
     
     /**
-     * Update shake detection settings dynamically
+     * Handle skip behavior
      */
-    private fun updateShakeSettings(enabled: Boolean, sensitivity: Float, skipDelay: Long = 2000L) {
-        Log.d(LOG_TAG, "Updating shake settings - enabled: $enabled, sensitivity: $sensitivity, delay: ${skipDelay}ms")
+    private fun handleSkipBehavior(): Boolean {
+        // Check if we have active media
+        if (!hasActiveMedia) {
+            Log.d(LOG_TAG, "Skip shake detected but no active media to control")
+            return false
+        }
         
-        isShakeEnabled = enabled
-        shakeSensitivity = sensitivity
+        val skipSettings = currentShakeSettings.getSkipSettings() ?: return false
         
-        if (enabled) {
-            if (shakeDetector == null) {
-                initializeShakeDetection(applicationContext)
-            } else {
-                shakeDetector?.setSensitivity(sensitivity)
-                shakeDetector?.setCooldown(skipDelay)
-                if (!shakeDetector!!.isActive()) {
-                    shakeDetector?.startListening()
+        // Check if media is paused and whether we should skip when paused
+        if (currentPlayerState == PlayerState.PAUSED && !skipSettings.skipWhenPaused) {
+            Log.d(LOG_TAG, "Media is paused and skip when paused is disabled - ignoring shake")
+            return false
+        }
+        
+        // Check if phone is unlocked and whether we should skip when unlocked
+        val myKM = applicationContext.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+        val isPhoneLocked = myKM.inKeyguardRestrictedInputMode()
+        
+        if (!isPhoneLocked && !skipSettings.skipWhenUnlocked) {
+            Log.d(LOG_TAG, "Phone is unlocked and skip when unlocked is disabled - ignoring shake")
+            return false
+        }
+        
+        // Proceed with skip
+        val success = mediaHelper.skipToNext()
+        if (success) {
+            Log.i(LOG_TAG, "Skipped to next track via shake gesture")
+        } else {
+            Log.w(LOG_TAG, "Failed to skip to next track")
+        }
+        
+        return success
+    }
+    
+    /**
+     * Handle play/pause behavior
+     */
+    private fun handlePlayPauseBehavior(): Boolean {
+        // Check if we have active media
+        if (!hasActiveMedia) {
+            Log.d(LOG_TAG, "Play/Pause shake detected but no active media to control")
+            return false
+        }
+        
+        val playPauseSettings = currentShakeSettings.getPlayPauseSettings() ?: return false
+        
+        // Check lock screen behavior
+        val myKM = applicationContext.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+        val isPhoneLocked = myKM.inKeyguardRestrictedInputMode()
+        
+        if (isPhoneLocked && !playPauseSettings.lockScreenBehavior) {
+            Log.d(LOG_TAG, "Phone is locked and lock screen behavior is disabled - ignoring shake")
+            return false
+        }
+        
+        // Toggle play/pause
+        val success = mediaHelper.togglePlayPause()
+        if (success) {
+            val action = if (currentPlayerState == PlayerState.PLAYING) "paused" else "resumed"
+            Log.i(LOG_TAG, "Media $action via shake gesture")
+            
+            // Handle auto-resume delay if we paused
+            if (currentPlayerState == PlayerState.PLAYING && playPauseSettings.autoResumeDelay > 0) {
+                // Schedule auto-resume
+                backgroundScope.launch {
+                    delay(playPauseSettings.autoResumeDelay)
+                    if (currentPlayerState == PlayerState.PAUSED) {
+                        Log.i(LOG_TAG, "Auto-resuming playback after ${playPauseSettings.autoResumeDelay}ms")
+                        mediaHelper.togglePlayPause()
+                    }
                 }
             }
         } else {
-            shakeDetector?.stopListening()
+            Log.w(LOG_TAG, "Failed to toggle play/pause")
         }
+        
+        return success
+    }
+    
+    /**
+     * Handle auto-start behavior
+     */
+    private fun handleAutoStartBehavior(): Boolean {
+        val autoStartSettings = currentShakeSettings.getAutoStartSettings() ?: return false
+        
+        // Check battery awareness
+        if (autoStartSettings.batteryAwareness) {
+            val batteryManager = applicationContext.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+            val batteryLevel = batteryManager.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            
+            if (batteryLevel < autoStartSettings.batteryThreshold) {
+                Log.d(LOG_TAG, "Battery level ($batteryLevel%) below threshold (${autoStartSettings.batteryThreshold}%) - ignoring auto-start shake")
+                return false
+            }
+        }
+        
+        // Toggle auto-start service
+        val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+        val currentAutoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
+        val newAutoStartState = !currentAutoStartEnabled
+        
+        // Apply timeout if configured
+        if (autoStartSettings.timeout > 0) {
+            backgroundScope.launch {
+                delay(autoStartSettings.timeout)
+                // Double-check that shake settings haven't changed
+                val currentSettings = shakeSettingsManager?.loadSettings()
+                if (currentSettings?.behavior == ShakeBehavior.AUTO_START) {
+                    toggleAutoStartService(newAutoStartState)
+                }
+            }
+        } else {
+            // Immediate toggle
+            toggleAutoStartService(newAutoStartState)
+        }
+        
+        Log.i(LOG_TAG, "Auto-start toggle scheduled via shake gesture: $newAutoStartState")
+        return true
+    }
+    
+    /**
+     * Toggle the auto-start service state
+     */
+    private fun toggleAutoStartService(enable: Boolean) {
+        val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("auto_start_enabled", enable).apply()
+        
+        // Start or stop the MusicDetectionService
+        val serviceIntent = Intent(applicationContext, com.pauwma.glyphbeat.services.autostart.MusicDetectionService::class.java)
+        
+        if (enable) {
+            applicationContext.startForegroundService(serviceIntent)
+            Log.i(LOG_TAG, "Auto-start service enabled via shake")
+        } else {
+            applicationContext.stopService(serviceIntent)
+            Log.i(LOG_TAG, "Auto-start service disabled via shake")
+        }
+    }
+    
+    /**
+     * Update shake detection settings dynamically (legacy method for backward compatibility)
+     */
+    private fun updateShakeSettings(enabled: Boolean, sensitivity: Float, skipDelay: Long = 2000L) {
+        Log.d(LOG_TAG, "Legacy shake settings update - enabled: $enabled, sensitivity: $sensitivity, delay: ${skipDelay}ms")
+        
+        // For backward compatibility, trigger preference change handler
+        handleShakePreferenceChange("shake_to_skip_enabled")
     }
 
     /**
@@ -1008,17 +1114,31 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
      */
     private fun handleShakePreferenceChange(key: String?) {
         when (key) {
-            "shake_to_skip_enabled", "shake_sensitivity", "shake_skip_delay" -> {
+            // New enhanced settings keys
+            "shake_controls_enabled", "shake_behavior", "shake_sensitivity", "shake_haptic_feedback",
+            "shake_skip_delay", "shake_skip_when_paused", "shake_skip_when_unlocked",
+            "play_pause_lock_screen", "play_pause_auto_resume",
+            "auto_start_timeout", "auto_start_battery_awareness", "auto_start_battery_threshold",
+            // Legacy keys for backward compatibility
+            "shake_to_skip_enabled", "feedback_when_shaked" -> {
                 Log.d(LOG_TAG, "Shake preference changed: $key")
                 
-                // Reload all shake preferences
-                shakePreferences?.let { prefs ->
-                    val enabled = prefs.getBoolean("shake_to_skip_enabled", false)
-                    val sensitivity = prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM)
-                    val skipDelay = prefs.getLong("shake_skip_delay", 2000L)
+                try {
+                    // Reload shake settings from manager
+                    currentShakeSettings = shakeSettingsManager?.loadSettings() ?: ShakeControlSettings()
                     
-                    // Update shake settings with new values
-                    updateShakeSettings(enabled, sensitivity, skipDelay)
+                    // Reinitialize shake detection with new settings
+                    shakeDetector?.stopListening()
+                    shakeDetector?.cleanup()
+                    shakeDetector = null
+                    
+                    if (currentShakeSettings.enabled) {
+                        initializeShakeDetection(applicationContext)
+                    }
+                    
+                    Log.i(LOG_TAG, "Shake settings reloaded: behavior=${currentShakeSettings.behavior.displayName}, enabled=${currentShakeSettings.enabled}")
+                } catch (e: Exception) {
+                    Log.e(LOG_TAG, "Failed to reload shake settings: ${e.message}", e)
                 }
             }
         }

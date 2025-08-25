@@ -81,6 +81,9 @@ import com.pauwma.glyphbeat.openNotificationAccessSettings
 import com.pauwma.glyphbeat.ui.settings.DropdownOption
 import com.pauwma.glyphbeat.ui.settings.DropdownSetting
 import com.pauwma.glyphbeat.ui.settings.SettingsDropdown
+import com.pauwma.glyphbeat.ui.settings.ShakeControlsSection
+import com.pauwma.glyphbeat.data.ShakeControlSettings
+import com.pauwma.glyphbeat.data.ShakeControlSettingsManager
 
 @Composable
 private fun TestResultCard(
@@ -353,16 +356,12 @@ fun SettingsScreen(
     var isTestLoading by remember { mutableStateOf(false) }
     var testError by remember { mutableStateOf<String?>(null) }
     
-    // Shake settings state - initialize with defaults, load actual values asynchronously
-    var shakeEnabled by remember { mutableStateOf(false) }
+    // Shake control settings - enhanced with new behavior system
+    val shakeSettingsManager = remember { ShakeControlSettingsManager(context) }
+    var shakeControlSettings by remember { mutableStateOf(ShakeControlSettings()) }
+    
+    // Legacy state variables for backward compatibility (removed after migration)
     var behaviour by remember { mutableStateOf("skip") }
-    var shakeSensitivity by remember { mutableStateOf(ShakeDetector.SENSITIVITY_MEDIUM) }
-    var shakeSkipWhenPaused by remember { mutableStateOf(false) }
-    var shakeSkipWhenUnlocked by remember { mutableStateOf(false) }
-    var hapticFeedbackWhenShaked by remember { mutableStateOf(true) }
-    var skipDelay by remember { mutableStateOf(3500L) }
-    // Use rememberSaveable to persist collapse state during navigation, but defaults to false on app restart
-    var shakeControlsExpanded by rememberSaveable { mutableStateOf(false) }
     
     // Auto-start settings state
     var autoStartEnabled by remember { mutableStateOf(false) }
@@ -451,13 +450,8 @@ fun SettingsScreen(
             mediaServiceWorking = isMediaControlServiceWorking(context)
             isLoadingPermissions = false
             
-            // Load preferences
-            shakeEnabled = prefs.getBoolean("shake_to_skip_enabled", false)
-            shakeSensitivity = prefs.getFloat("shake_sensitivity", ShakeDetector.SENSITIVITY_MEDIUM)
-            shakeSkipWhenPaused = prefs.getBoolean("shake_skip_when_paused", false)
-            shakeSkipWhenUnlocked = prefs.getBoolean("shake_skip_when_unlocked", false)
-            hapticFeedbackWhenShaked = prefs.getBoolean("feedback_when_shaked", true)
-            skipDelay = prefs.getLong("shake_skip_delay", 3500L)
+            // Load shake control settings using new manager
+            shakeControlSettings = shakeSettingsManager.loadSettings()
             
             // Load auto-start preferences
             autoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
@@ -830,29 +824,47 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     
-                    Switch(
-                        checked = autoStartEnabled,
-                        onCheckedChange = { enabled ->
-                            autoStartEnabled = enabled
-                            prefs.edit().putBoolean("auto_start_enabled", enabled).apply()
-                            
-                            // Start/stop the detection service
-                            if (enabled) {
-                                MusicDetectionService.start(context)
-                            } else {
-                                MusicDetectionService.stop(context)
+                    // Custom toggle switch to match shake controls style
+                    Box(
+                        modifier = Modifier
+                            .width(56.dp)
+                            .height(32.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                if (autoStartEnabled) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            .clickable { 
+                                val enabled = !autoStartEnabled
+                                autoStartEnabled = enabled
+                                prefs.edit().putBoolean("auto_start_enabled", enabled).apply()
+                                
+                                // Start/stop the detection service
+                                if (enabled) {
+                                    MusicDetectionService.start(context)
+                                } else {
+                                    MusicDetectionService.stop(context)
+                                }
+                                
+                                Log.d("SettingsScreen", "Auto-start service: $enabled")
+                                
+                                // Auto-expand when enabling, auto-collapse when disabling
+                                if (enabled && !autoStartControlsExpanded) {
+                                    autoStartControlsExpanded = true
+                                } else if (!enabled && autoStartControlsExpanded) {
+                                    autoStartControlsExpanded = false
+                                }
                             }
-                            
-                            Log.d("SettingsScreen", "Auto-start service: $enabled")
-                            
-                            // Auto-expand when enabling, auto-collapse when disabling
-                            if (enabled && !autoStartControlsExpanded) {
-                                autoStartControlsExpanded = true
-                            } else if (!enabled && autoStartControlsExpanded) {
-                                autoStartControlsExpanded = false
-                            }
-                        }
-                    )
+                            .padding(2.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color.White)
+                                .align(if (autoStartEnabled) Alignment.CenterEnd else Alignment.CenterStart)
+                        )
+                    }
                 }
 
                 // Animated visibility for detailed settings
@@ -1095,359 +1107,16 @@ fun SettingsScreen(
             }
         }
 
-        // Shake Control Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF1A1A1A)
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Clickable header with expand/collapse icon
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        ) { shakeControlsExpanded = !shakeControlsExpanded },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = "Shake Controls",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = customFont
-                            ),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-
-                        Text(
-                            text = "Skip to the next track with a shake gesture",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                        )
-                    }
-                    
-                    // Animated expand/collapse icon
-                    val rotationAngle by animateFloatAsState(
-                        targetValue = if (shakeControlsExpanded) 180f else 0f,
-                        label = "expandIcon"
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ExpandMore,
-                        contentDescription = if (shakeControlsExpanded) "Collapse" else "Expand",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .rotate(rotationAngle),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                // Enable/Disable switch (always visible)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Shake Controls",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    
-                    Switch(
-                        checked = shakeEnabled,
-                        onCheckedChange = { enabled ->
-                            shakeEnabled = enabled
-                            prefs.edit().putBoolean("shake_to_skip_enabled", enabled).apply()
-                            Log.d("SettingsScreen", "Shake to skip: $enabled")
-                            // Auto-expand when enabling, auto-collapse when disabling
-                            if (enabled && !shakeControlsExpanded) {
-                                shakeControlsExpanded = true
-                            } else if (!enabled && shakeControlsExpanded) {
-                                shakeControlsExpanded = false
-                            }
-                        }
-                    )
-                }
-
-                // Animated visibility for detailed settings
-                AnimatedVisibility(
-                    visible = shakeControlsExpanded,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        // Divider between header and settings
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 4.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                        )
-
-                        // Behaviour Dropdown
-                        SettingsDropdown(
-                            setting = DropdownSetting(
-                                id = "behaviour",
-                                displayName = "Control Behaviour",
-                                description = "Choose the function of the shake gesture",
-                                defaultValue = "skip",
-                                options = listOf(
-                                    DropdownOption("skip", "Skip", "Skip to the next song"),
-                                    DropdownOption("pause", "Play/Pause", "Toggle Pause/Resume playback"),
-                                    DropdownOption("auto", "Auto-Start", "Toggle auto-start of the service")
-                                )
-                            ),
-                            currentValue = behaviour,
-                            onValueChange = { behaviour = it }
-                        )
-                        
-                        // Sensitivity slider
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                        Text(
-                            text = "Shake Sensitivity",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Low",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "Medium",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "High",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        
-                        Slider(
-                            value = when (shakeSensitivity) {
-                                ShakeDetector.SENSITIVITY_HIGH -> 2f
-                                ShakeDetector.SENSITIVITY_MEDIUM -> 1f
-                                ShakeDetector.SENSITIVITY_LOW -> 0f
-                                else -> 1f
-                            },
-                            onValueChange = { value ->
-                                shakeSensitivity = when {
-                                    value < 0.5f -> ShakeDetector.SENSITIVITY_LOW
-                                    value < 1.5f -> ShakeDetector.SENSITIVITY_MEDIUM
-                                    else -> ShakeDetector.SENSITIVITY_HIGH
-                                }
-                                prefs.edit().putFloat("shake_sensitivity", shakeSensitivity).apply()
-                                Log.d("SettingsScreen", "Shake sensitivity: $shakeSensitivity")
-                            },
-                            valueRange = 0f..2f,
-                            steps = 1,
-                            colors = SliderDefaults.colors(
-                                thumbColor = MaterialTheme.colorScheme.primary,
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        )
-                        
-                        Text(
-                            text = when (shakeSensitivity) {
-                                ShakeDetector.SENSITIVITY_HIGH -> "High sensitivity - gentle shake required"
-                                ShakeDetector.SENSITIVITY_MEDIUM -> "Medium sensitivity - moderate shake required"
-                                ShakeDetector.SENSITIVITY_LOW -> "Low sensitivity - strong shake required"
-                                else -> ""
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                        )
-                    }
-                    
-                    // Skip Delay slider
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = "Skip Delay",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "0.5s",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "2s",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "3.5s",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "5s",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        
-                        Slider(
-                            value = ((skipDelay - 500f) / 4500f).coerceIn(0f, 1f),
-                            onValueChange = { value ->
-                                skipDelay = (500 + (value * 4500)).toLong()
-                                prefs.edit().putLong("shake_skip_delay", skipDelay).apply()
-                                Log.d("SettingsScreen", "Skip delay: ${skipDelay}ms")
-                            },
-                            valueRange = 0f..1f,
-                            steps = 8,
-                            colors = SliderDefaults.colors(
-                                thumbColor = MaterialTheme.colorScheme.primary,
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        )
-                        
-                        Text(
-                            text = "Delay between skips: ${String.format("%.1f", skipDelay / 1000.0)} seconds",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                        )
-                    }
-                    
-                    // Skip when paused toggle
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = "Skip when paused",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-                                Text(
-                                    text = "Allow shake to skip even when music is paused",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                                )
-                            }
-                            
-                            Switch(
-                                checked = shakeSkipWhenPaused,
-                                onCheckedChange = { enabled ->
-                                    shakeSkipWhenPaused = enabled
-                                    prefs.edit().putBoolean("shake_skip_when_paused", enabled).apply()
-                                    Log.d("SettingsScreen", "Skip when paused: $enabled")
-                                }
-                            )
-                        }
-                    }
-
-                        // Skip when paused toggle
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(
-                                        text = "Skip when unlocked",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onBackground
-                                    )
-                                    Text(
-                                        text = "Allow shake to skip when phone is unlocked",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                                    )
-                                }
-
-                                Switch(
-                                    checked = shakeSkipWhenUnlocked,
-                                    onCheckedChange = { enabled ->
-                                        shakeSkipWhenUnlocked = enabled
-                                        prefs.edit().putBoolean("shake_skip_when_unlocked", enabled).apply()
-                                        Log.d("SettingsScreen", "Skip when unlocked: $enabled")
-                                    }
-                                )
-                            }
-                        }
-                    // Skip when paused toggle
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = "Haptic feedback",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-                                Text(
-                                    text = "Sends a short vibration confirming the action",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                                )
-                            }
-
-                            Switch(
-                                checked = hapticFeedbackWhenShaked,
-                                onCheckedChange = { enabled ->
-                                    hapticFeedbackWhenShaked = enabled
-                                    prefs.edit().putBoolean("feedback_when_shaked", enabled).apply()
-                                    Log.d("SettingsScreen", "Feedback on shaked: $enabled")
-                                }
-                            )
-                        }
-                    }
-                    } // End of AnimatedVisibility Column
-                } // End of AnimatedVisibility
-            }
-        }
+        // Enhanced Shake Controls Section
+        ShakeControlsSection(
+            settings = shakeControlSettings,
+            onSettingsChange = { newSettings ->
+                shakeControlSettings = newSettings
+                shakeSettingsManager.saveSettings(newSettings)
+                Log.d("SettingsScreen", "Shake control settings updated: ${newSettings.behavior.id}, enabled=${newSettings.enabled}")
+            },
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
 
         // Bug Report Card
         Card(
