@@ -45,6 +45,7 @@ import androidx.compose.material3.*
 import androidx.compose.ui.draw.rotate
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.pauwma.glyphbeat.core.AppConfig
 import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import com.pauwma.glyphbeat.services.autostart.MusicAppWhitelistManager
 import com.pauwma.glyphbeat.services.autostart.MusicDetectionService
@@ -1216,7 +1217,7 @@ fun SettingsScreen(
                                 "Hi,\n\nI found an issue with GlyphBeat:\n\n" +
                                 "Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}\n" +
                                 "Android Version: ${android.os.Build.VERSION.RELEASE}\n" +
-                                "App Version: 1.0.0\n\n" +
+                                "App Version: ${AppConfig.APP_VERSION}\n\n" +
                                 "Description of the issue:\n\n\n" +
                                 "Steps to reproduce:\n1. \n2. \n3. \n\n" +
                                 "Expected behavior:\n\n\n" +
@@ -1421,7 +1422,7 @@ fun SettingsScreen(
                 ClickableText(
                     modifier = Modifier.padding(top = 8.dp),
                     text = buildAnnotatedString {
-                        append("Version: 1.1.0 - ")
+                        append("Version: ${AppConfig.APP_VERSION} - ")
                         pushStringAnnotation(tag = "URL", annotation = "https://privacidad.me/@pauwma")
                         withStyle(
                             style = SpanStyle(
@@ -1438,7 +1439,7 @@ fun SettingsScreen(
                     ),
                     onClick = { offset ->
                         val annotations = buildAnnotatedString {
-                            append("Version: 1.1.0 - ")
+                            append("Version: ${AppConfig.APP_VERSION} - ")
                             pushStringAnnotation(tag = "URL", annotation = "https://privacidad.me/@pauwma")
                             append("pauwma")
                             pop()

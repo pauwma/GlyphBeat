@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pauwma.glyphbeat.R
+import com.pauwma.glyphbeat.core.AppConfig
 import com.pauwma.glyphbeat.theme.NothingRed
 import com.pauwma.glyphbeat.theme.NothingWhite
 import com.pauwma.glyphbeat.ui.components.GlyphPreview
@@ -108,7 +109,7 @@ fun WelcomePage(
                 )
                 
                 Text(
-                    text = "Version 1.1.0",
+                    text = "Version ${AppConfig.APP_VERSION}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
