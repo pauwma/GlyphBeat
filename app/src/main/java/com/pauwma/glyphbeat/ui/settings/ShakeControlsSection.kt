@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.data.BehaviorSettings
 import com.pauwma.glyphbeat.data.ShakeBehavior
+import com.pauwma.glyphbeat.data.ShakeCondition
 import com.pauwma.glyphbeat.data.ShakeControlSettings
 import com.pauwma.glyphbeat.data.getSkipSettings
 import com.pauwma.glyphbeat.data.getPlayPauseSettings
@@ -193,6 +194,10 @@ fun ShakeControlsSection(
                             onHapticFeedbackChange = { newHaptic ->
                                 onSettingsChange(settings.copy(hapticFeedback = newHaptic))
                             },
+                            shakeCondition = settings.shakeCondition,
+                            onShakeConditionChange = { newCondition ->
+                                onSettingsChange(settings.copy(shakeCondition = newCondition))
+                            },
                             enabled = settings.enabled
                         )
                     }
@@ -264,6 +269,44 @@ fun ShakeControlsSection(
 }
 
 @Composable
+private fun ShakeConditionDropdown(
+    selectedCondition: ShakeCondition,
+    onConditionChange: (ShakeCondition) -> Unit,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    val customFont = FontFamily(Font(R.font.ntype82regular))
+    val conditions = ShakeCondition.entries.toTypedArray()
+    
+    val dropdownOptions = conditions.map { condition ->
+        DropdownOption(
+            value = condition.id,
+            label = condition.displayName,
+            description = condition.description
+        )
+    }
+    
+    val dropdownSetting = DropdownSetting(
+        id = "shake_condition",
+        displayName = "Shake Control Condition",
+        description = "Choose when shake controls should be active",
+        defaultValue = selectedCondition.id,
+        options = dropdownOptions
+    )
+    
+    SettingsDropdown(
+        setting = dropdownSetting,
+        currentValue = selectedCondition.id,
+        onValueChange = { newValue ->
+            conditions.find { it.id == newValue }?.let { newCondition ->
+                onConditionChange(newCondition)
+            }
+        },
+        modifier = modifier
+    )
+}
+
+@Composable
 private fun BehaviorSelectionDropdown(
     selectedBehavior: ShakeBehavior,
     onBehaviorChange: (ShakeBehavior) -> Unit,
@@ -324,6 +367,8 @@ private fun GeneralShakeSettings(
     onSensitivityChange: (Float) -> Unit,
     hapticFeedback: Boolean,
     onHapticFeedbackChange: (Boolean) -> Unit,
+    shakeCondition: ShakeCondition,
+    onShakeConditionChange: (ShakeCondition) -> Unit,
     enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -430,6 +475,13 @@ private fun GeneralShakeSettings(
             disabledLabel = "Disabled",
             useAlternateColors = true
         )
+        
+        // Shake control condition dropdown
+        ShakeConditionDropdown(
+            selectedCondition = shakeCondition,
+            onConditionChange = onShakeConditionChange,
+            enabled = enabled
+        )
     }
 }
 
@@ -466,17 +518,6 @@ private fun SkipBehaviorSettings(
             },
             useAlternateColors = true
         )
-        
-        // Skip when unlocked toggle
-        EnhancedToggleSetting(
-            title = "Skip When Unlocked",
-            description = "Allow skipping when device screen is unlocked and active",
-            checked = settings.skipWhenUnlocked,
-            onCheckedChange = { newValue ->
-                onSettingsChange(settings.copy(skipWhenUnlocked = newValue))
-            },
-            useAlternateColors = true
-        )
     }
 }
 
@@ -491,19 +532,6 @@ private fun PlayPauseBehaviorSettings(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Lock screen behavior toggle
-        EnhancedToggleSetting(
-            title = "Lock Screen Behavior",
-            description = "Allow play/pause when device is locked",
-            checked = settings.lockScreenBehavior,
-            onCheckedChange = { newValue ->
-                onSettingsChange(settings.copy(lockScreenBehavior = newValue))
-            },
-            enabledLabel = "Enabled",
-            disabledLabel = "Disabled",
-            useAlternateColors = true
-        )
-        
         // Auto-resume delay slider
         TimeoutSlider(
             label = "Auto-Resume Delay",

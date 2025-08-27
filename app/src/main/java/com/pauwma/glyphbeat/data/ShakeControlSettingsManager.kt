@@ -14,22 +14,25 @@ class ShakeControlSettingsManager(private val context: Context) {
         private const val LOG_TAG = "ShakeControlSettings"
         private const val PREFS_NAME = "glyph_settings"
         private const val SETTINGS_VERSION_KEY = "shake_settings_version"
-        private const val CURRENT_SETTINGS_VERSION = 2
+        private const val CURRENT_SETTINGS_VERSION = 3
         
-        // New setting keys (v2)
+        // New setting keys (v3)
         private const val SHAKE_ENABLED_KEY = "shake_controls_enabled"
         private const val SHAKE_BEHAVIOR_KEY = "shake_behavior"
         private const val SHAKE_SENSITIVITY_KEY = "shake_sensitivity"
         private const val SHAKE_HAPTIC_FEEDBACK_KEY = "shake_haptic_feedback"
+        private const val SHAKE_CONDITION_KEY = "shake_condition"
         
         // Skip behavior settings
         private const val SKIP_DELAY_KEY = "shake_skip_delay"
         private const val SKIP_WHEN_PAUSED_KEY = "shake_skip_when_paused"
-        private const val SKIP_WHEN_UNLOCKED_KEY = "shake_skip_when_unlocked"
         
         // Play/Pause behavior settings
-        private const val PLAY_PAUSE_LOCK_SCREEN_KEY = "play_pause_lock_screen"
         private const val PLAY_PAUSE_AUTO_RESUME_KEY = "play_pause_auto_resume"
+        
+        // Legacy v2 keys (for migration)
+        private const val LEGACY_SKIP_WHEN_UNLOCKED_KEY = "shake_skip_when_unlocked"
+        private const val LEGACY_PLAY_PAUSE_LOCK_SCREEN_KEY = "play_pause_lock_screen"
         
         // Auto-Start behavior settings
         private const val AUTO_START_TIMEOUT_KEY = "auto_start_timeout"
@@ -55,6 +58,8 @@ class ShakeControlSettingsManager(private val context: Context) {
             val behavior = ShakeBehavior.entries.find { it.id == behaviorId } ?: ShakeBehavior.SKIP
             val sensitivity = prefs.getFloat(SHAKE_SENSITIVITY_KEY, ShakeDetector.SENSITIVITY_MEDIUM)
             val hapticFeedback = prefs.getBoolean(SHAKE_HAPTIC_FEEDBACK_KEY, true)
+            val conditionId = prefs.getString(SHAKE_CONDITION_KEY, ShakeCondition.ALWAYS.id) ?: ShakeCondition.ALWAYS.id
+            val shakeCondition = ShakeCondition.entries.find { it.id == conditionId } ?: ShakeCondition.ALWAYS
             
             val behaviorSettings = when (behavior) {
                 ShakeBehavior.SKIP -> loadSkipSettings()
@@ -67,6 +72,7 @@ class ShakeControlSettingsManager(private val context: Context) {
                 behavior = behavior,
                 sensitivity = sensitivity,
                 hapticFeedback = hapticFeedback,
+                shakeCondition = shakeCondition,
                 behaviorSettings = behaviorSettings
             )
         } catch (e: Exception) {
@@ -85,6 +91,7 @@ class ShakeControlSettingsManager(private val context: Context) {
                 putString(SHAKE_BEHAVIOR_KEY, settings.behavior.id)
                 putFloat(SHAKE_SENSITIVITY_KEY, settings.sensitivity)
                 putBoolean(SHAKE_HAPTIC_FEEDBACK_KEY, settings.hapticFeedback)
+                putString(SHAKE_CONDITION_KEY, settings.shakeCondition.id)
                 
                 when (settings.behaviorSettings) {
                     is BehaviorSettings.SkipSettings -> saveSkipSettings(settings.behaviorSettings)
@@ -113,22 +120,19 @@ class ShakeControlSettingsManager(private val context: Context) {
             SHAKE_SENSITIVITY_KEY to settings.sensitivity,
             LEGACY_FEEDBACK_WHEN_SHAKED_KEY to settings.hapticFeedback,
             SKIP_DELAY_KEY to (skipSettings?.skipDelay ?: 3500L),
-            SKIP_WHEN_PAUSED_KEY to (skipSettings?.skipWhenPaused ?: false),
-            SKIP_WHEN_UNLOCKED_KEY to (skipSettings?.skipWhenUnlocked ?: false)
+            SKIP_WHEN_PAUSED_KEY to (skipSettings?.skipWhenPaused ?: false)
         )
     }
     
     private fun loadSkipSettings(): BehaviorSettings.SkipSettings {
         return BehaviorSettings.SkipSettings(
             skipDelay = prefs.getLong(SKIP_DELAY_KEY, 3500L),
-            skipWhenPaused = prefs.getBoolean(SKIP_WHEN_PAUSED_KEY, false),
-            skipWhenUnlocked = prefs.getBoolean(SKIP_WHEN_UNLOCKED_KEY, false)
+            skipWhenPaused = prefs.getBoolean(SKIP_WHEN_PAUSED_KEY, false)
         )
     }
     
     private fun loadPlayPauseSettings(): BehaviorSettings.PlayPauseSettings {
         return BehaviorSettings.PlayPauseSettings(
-            lockScreenBehavior = prefs.getBoolean(PLAY_PAUSE_LOCK_SCREEN_KEY, true),
             autoResumeDelay = prefs.getLong(PLAY_PAUSE_AUTO_RESUME_KEY, 0L)
         )
     }
@@ -142,11 +146,9 @@ class ShakeControlSettingsManager(private val context: Context) {
     private fun SharedPreferences.Editor.saveSkipSettings(settings: BehaviorSettings.SkipSettings) {
         putLong(SKIP_DELAY_KEY, settings.skipDelay)
         putBoolean(SKIP_WHEN_PAUSED_KEY, settings.skipWhenPaused)
-        putBoolean(SKIP_WHEN_UNLOCKED_KEY, settings.skipWhenUnlocked)
     }
     
     private fun SharedPreferences.Editor.savePlayPauseSettings(settings: BehaviorSettings.PlayPauseSettings) {
-        putBoolean(PLAY_PAUSE_LOCK_SCREEN_KEY, settings.lockScreenBehavior)
         putLong(PLAY_PAUSE_AUTO_RESUME_KEY, settings.autoResumeDelay)
     }
     
@@ -164,7 +166,11 @@ class ShakeControlSettingsManager(private val context: Context) {
             Log.i(LOG_TAG, "Migrating shake control settings from version $currentVersion to $CURRENT_SETTINGS_VERSION")
             
             when (currentVersion) {
-                1 -> migrateFromV1ToV2()
+                1 -> {
+                    migrateFromV1ToV2()
+                    migrateFromV2ToV3()
+                }
+                2 -> migrateFromV2ToV3()
             }
             
             // Update version
@@ -184,7 +190,7 @@ class ShakeControlSettingsManager(private val context: Context) {
             val legacyHapticFeedback = prefs.getBoolean(LEGACY_FEEDBACK_WHEN_SHAKED_KEY, true)
             val legacySkipDelay = prefs.getLong(SKIP_DELAY_KEY, 3500L)
             val legacySkipWhenPaused = prefs.getBoolean(SKIP_WHEN_PAUSED_KEY, false)
-            val legacySkipWhenUnlocked = prefs.getBoolean(SKIP_WHEN_UNLOCKED_KEY, false)
+            val legacySkipWhenUnlocked = prefs.getBoolean(LEGACY_SKIP_WHEN_UNLOCKED_KEY, false)
             
             // Create new settings based on legacy values
             val newSettings = ShakeControlSettings(
@@ -194,8 +200,7 @@ class ShakeControlSettingsManager(private val context: Context) {
                 hapticFeedback = legacyHapticFeedback,
                 behaviorSettings = BehaviorSettings.SkipSettings(
                     skipDelay = legacySkipDelay,
-                    skipWhenPaused = legacySkipWhenPaused,
-                    skipWhenUnlocked = legacySkipWhenUnlocked
+                    skipWhenPaused = legacySkipWhenPaused
                 )
             )
             
@@ -205,6 +210,41 @@ class ShakeControlSettingsManager(private val context: Context) {
             Log.i(LOG_TAG, "Migrated legacy shake-to-skip settings: enabled=$legacyEnabled, sensitivity=$legacySensitivity")
         } catch (e: Exception) {
             Log.e(LOG_TAG, "Error migrating shake control settings from v1 to v2", e)
+        }
+    }
+    
+    /**
+     * Migrate from version 2 to version 3 (unified shake condition)
+     */
+    private fun migrateFromV2ToV3() {
+        try {
+            // Check if old lock/unlock settings exist
+            val skipWhenUnlocked = prefs.getBoolean(LEGACY_SKIP_WHEN_UNLOCKED_KEY, false)
+            val playPauseLockScreen = prefs.getBoolean(LEGACY_PLAY_PAUSE_LOCK_SCREEN_KEY, true)
+            
+            // Determine the appropriate shake condition based on old settings
+            val shakeCondition = when {
+                // If skip when unlocked was false, it meant skip only worked when locked
+                !skipWhenUnlocked -> ShakeCondition.LOCKED_ONLY
+                // If play/pause lock screen was false, it meant play/pause only worked when unlocked
+                !playPauseLockScreen -> ShakeCondition.UNLOCKED_ONLY
+                // Otherwise, default to always
+                else -> ShakeCondition.ALWAYS
+            }
+            
+            // Save the new shake condition
+            prefs.edit().putString(SHAKE_CONDITION_KEY, shakeCondition.id).apply()
+            
+            // Remove old keys
+            prefs.edit().apply {
+                remove(LEGACY_SKIP_WHEN_UNLOCKED_KEY)
+                remove(LEGACY_PLAY_PAUSE_LOCK_SCREEN_KEY)
+                apply()
+            }
+            
+            Log.i(LOG_TAG, "Migrated to unified shake condition: ${shakeCondition.displayName}")
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Error migrating shake control settings from v2 to v3", e)
         }
     }
     
@@ -234,16 +274,15 @@ class ShakeControlSettingsManager(private val context: Context) {
             "behavior" to settings.behavior.id,
             "sensitivity" to settings.sensitivity,
             "hapticFeedback" to settings.hapticFeedback,
+            "shakeCondition" to settings.shakeCondition.id,
             "behaviorSettings" to when (val behaviorSettings = settings.behaviorSettings) {
                 is BehaviorSettings.SkipSettings -> mapOf(
                     "type" to "skip",
                     "skipDelay" to behaviorSettings.skipDelay,
-                    "skipWhenPaused" to behaviorSettings.skipWhenPaused,
-                    "skipWhenUnlocked" to behaviorSettings.skipWhenUnlocked
+                    "skipWhenPaused" to behaviorSettings.skipWhenPaused
                 )
                 is BehaviorSettings.PlayPauseSettings -> mapOf(
                     "type" to "play_pause",
-                    "lockScreenBehavior" to behaviorSettings.lockScreenBehavior,
                     "autoResumeDelay" to behaviorSettings.autoResumeDelay
                 )
                 is BehaviorSettings.AutoStartSettings -> mapOf(

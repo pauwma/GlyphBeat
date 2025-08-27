@@ -23,6 +23,7 @@ import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
 import com.pauwma.glyphbeat.data.ShakeControlSettings
 import com.pauwma.glyphbeat.data.ShakeControlSettingsManager
 import com.pauwma.glyphbeat.data.ShakeBehavior
+import com.pauwma.glyphbeat.data.ShakeCondition
 import com.pauwma.glyphbeat.data.BehaviorSettings
 import com.pauwma.glyphbeat.data.getSkipSettings
 import com.pauwma.glyphbeat.data.getPlayPauseSettings
@@ -941,6 +942,12 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private fun handleShakeDetected(force: Float) {
         Log.d(LOG_TAG, "Shake detected with force: $force, behavior: ${currentShakeSettings.behavior.displayName}")
         
+        // Check if shake condition allows action based on lock state
+        if (!isShakeConditionMet()) {
+            Log.d(LOG_TAG, "Shake condition not met - ignoring shake")
+            return
+        }
+        
         // Execute behavior-specific action
         val success = when (currentShakeSettings.behavior) {
             ShakeBehavior.SKIP -> handleSkipBehavior()
@@ -951,6 +958,20 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // Provide haptic feedback if enabled and action was successful
         if (success && currentShakeSettings.hapticFeedback) {
             shakeDetector?.provideHapticFeedback()
+        }
+    }
+    
+    /**
+     * Check if shake condition allows action based on current lock state
+     */
+    private fun isShakeConditionMet(): Boolean {
+        val keyguardManager = applicationContext.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+        val isPhoneLocked = keyguardManager.inKeyguardRestrictedInputMode()
+        
+        return when (currentShakeSettings.shakeCondition) {
+            ShakeCondition.ALWAYS -> true
+            ShakeCondition.LOCKED_ONLY -> isPhoneLocked
+            ShakeCondition.UNLOCKED_ONLY -> !isPhoneLocked
         }
     }
     
@@ -969,15 +990,6 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // Check if media is paused and whether we should skip when paused
         if (currentPlayerState == PlayerState.PAUSED && !skipSettings.skipWhenPaused) {
             Log.d(LOG_TAG, "Media is paused and skip when paused is disabled - ignoring shake")
-            return false
-        }
-        
-        // Check if phone is unlocked and whether we should skip when unlocked
-        val myKM = applicationContext.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-        val isPhoneLocked = myKM.inKeyguardRestrictedInputMode()
-        
-        if (!isPhoneLocked && !skipSettings.skipWhenUnlocked) {
-            Log.d(LOG_TAG, "Phone is unlocked and skip when unlocked is disabled - ignoring shake")
             return false
         }
         
@@ -1003,15 +1015,6 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         }
         
         val playPauseSettings = currentShakeSettings.getPlayPauseSettings() ?: return false
-        
-        // Check lock screen behavior
-        val myKM = applicationContext.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-        val isPhoneLocked = myKM.inKeyguardRestrictedInputMode()
-        
-        if (isPhoneLocked && !playPauseSettings.lockScreenBehavior) {
-            Log.d(LOG_TAG, "Phone is locked and lock screen behavior is disabled - ignoring shake")
-            return false
-        }
         
         // Toggle play/pause
         val success = mediaHelper.togglePlayPause()
@@ -1153,8 +1156,8 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         when (key) {
             // New enhanced settings keys
             "shake_controls_enabled", "shake_behavior", "shake_sensitivity", "shake_haptic_feedback",
-            "shake_skip_delay", "shake_skip_when_paused", "shake_skip_when_unlocked",
-            "play_pause_lock_screen", "play_pause_auto_resume",
+            "shake_condition", "shake_skip_delay", "shake_skip_when_paused",
+            "play_pause_auto_resume",
             "auto_start_timeout", "auto_start_battery_awareness", "auto_start_battery_threshold",
             // Legacy keys for backward compatibility
             "shake_to_skip_enabled", "feedback_when_shaked" -> {

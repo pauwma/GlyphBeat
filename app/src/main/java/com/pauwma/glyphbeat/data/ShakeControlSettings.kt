@@ -12,6 +12,15 @@ enum class ShakeBehavior(val id: String, val displayName: String, val descriptio
 }
 
 /**
+ * Enum representing when shake controls should be active
+ */
+enum class ShakeCondition(val id: String, val displayName: String, val description: String) {
+    ALWAYS("always", "Always", "Shake controls work in all conditions"),
+    LOCKED_ONLY("locked_only", "When Locked", "Shake controls only work when phone is locked"),
+    UNLOCKED_ONLY("unlocked_only", "When Unlocked", "Shake controls only work when phone is unlocked")
+}
+
+/**
  * Base class for behavior-specific settings
  */
 sealed class BehaviorSettings {
@@ -20,15 +29,13 @@ sealed class BehaviorSettings {
      */
     data class SkipSettings(
         val skipDelay: Long = 3500L,                    // Delay between shake detections (ms)
-        val skipWhenPaused: Boolean = false,            // Allow skipping when media is paused
-        val skipWhenUnlocked: Boolean = false           // Allow skipping when device is unlocked
+        val skipWhenPaused: Boolean = false             // Allow skipping when media is paused
     ) : BehaviorSettings()
     
     /**
      * Settings specific to Play/Pause behavior
      */
     data class PlayPauseSettings(
-        val lockScreenBehavior: Boolean = true,         // Allow play/pause when device is locked (default: true)
         val autoResumeDelay: Long = 0L                  // Auto-resume delay in ms (0 = disabled)
     ) : BehaviorSettings()
     
@@ -48,6 +55,7 @@ data class ShakeControlSettings(
     val behavior: ShakeBehavior = ShakeBehavior.SKIP,   // Selected behavior
     val sensitivity: Float = ShakeDetector.SENSITIVITY_MEDIUM, // Shake sensitivity
     val hapticFeedback: Boolean = true,                 // Haptic feedback on shake
+    val shakeCondition: ShakeCondition = ShakeCondition.ALWAYS, // When shake controls are active
     val behaviorSettings: BehaviorSettings = BehaviorSettings.SkipSettings() // Behavior-specific settings
 ) {
     
