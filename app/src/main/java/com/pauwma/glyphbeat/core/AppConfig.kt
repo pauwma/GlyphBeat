@@ -15,7 +15,7 @@ object AppConfig {
      * Version code matching the build.gradle.kts versionCode.
      * Used for internal version tracking.
      */
-    const val VERSION_CODE = 7
+    const val VERSION_CODE = 9
     
     /**
      * Enable update dialog for new versions.
