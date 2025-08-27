@@ -120,7 +120,7 @@ fun ShakeControlsSection(
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             // Master enable/disable switch
             Row(

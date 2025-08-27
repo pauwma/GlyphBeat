@@ -827,7 +827,7 @@ fun SettingsScreen(
                         )
 
                         Text(
-                            text = "Automatically activate service when music starts playing",
+                            text = "Automatically activate when music starts playing",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )

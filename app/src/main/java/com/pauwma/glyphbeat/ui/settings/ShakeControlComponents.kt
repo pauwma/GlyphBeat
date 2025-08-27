@@ -494,7 +494,7 @@ fun BatteryAwarenessSettings(
                             thumbColor = MaterialTheme.colorScheme.primary,
                             activeTrackColor = MaterialTheme.colorScheme.primary,
                             inactiveTrackColor = if (useAlternateColors) Color(0xFF1A1A1A) else MaterialTheme.colorScheme.surfaceVariant,
-                            activeTickColor = if (useAlternateColors) Color(0xFF1A1A1A) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                            activeTickColor = if (useAlternateColors) Color(0xFF1A1A1A) else MaterialTheme.colorScheme.surfaceVariant,
                             inactiveTickColor = MaterialTheme.colorScheme.primary
                         )
                     )
