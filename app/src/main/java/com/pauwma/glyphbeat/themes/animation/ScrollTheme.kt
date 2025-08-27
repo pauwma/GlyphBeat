@@ -49,7 +49,7 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
 
     // Pause state tracking
     private var isPaused = false
-    private var currentPauseMode = "freeze" // "freeze" or "slow_motion"
+    private var currentPauseMode = "slow_motion" // "freeze" or "slow_motion"
 
     // Settings-driven properties
     private var currentBrightness = 1.0f
@@ -375,7 +375,7 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
                 id = "scroll_speed",
                 displayName = "Scroll Speed",
                 description = "Text scrolling speed",
-                defaultValue = 6,
+                defaultValue = 5,
                 minValue = 1,
                 maxValue = 10,
                 stepSize = 1,
@@ -385,10 +385,10 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
                 id = "pause_mode",
                 displayName = "Pause Behavior",
                 description = "How text behaves when paused",
-                defaultValue = "freeze",
+                defaultValue = "slow_motion",
                 options = listOf(
-                    DropdownOption("freeze", "Freeze", "Stop scrolling completely"),
-                    DropdownOption("slow_motion", "Slow Motion", "Continue scrolling slowly")
+                    DropdownOption("slow_motion", "Slow Motion", "Continue scrolling slowly"),
+                    DropdownOption("freeze", "Freeze", "Stop scrolling completely")
                 ),
                 category = SettingCategories.ANIMATION
             )
@@ -410,7 +410,7 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
                 id = "text_spacing",
                 displayName = "Character Spacing",
                 description = "Space between characters",
-                defaultValue = 1,
+                defaultValue = 2,
                 minValue = 1,
                 maxValue = 5,
                 stepSize = 1,
@@ -431,7 +431,7 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
                 id = "paused_opacity",
                 displayName = "Paused Opacity",
                 description = "Opacity when media is paused",
-                defaultValue = 0.5f,
+                defaultValue = 0.2f,
                 minValue = 0.1f,
                 maxValue = 0.8f,
                 stepSize = 0.1f,
