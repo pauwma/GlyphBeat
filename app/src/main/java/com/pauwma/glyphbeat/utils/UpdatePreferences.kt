@@ -19,7 +19,7 @@ object UpdatePreferences {
     var testMode = false
     
     // Force show for testing - ignores all checks
-    var forceShow = true
+    var forceShow = false
     
     private fun getPreferences(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
