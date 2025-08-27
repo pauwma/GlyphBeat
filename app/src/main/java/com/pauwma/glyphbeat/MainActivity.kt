@@ -31,6 +31,15 @@ import com.pauwma.glyphbeat.ui.navigation.TrackControlScreen
 import com.pauwma.glyphbeat.ui.navigation.SettingsNavigationScreen
 import com.pauwma.glyphbeat.tutorial.TutorialActivity
 import com.pauwma.glyphbeat.tutorial.utils.TutorialPreferences
+import com.pauwma.glyphbeat.core.AppConfig
+import com.pauwma.glyphbeat.utils.UpdatePreferences
+import com.pauwma.glyphbeat.data.UpdateManager
+import com.pauwma.glyphbeat.ui.dialogs.UpdateDialog
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,6 +53,9 @@ class MainActivity : ComponentActivity() {
             finish()
             return
         }
+        
+        // Update version tracking
+        UpdatePreferences.updateLastLaunchVersion(this, AppConfig.VERSION_CODE)
         
         enableEdgeToEdge()
         
@@ -65,6 +77,50 @@ class MainActivity : ComponentActivity() {
         setContent {
             NothingAndroidSDKDemoTheme {
                 val navController = rememberNavController()
+                
+                // Update dialog state
+                var showUpdateDialog by remember { mutableStateOf(false) }
+                val updateContent = remember { UpdateManager.getUpdateContent(AppConfig.VERSION_CODE) }
+                
+                // Check if we should show update dialog
+                LaunchedEffect(Unit) {
+                    android.util.Log.d("MainActivity", "Checking update dialog...")
+                    android.util.Log.d("MainActivity", "ENABLE_UPDATE_DIALOG: ${AppConfig.ENABLE_UPDATE_DIALOG}")
+                    android.util.Log.d("MainActivity", "VERSION_CODE: ${AppConfig.VERSION_CODE}")
+                    android.util.Log.d("MainActivity", "MIN_VERSION_FOR_UPDATES: ${AppConfig.MIN_VERSION_FOR_UPDATES}")
+                    android.util.Log.d("MainActivity", "updateContent: $updateContent")
+                    
+                    val shouldShow = UpdatePreferences.shouldShowUpdateDialog(this@MainActivity, AppConfig.VERSION_CODE)
+                    android.util.Log.d("MainActivity", "shouldShowUpdateDialog: $shouldShow")
+                    
+                    if (AppConfig.ENABLE_UPDATE_DIALOG && 
+                        AppConfig.VERSION_CODE >= AppConfig.MIN_VERSION_FOR_UPDATES &&
+                        updateContent != null &&
+                        shouldShow) {
+                        android.util.Log.d("MainActivity", "Showing update dialog in 500ms...")
+                        kotlinx.coroutines.delay(500) // Small delay for better UX
+                        android.util.Log.d("MainActivity", "Setting showUpdateDialog to true")
+                        showUpdateDialog = true
+                        android.util.Log.d("MainActivity", "showUpdateDialog is now: $showUpdateDialog")
+                    } else {
+                        android.util.Log.d("MainActivity", "Not showing update dialog")
+                    }
+                }
+                
+                // Show update dialog
+                if (showUpdateDialog && updateContent != null) {
+                    android.util.Log.d("MainActivity", "Calling UpdateDialog composable")
+                    UpdateDialog(
+                        updateContent = updateContent,
+                        onDismiss = {
+                            android.util.Log.d("MainActivity", "UpdateDialog dismissed")
+                            showUpdateDialog = false
+                            UpdatePreferences.markUpdateDialogShown(this@MainActivity, AppConfig.VERSION_CODE)
+                        }
+                    )
+                } else {
+                    android.util.Log.d("MainActivity", "Not showing dialog: showUpdateDialog=$showUpdateDialog, updateContent=$updateContent")
+                }
                 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),

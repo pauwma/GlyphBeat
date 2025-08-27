@@ -16,4 +16,16 @@ object AppConfig {
      * Used for internal version tracking.
      */
     const val VERSION_CODE = 7
+    
+    /**
+     * Enable update dialog for new versions.
+     * Set to false to disable update notifications.
+     */
+    const val ENABLE_UPDATE_DIALOG = true
+    
+    /**
+     * Minimum version code to show update dialog.
+     * Update dialogs won't be shown for versions below this.
+     */
+    const val MIN_VERSION_FOR_UPDATES = 7
 }
