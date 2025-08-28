@@ -229,7 +229,7 @@
     <div class="container">
         <div class="header">
             <h1>Glyph Beat – Privacy Policy</h1>
-            <div class="effective-date">Effective Date: 19 August 2025</div>
+            <div class="effective-date">Effective Date: 28 August 2025</div>
         </div>
         
         <div class="content">
@@ -262,10 +262,17 @@
                             <td><strong>No</strong></td>
                         </tr>
                         <tr>
-                            <td><strong>User settings</strong> (selected theme, brightness, timeout)</td>
+                            <td><strong>User settings</strong> (selected theme, brightness, timeout, auto-start preferences, shake sensitivity)</td>
                             <td>In-app preferences</td>
                             <td>Restore your choices on next launch</td>
                             <td>Stored <strong>locally</strong> in SharedPreferences</td>
+                            <td><strong>No</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Motion sensor data</strong> (accelerometer)</td>
+                            <td>Device sensors</td>
+                            <td>Detect shake gestures for track skipping (optional feature)</td>
+                            <td><strong>Not stored</strong> - processed in real-time only</td>
                             <td><strong>No</strong></td>
                         </tr>
                         <tr>
@@ -294,18 +301,40 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>android.permission.BIND_NOTIFICATION_LISTENER_SERVICE</strong></td>
+                            <td><strong>BIND_NOTIFICATION_LISTENER_SERVICE</strong></td>
                             <td>Read media notifications & obtain MediaSession tokens.</td>
                         </tr>
                         <tr>
-                            <td><strong>android.permission.INTERNET</strong></td>
-                            <td>Open external donation pages when the user taps "Support Development".</td>
+                            <td><strong>VIBRATE</strong></td>
+                            <td>Provide haptic feedback when shake gesture is detected.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WAKE_LOCK</strong></td>
+                            <td>Keep shake detection active when screen is locked (optional feature).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>INTERNET</strong></td>
+                            <td>Load album artwork from streaming services & open external donation pages.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RECEIVE_BOOT_COMPLETED</strong></td>
+                            <td>Start auto-detection service on device boot (optional auto-start feature).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>FOREGROUND_SERVICE</strong></td>
+                            <td>Run music detection service in the foreground for auto-start functionality.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>FOREGROUND_SERVICE_MEDIA_PLAYBACK</strong></td>
+                            <td>Declare the foreground service type for media playback detection.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>POST_NOTIFICATIONS</strong></td>
+                            <td>Show service notification when auto-detection is running (Android 13+).</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            
-            <p>No other dangerous permissions are requested.</p>
             
             <h2>4. Third-party services</h2>
             <ul>
@@ -337,10 +366,6 @@
                 <li><strong>Uninstall</strong> the app at any time.</li>
             </ul>
             
-            <h2>8. Changes to this policy</h2>
-            <p>
-                Updates will be posted within the app (<strong>Settings → About → Privacy Policy</strong>) and at the URL listed below. The "Effective Date" will change accordingly.
-            </p>
             
             <div class="contact-section">
                 <h2 style="border: none; margin-top: 0;">9. Contact</h2>

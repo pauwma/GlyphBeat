@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glyph Beat - Music Visualizer for Nothing Phone</title>
+    <title>Glyph Beat - Music Visualizer for Nothing Phone 3</title>
     <style>
         @font-face {
             font-family: 'NType82';
@@ -60,9 +60,9 @@
         }
         
         .header {
-            background: #FF0000;
+            background: #1A1A1A;
             color: white;
-            padding: 60px 40px;
+            padding: 30px 18px;
             text-align: center;
             position: relative;
         }
@@ -108,6 +108,25 @@
             font-weight: 700;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .logo-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: block;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+        
+        @keyframes logoFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
         }
         
         .tagline {
@@ -233,6 +252,11 @@
                 font-size: 2.5em;
             }
             
+            .logo-image {
+                width: 80px;
+                height: 80px;
+            }
+            
             .content {
                 padding: 40px 30px;
             }
@@ -263,8 +287,9 @@
                 <div class="glyph-dot"></div>
                 <div class="glyph-dot"></div>
             </div>
+            <img src="img/logo.png" alt="Glyph Beat Logo" class="logo-image">
             <h1 class="logo">Glyph Beat</h1>
-            <p class="tagline">Music Visualizer for Nothing Phone</p>
+            <p class="tagline">Music Visualizer for Nothing Phone 3</p>
         </div>
         
         <div class="content">
