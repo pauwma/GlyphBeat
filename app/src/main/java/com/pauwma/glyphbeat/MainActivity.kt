@@ -41,11 +41,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.LaunchedEffect
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
+        // Splash Screen
+        installSplashScreen()
+
         // Check if tutorial should be shown
         if (!TutorialPreferences.isTutorialCompleted(this)) {
             // Launch tutorial activity
