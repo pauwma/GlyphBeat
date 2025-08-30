@@ -146,14 +146,14 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         context: Context,
         glyphMatrixManager: GlyphMatrixManager
     ) {
-        Log.d(LOG_TAG, "MediaPlayerToyService connected - starting enhanced animation loop")
+        Log.d(LOG_TAG, "[*] MediaPlayerToyService connected")
         
         // Store reference to matrix manager for immediate updates
         this.matrixManager = glyphMatrixManager
         
         // Always send Glyph activity broadcast when service starts
         // The MusicDetectionService will determine if it should suspend based on its own state
-        Log.i(LOG_TAG, "MediaPlayerToyService activated - sending Glyph activity notification")
+        Log.i(LOG_TAG, "[*] MediaPlayerToyService activated - sending Glyph activity notification")
         sendGlyphActivityBroadcast()
         
         // Initialize components
@@ -176,7 +176,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // This gives the service time to stabilize and prevents detecting the initial sensor variations
         backgroundScope.launch {
             delay(1500L) // 1.5 second delay before enabling shake detection
-            Log.d(LOG_TAG, "Initializing shake detection after startup delay")
+            Log.d(LOG_TAG, "[~] Initializing shake detection after startup delay")
             initializeShakeDetection(context)
             registerShakePreferencesListener(context)
         }
@@ -196,14 +196,12 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // Start with proper initial frame based on actual media state
         val shouldAnimate = initialPlayerState == PlayerState.PLAYING
         val initialFrame = generateFrame(shouldAnimate, initialPlayerState)
-        val themeBrightness = currentTheme?.getBrightness() ?: 255
         uiScope.launch {
             // Check if auto-start is paused
             val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
             val isPaused = prefs.getBoolean("auto_start_paused", false)
             
             if (!isPaused) {
-                // Always use SDK brightness of 255 - themes now handle brightness in pixel values
                 val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, initialFrame, 255)
                 glyphMatrixManager.setMatrixFrame(matrixFrame.render())
             }
@@ -398,22 +396,12 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
 
     override fun onTouchPointPressed() {
         // Short press disabled - no functionality
-        Log.v(LOG_TAG, "Short press detected but no action assigned")
+        // Log.v(LOG_TAG, "Short press detected but no action assigned")
     }
 
     override fun onTouchPointLongPress() {
         // Long press to toggle play/pause with instant visual feedback
         Log.d(LOG_TAG, "Long press detected - toggling media playback with instant feedback")
-        
-        // Debug: Test with raw 255 values
-        // To test maximum brightness capability:
-        // 1. Uncomment the next two lines
-        // 2. Build and run the app
-        // 3. Long press on the Glyph Matrix
-        // 4. Check if the center circle appears at full brightness
-        // 5. Check logcat for "Test frame - Max brightness: 255"
-        // testMaxBrightness()
-        // return
         
         try {
             // Predict the new state immediately for instant UI feedback
@@ -426,7 +414,6 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 
                 // Force immediate frame update
                 val pixelArray = generateFrame(predictedState == PlayerState.PLAYING, predictedState)
-                val themeBrightness = currentTheme?.getBrightness() ?: 255
                 uiScope.launch(Dispatchers.Main.immediate) {
                     // Check if auto-start is paused
                     val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
