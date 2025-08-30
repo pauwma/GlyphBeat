@@ -49,10 +49,10 @@ object UpdateManager {
     
     // Define update content for each version
     private val updateContents = mutableMapOf(
-        // Version 1.2.0 (Version Code 7)
+        // Version 1.2.0 (Version Code 10)
         7 to UpdateContent(
             versionName = "1.2.0",
-            versionCode = 7,
+            versionCode = 10,
             title = "New Features Available!",
             subtitle = "Enhanced animations and controls",
             features = listOf(
@@ -85,10 +85,10 @@ object UpdateManager {
             )
         ),
         
-        // Version 1.3.0 (Version Code 8) - Example for future :P
+        // Version 1.3.0 - Example for future :P
         8 to UpdateContent(
             versionName = "1.3.0",
-            versionCode = 8,
+            versionCode = 11,
             title = "Performance Update",
             subtitle = "Faster, smoother, better",
             features = listOf(
