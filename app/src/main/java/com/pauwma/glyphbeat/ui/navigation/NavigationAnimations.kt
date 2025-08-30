@@ -10,27 +10,27 @@ import androidx.compose.ui.unit.IntOffset
  * Provides smooth, premium transitions between screens.
  */
 object NavigationAnimations {
-
+    
     // Animation durations
     const val TRANSITION_DURATION = 400
     const val FAST_TRANSITION = 250
     const val SLOW_TRANSITION = 600
-
+    
     // Spring specs for natural motion
     val springSpec = spring<Float>(
         dampingRatio = Spring.DampingRatioMediumBouncy,
         stiffness = Spring.StiffnessLow
     )
-
+    
     val smoothSpringSpec = spring<Float>(
         dampingRatio = Spring.DampingRatioNoBouncy,
         stiffness = Spring.StiffnessMedium
     )
-
+    
     // Easing curves
     val enteringEasing = FastOutSlowInEasing
     val exitingEasing = FastOutLinearInEasing
-
+    
     /**
      * Slide in from right animation for forward navigation
      */
@@ -48,7 +48,7 @@ object NavigationAnimations {
             )
         )
     }
-
+    
     /**
      * Slide in from left animation for backward navigation
      */
@@ -66,7 +66,7 @@ object NavigationAnimations {
             )
         )
     }
-
+    
     /**
      * Slide out to left animation for forward navigation
      */
@@ -85,7 +85,7 @@ object NavigationAnimations {
             )
         )
     }
-
+    
     /**
      * Slide out to right animation for backward navigation
      */
@@ -104,7 +104,7 @@ object NavigationAnimations {
             )
         )
     }
-
+    
     /**
      * Parallax slide effect - slower movement for exiting screen
      */
@@ -128,7 +128,7 @@ object NavigationAnimations {
             )
         )
     }
-
+    
     fun parallaxSlideOutToLeft(): ExitTransition {
         return slideOut(
             targetOffset = { IntOffset(-it.width / 3, 0) }, // Slower movement
@@ -149,7 +149,7 @@ object NavigationAnimations {
             )
         )
     }
-
+    
     /**
      * Scale and fade transition for a more dramatic effect
      */
@@ -167,7 +167,7 @@ object NavigationAnimations {
             )
         )
     }
-
+    
     fun scaleAndFadeOut(): ExitTransition {
         return scaleOut(
             targetScale = 1.08f,
@@ -183,7 +183,7 @@ object NavigationAnimations {
             )
         )
     }
-
+    
     /**
      * Vertical slide animations for modal-like transitions
      */
@@ -201,7 +201,7 @@ object NavigationAnimations {
             )
         )
     }
-
+    
     fun slideOutToBottom(): ExitTransition {
         return slideOut(
             targetOffset = { IntOffset(0, it.height) },
@@ -216,35 +216,35 @@ object NavigationAnimations {
             )
         )
     }
-
+    
     /**
      * Get appropriate enter transition based on navigation direction
      */
     fun getEnterTransition(fromRoute: String?, toRoute: String): EnterTransition {
         val fromIndex = getRouteIndex(fromRoute)
         val toIndex = getRouteIndex(toRoute)
-
+        
         return when {
             fromIndex < toIndex -> parallaxSlideInFromRight()
             fromIndex > toIndex -> slideInFromLeft()
             else -> scaleAndFadeIn()
         }
     }
-
+    
     /**
      * Get appropriate exit transition based on navigation direction
      */
     fun getExitTransition(fromRoute: String, toRoute: String?): ExitTransition {
         val fromIndex = getRouteIndex(fromRoute)
         val toIndex = getRouteIndex(toRoute)
-
+        
         return when {
             fromIndex < toIndex -> parallaxSlideOutToLeft()
             fromIndex > toIndex -> slideOutToRight()
             else -> scaleAndFadeOut()
         }
     }
-
+    
     private fun getRouteIndex(route: String?): Int {
         return when (route) {
             "media_player" -> 0
@@ -264,7 +264,7 @@ fun <T> AnimatedNavContent(
     modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
     transitionSpec: AnimatedContentTransitionScope<T>.() -> ContentTransform = {
         fadeIn(animationSpec = tween(220, delayMillis = 90)) togetherWith
-                fadeOut(animationSpec = tween(90))
+            fadeOut(animationSpec = tween(90))
     },
     content: @Composable AnimatedContentScope.(T) -> Unit
 ) {

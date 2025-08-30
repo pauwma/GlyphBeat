@@ -17,6 +17,10 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import com.pauwma.glyphbeat.ui.navigation.NavigationAnimations
 import com.pauwma.glyphbeat.theme.NothingAndroidSDKDemoTheme
 import com.pauwma.glyphbeat.ui.screens.SettingsScreen
@@ -139,25 +143,25 @@ class MainActivity : AppCompatActivity() {
                             .padding(innerPadding)
                             .fillMaxSize()
                             .background(Color.Black),
-                        enterTransition = {
+                        enterTransition = { 
                             NavigationAnimations.getEnterTransition(
                                 initialState.destination.route,
                                 targetState.destination.route ?: ""
                             )
                         },
-                        exitTransition = {
+                        exitTransition = { 
                             NavigationAnimations.getExitTransition(
                                 initialState.destination.route ?: "",
                                 targetState.destination.route
                             )
                         },
-                        popEnterTransition = {
+                        popEnterTransition = { 
                             NavigationAnimations.getEnterTransition(
                                 initialState.destination.route,
                                 targetState.destination.route ?: ""
                             )
                         },
-                        popExitTransition = {
+                        popExitTransition = { 
                             NavigationAnimations.getExitTransition(
                                 initialState.destination.route ?: "",
                                 targetState.destination.route

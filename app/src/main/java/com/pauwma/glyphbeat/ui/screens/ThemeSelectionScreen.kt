@@ -51,7 +51,7 @@ fun ThemeSelectionScreen(
     // Settings sheet state
     var selectedThemeForSettings by remember { mutableStateOf<AnimationTheme?>(null) }
     var showSettingsSheet by remember { mutableStateOf(false) }
-
+    
     // Apply settings to newly selected theme - fully on IO thread
     LaunchedEffect(selectedThemeIndex) {
         if (selectedThemeIndex in themeRepository.availableThemes.indices) {
@@ -121,7 +121,7 @@ fun ThemeSelectionScreen(
                 items(themeRepository.availableThemes) { theme ->
                     val themeIndex = themeRepository.availableThemes.indexOf(theme)
                     val isSelected = themeRepository.isThemeSelected(themeIndex)
-
+                    
                     ThemePreviewCard(
                         theme = theme,
                         isSelected = isSelected,
