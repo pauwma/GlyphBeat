@@ -49,14 +49,6 @@ fun ThemeSelectionScreen(
     var selectedThemeForSettings by remember { mutableStateOf<AnimationTheme?>(null) }
     var showSettingsSheet by remember { mutableStateOf(false) }
     
-    // Delay initial loading to prevent ANR
-    var isReady by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        // Small delay to let UI render first
-        kotlinx.coroutines.delay(100)
-        isReady = true
-    }
-    
     // Apply settings to newly selected theme - fully on IO thread
     LaunchedEffect(selectedThemeIndex) {
         if (selectedThemeIndex in themeRepository.availableThemes.indices) {
@@ -109,48 +101,34 @@ fun ThemeSelectionScreen(
             }
             
             // Theme Grid - with bottom padding for the apply button
-            if (isReady) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 0.dp,
-                        bottom = 120.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(themeRepository.availableThemes) { theme ->
-                        val themeIndex = themeRepository.availableThemes.indexOf(theme)
-                        val isSelected = themeRepository.isThemeSelected(themeIndex)
-                        
-                        ThemePreviewCard(
-                            theme = theme,
-                            isSelected = isSelected,
-                            onSelect = {
-                                themeRepository.selectTheme(themeIndex)
-                            },
-                            onOpenSettings = {
-                                selectedThemeForSettings = theme
-                                showSettingsSheet = true
-                            }
-                        )
-                    }
-                }
-            } else {
-                // Show loading state while themes are initializing
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    androidx.compose.material3.CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 0.dp,
+                    bottom = 120.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(themeRepository.availableThemes) { theme ->
+                    val themeIndex = themeRepository.availableThemes.indexOf(theme)
+                    val isSelected = themeRepository.isThemeSelected(themeIndex)
+                    
+                    ThemePreviewCard(
+                        theme = theme,
+                        isSelected = isSelected,
+                        onSelect = {
+                            themeRepository.selectTheme(themeIndex)
+                        },
+                        onOpenSettings = {
+                            selectedThemeForSettings = theme
+                            showSettingsSheet = true
+                        }
                     )
                 }
             }

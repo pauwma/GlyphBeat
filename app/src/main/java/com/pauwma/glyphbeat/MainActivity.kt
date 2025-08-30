@@ -22,6 +22,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import com.pauwma.glyphbeat.ui.navigation.NavigationAnimations
 import com.pauwma.glyphbeat.theme.NothingAndroidSDKDemoTheme
 import com.pauwma.glyphbeat.ui.screens.ThemeSelectionScreen
 import com.pauwma.glyphbeat.ui.screens.SettingsScreen
@@ -136,10 +137,30 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .fillMaxSize()
                             .background(Color.Black),
-                        enterTransition = { fadeIn(animationSpec = androidx.compose.animation.core.tween(150)) },
-                        exitTransition = { fadeOut(animationSpec = androidx.compose.animation.core.tween(150)) },
-                        popEnterTransition = { fadeIn(animationSpec = androidx.compose.animation.core.tween(150)) },
-                        popExitTransition = { fadeOut(animationSpec = androidx.compose.animation.core.tween(150)) }
+                        enterTransition = { 
+                            NavigationAnimations.getEnterTransition(
+                                initialState.destination.route,
+                                targetState.destination.route ?: ""
+                            )
+                        },
+                        exitTransition = { 
+                            NavigationAnimations.getExitTransition(
+                                initialState.destination.route ?: "",
+                                targetState.destination.route
+                            )
+                        },
+                        popEnterTransition = { 
+                            NavigationAnimations.getEnterTransition(
+                                initialState.destination.route,
+                                targetState.destination.route ?: ""
+                            )
+                        },
+                        popExitTransition = { 
+                            NavigationAnimations.getExitTransition(
+                                initialState.destination.route ?: "",
+                                targetState.destination.route
+                            )
+                        }
                     ) {
                         // Media Player Tab
                         composable("media_player") {
