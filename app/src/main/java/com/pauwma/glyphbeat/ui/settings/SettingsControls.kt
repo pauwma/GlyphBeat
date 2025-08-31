@@ -268,28 +268,32 @@ fun SettingsDropdown(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
     ) {
-        // Setting name
-        Text(
-            text = setting.displayName,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontFamily = customFont,
-                fontSize = 15.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        // Setting name (only show if not empty)
+        if (setting.displayName.isNotEmpty()) {
+            Text(
+                text = setting.displayName,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = customFont,
+                    fontSize = 15.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            Spacer(modifier = Modifier.height(2.dp))
+        }
         
-        Spacer(modifier = Modifier.height(2.dp))
-        
-        // Description
-        Text(
-            text = setting.description,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 11.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-        )
-        
-        Spacer(modifier = Modifier.height(6.dp))
+        // Description (only show if not empty)
+        if (setting.description.isNotEmpty()) {
+            Text(
+                text = setting.description,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 11.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+            
+            Spacer(modifier = Modifier.height(6.dp))
+        }
         
         // Dropdown trigger
         ExposedDropdownMenuBox(

@@ -165,7 +165,7 @@ fun ThemePreviewCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 4.dp),
-                    maxLines = 3
+                    maxLines = 2
                 )
             }
             

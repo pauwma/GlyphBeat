@@ -1,5 +1,8 @@
 package com.pauwma.glyphbeat.ui.settings
 
+import android.content.Context
+import com.pauwma.glyphbeat.R
+
 /**
  * Interface for animation themes that support customizable settings.
  * Themes can implement this interface to provide user-configurable options.
@@ -190,6 +193,23 @@ object SettingCategories {
     const val BEHAVIOR = "Behavior"
     const val EFFECTS = "Effects"
     const val AUDIO = "Audio"
+    
+    /**
+     * Get localized category names using string resources.
+     */
+    fun getLocalizedCategory(context: Context, category: String): String {
+        return when (category) {
+            ANIMATION -> context.getString(R.string.section_animation)
+            DESIGN -> context.getString(R.string.section_design)
+            LAYOUT -> context.getString(R.string.section_layout)
+            VISUAL -> context.getString(R.string.section_visual)
+            TIMING -> context.getString(R.string.section_timing)
+            BEHAVIOR -> context.getString(R.string.section_behavior)
+            EFFECTS -> context.getString(R.string.section_effects)
+            AUDIO -> context.getString(R.string.section_audio)
+            else -> category // Fallback to original category name
+        }
+    }
 }
 
 /**

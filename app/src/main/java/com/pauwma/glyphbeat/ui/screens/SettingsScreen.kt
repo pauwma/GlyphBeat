@@ -82,8 +82,21 @@ import com.pauwma.glyphbeat.isMediaControlServiceWorking
 import com.pauwma.glyphbeat.openNotificationAccessSettings
 import com.pauwma.glyphbeat.ui.settings.ShakeControlsSection
 import com.pauwma.glyphbeat.ui.settings.BatteryAwarenessSettings
+import com.pauwma.glyphbeat.ui.settings.SettingsDropdown
+import com.pauwma.glyphbeat.ui.settings.DropdownSetting
+import com.pauwma.glyphbeat.ui.settings.DropdownOption
 import com.pauwma.glyphbeat.data.ShakeControlSettings
 import com.pauwma.glyphbeat.data.ShakeControlSettingsManager
+import java.util.Locale
+
+/**
+ * Data class representing a language option
+ */
+data class LanguageInfo(
+    val code: String,           // Language code like "en", "es"
+    val displayName: String,    // Localized display name
+    val author: String? = null  // Optional translator attribution
+)
 
 @Composable
 private fun TestResultCard(
@@ -375,6 +388,15 @@ fun SettingsScreen(
     var isLoadingMusicApps by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
     
+    // Language settings state
+    var currentLanguage by remember { mutableStateOf("en") }
+    val availableLanguages = remember {
+        listOf(
+            LanguageInfo("en", context.getString(R.string.language_english), null),
+            LanguageInfo("es", context.getString(R.string.language_spanish), "@pauwma")
+        )
+    }
+    
     // App priority for sorting (most popular apps first)
     val appPriority = mapOf(
         "com.spotify.music"                       to 1,
@@ -415,6 +437,16 @@ fun SettingsScreen(
     
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    
+    // Function to change app language
+    fun changeLanguage(languageCode: String) {
+        currentLanguage = languageCode
+        prefs.edit().putString("app_language", languageCode).apply()
+        
+        // Note: Language change will take effect on next app restart
+        // This prevents theme disruption that occurs with immediate recreation
+        Log.d("SettingsScreen", "Language preference saved: $languageCode (will apply on next app start)")
+    }
     
     // Function to load and sort music apps
     fun loadMusicApps() {
@@ -463,6 +495,9 @@ fun SettingsScreen(
             autoStopDelay = prefs.getLong("auto_stop_delay", 3000L)
             batteryAwarenessEnabled = prefs.getBoolean("battery_awareness_enabled", false)
             batteryThreshold = prefs.getInt("battery_threshold", 10)
+            
+            // Load language preference
+            currentLanguage = prefs.getString("app_language", "en") ?: "en"
             
             // Load music apps
             loadMusicApps()
@@ -1256,7 +1291,7 @@ fun SettingsScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Contact")
+                    Text(context.getString(R.string.contact_button))
                 }
             }
         }
@@ -1398,7 +1433,7 @@ fun SettingsScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Replay Tutorial")
+                    Text(context.getString(R.string.tutorial_button))
                 }
             }
         }
@@ -1412,7 +1447,59 @@ fun SettingsScreen(
                 containerColor = Color(0xFF1A1A1A)
             )
         ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = context.getString(R.string.language_settings_title),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = customFont
+                    ),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
 
+                Text(
+                    text = context.getString(R.string.language_settings_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                // Language selection dropdown using consistent SettingsDropdown
+                val languageDropdownOptions = availableLanguages.map { language ->
+                    DropdownOption(
+                        value = language.code,
+                        label = buildString {
+                            append(language.displayName)
+                            append(" - ")
+                            append(language.code.uppercase())
+                            language.author?.let { author ->
+                                append(" ")
+                                append(author)
+                            }
+                        },
+                        description = null
+                    )
+                }
+
+                val languageDropdownSetting = DropdownSetting(
+                    id = "app_language",
+                    displayName = "",
+                    description = "",
+                    defaultValue = currentLanguage,
+                    options = languageDropdownOptions
+                )
+
+                SettingsDropdown(
+                    setting = languageDropdownSetting,
+                    currentValue = currentLanguage,
+                    onValueChange = { newLanguageCode ->
+                        changeLanguage(newLanguageCode)
+                    },
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+            }
         }
 
 
@@ -1447,7 +1534,7 @@ fun SettingsScreen(
                 ClickableText(
                     modifier = Modifier.padding(top = 8.dp),
                     text = buildAnnotatedString {
-                        append(context.getString(R.string.version) + "${AppConfig.APP_VERSION} - ")
+                        append(context.getString(R.string.version) + " ${AppConfig.APP_VERSION} - ")
                         pushStringAnnotation(tag = "URL", annotation = "https://privacidad.me/@pauwma")
                         withStyle(
                             style = SpanStyle(

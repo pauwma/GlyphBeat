@@ -26,7 +26,7 @@
     <string name="theme_cover_art_desc">Try to guess what cover that’s supposed to be!</string>
 
     <string name="theme_minimal_title">Minimal</string>
-    <string name="theme_minimal_desc">I’m empty inside — I just want nothing</string>
+    <string name="theme_minimal_desc">I’m empty inside, I just want nothing</string>
 
     <string name="theme_scroll_title">Scroll Text</string>
     <string name="theme_scroll_desc">Title, artist, album all flexin’ on a nonstop scroll</string>
@@ -49,6 +49,17 @@
 
     <string name="set_small">Small</string>
     <string name="set_large">Large</string>
+
+
+    <!-- ───── Theme Sections ───── -->
+    <string name="section_animation">Animation</string>
+    <string name="section_design">Design</string>
+    <string name="section_layout">Layout</string>
+    <string name="section_visual">Visual</string>
+    <string name="section_timing">Timing</string>
+    <string name="section_behavior">Behavior</string>
+    <string name="section_effects">Effects</string>
+    <string name="section_audio">Audio</string>
 
 
     <!-- ───── Vinyl Record settings ───── -->
@@ -227,6 +238,7 @@
     <!-- ───── Bugs Report & Support ───── -->
     <string name="bug_report_title">Bug Report &amp; Support</string>
     <string name="bug_report_desc">Found a bug or need help? Contact me for support</string>
+    <string name="contact_button">Contact</string>
 
 
     <!-- ───── Support GlyphBeat ───── -->
@@ -237,7 +249,14 @@
     <!-- ───── Tutorial ───── -->
     <string name="tutorial_title">Tutorial</string>
     <string name="tutorial_desc">View the app introduction and setup guide again</string>
+    <string name="tutorial_button">Replay Tutorial</string>
 
+
+    <!-- ───── Language Settings ───── -->
+    <string name="language_settings_title">Language</string>
+    <string name="language_settings_desc">Select your preferred language</string>
+    <string name="language_english">English</string>
+    <string name="language_spanish">Español</string>
 
     <!-- ───── App Information ───── -->
     <string name="app_info_title">App Information</string>
@@ -249,6 +268,7 @@
 
     <!-- - ────────── - Tutorial - ────────── - -->
 
+    <!-- ───── Welcome Page ───── -->
 
 
 </resources>

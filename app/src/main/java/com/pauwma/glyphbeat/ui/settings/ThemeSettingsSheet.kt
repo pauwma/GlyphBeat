@@ -452,6 +452,7 @@ private fun ThemeSettingsContent(
     onSettingChanged: (String, Any) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
     
     // Group settings by category
@@ -467,7 +468,7 @@ private fun ThemeSettingsContent(
             // Category header
             item {
                 Text(
-                    text = category,
+                    text = SettingCategories.getLocalizedCategory(context, category),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont,
                         fontWeight = FontWeight.SemiBold,
