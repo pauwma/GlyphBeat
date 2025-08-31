@@ -291,10 +291,10 @@ data class DropdownSetting(
 data class DropdownOption(
     @SerializedName("value")
     val value: String,
-    
-    @SerializedName("label") 
+
+    @SerializedName("label")
     val label: String,
-    
+
     @SerializedName("description")
     val description: String? = null
 )

@@ -1,5 +1,6 @@
 package com.pauwma.glyphbeat.themes.animation
 
+import android.content.Context
 import com.pauwma.glyphbeat.themes.base.FrameTransition
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.ui.settings.SettingCategories
@@ -8,16 +9,17 @@ import com.pauwma.glyphbeat.ui.settings.ThemeSettingsBuilder
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
 import com.pauwma.glyphbeat.ui.settings.getDropdownValue
 import kotlin.math.sqrt
+import com.pauwma.glyphbeat.R
 
-class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
+class GlyphyTheme(private val ctx: Context)  : ThemeTemplate(), ThemeSettingsProvider {
     
     // No animation state needed for static pause frame
 
     // =================================================================================
     // THEME METADATA
     // =================================================================================
-    override val titleTheme: String = "Glyphy"
-    override val descriptionTheme: String = "Training to be a good AI, but for now look at him..."
+    override val titleTheme: String = ctx.getString(R.string.theme_glyphy_title)
+    override val descriptionTheme: String = ctx.getString(R.string.theme_glyphy_desc)
     override val authorName: String = "pauwma"
     override val version: String = "1.0.0"
     override val category: String = "Fun"
@@ -333,13 +335,13 @@ class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
         return ThemeSettingsBuilder(getSettingsId())
             .addDropdownSetting(
                 id = "animation_pattern",
-                displayName = "Animation Pattern",
-                description = "Style of the animation",
+                displayName = ctx.getString(R.string.set_glyphy_pattern_title),
+                description = ctx.getString(R.string.set_glyphy_pattern_desc),
                 defaultValue = "dance",
                 optionsMap = mapOf(
-                    "dance" to "Dance",
-                    "blink" to "Blink",
-                    "jam" to "Jamming"
+                    "dance" to ctx.getString(R.string.set_glyphy_pattern_dance),
+                    "blink" to ctx.getString(R.string.set_glyphy_pattern_blink),
+                    "jam" to ctx.getString(R.string.set_glyphy_pattern_jam)
                 ),
                 category = SettingCategories.ANIMATION
             )

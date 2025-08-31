@@ -1,8 +1,10 @@
 package com.pauwma.glyphbeat.themes.animation
 
+import android.content.Context
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.themes.base.FrameTransition
 import com.pauwma.glyphbeat.ui.settings.*
+import com.pauwma.glyphbeat.R
 
 
 /**
@@ -14,15 +16,15 @@ import com.pauwma.glyphbeat.ui.settings.*
  * - Paused frame: Dimmed version of the pattern
  * - Offline frame: Dark with minimal accent pattern
  */
-class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
+class MinimalTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvider {
 
     // =================================================================================
     // THEME METADATA
     // =================================================================================
 
-    override val titleTheme: String = "Minimal"
+    override val titleTheme: String = ctx.getString(R.string.theme_minimal_title)
 
-    override val descriptionTheme: String = "I'm empty inside I just want nothing"
+    override val descriptionTheme: String = ctx.getString(R.string.theme_minimal_desc)
 
     override val authorName: String = "pauwma"
 
@@ -197,15 +199,15 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
         return ThemeSettingsBuilder(getSettingsId())
             .addToggleSetting(
                 id = "outside_border",
-                displayName = "Border",
-                description = "Enable outside border stroke",
+                displayName = ctx.getString(R.string.set_min_border_title),
+                description = ctx.getString(R.string.set_min_border_desc),
                 defaultValue = false,
                 category = SettingCategories.LAYOUT
             )
             .addSliderSetting(
                 id = "minimal_brightness",
-                displayName = "Brightness",
-                description = "Brightness multiplier for icons",
+                displayName = ctx.getString(R.string.set_brightness_title),
+                description = ctx.getString(R.string.set_brightness_desc),
                 defaultValue = 1.0f,
                 minValue = 0.1f,
                 maxValue = 1.0f,
@@ -215,8 +217,8 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
             )
             .addSliderSetting(
                 id = "paused_opacity",
-                displayName = "Paused Opacity",
-                description = "Opacity when media is paused",
+                displayName = ctx.getString(R.string.set_paused_opacity_title),
+                description = ctx.getString(R.string.set_paused_opacity_desc),
                 defaultValue = 0.4f,
                 minValue = 0.1f,
                 maxValue = 0.8f,

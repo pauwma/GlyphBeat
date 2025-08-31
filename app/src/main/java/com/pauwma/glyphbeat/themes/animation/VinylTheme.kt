@@ -1,14 +1,16 @@
 package com.pauwma.glyphbeat.themes.animation
 
+import android.content.Context
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.ui.settings.*
+import com.pauwma.glyphbeat.R
 
 /**
  * Custom vinyl record theme with predefined 8-frame animation.
  * Uses specific pixel data to create a detailed vinyl record spinning animation.
  * Now extends ThemeTemplate for enhanced features and supports customizable settings.
  */
-class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
+class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvider {
     
     // Settings-driven properties with default values
     private var currentAnimationSpeed: Long = getAnimationSpeed()
@@ -19,8 +21,8 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
     // THEME METADATA - Custom vinyl record theme information
     // =================================================================================
     
-    override val titleTheme: String = "Vinyl Record"
-    override val descriptionTheme: String = "Go full retro\nGo full DJ mode!"
+    override val titleTheme: String = ctx.getString(R.string.theme_vinyl_record_title)
+    override val descriptionTheme: String = ctx.getString(R.string.theme_vinyl_record_desc)
     override val authorName: String = "pauwma"
     override val version: String = "1.0.0" 
     override val category: String = "Music"
@@ -212,8 +214,8 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
         return ThemeSettingsBuilder(getSettingsId())
             .addSliderSetting(
                 id = CommonSettingIds.ROTATION_SPEED,
-                displayName = "Rotation Speed",
-                description = "How fast the vinyl record spins",
+                displayName =  ctx.getString(R.string.set_rotation_speed_title),
+                description = ctx.getString(R.string.set_vinyl_rotation_speed_desc),
                 defaultValue = 100L,
                 minValue = 50L,
                 maxValue = 300L,
@@ -223,19 +225,19 @@ class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
             )
             .addDropdownSetting(
                 id = "vinyl_size",
-                displayName = "Vinyl Size",
-                description = "Size of the vinyl record display",
+                displayName = ctx.getString(R.string.set_vinyl_size_title),
+                description = ctx.getString(R.string.set_vinyl_size_desc),
                 defaultValue = "large",
                 optionsMap = mapOf(
-                    "small" to "Small",
-                    "large" to "Large"
+                    "small" to ctx.getString(R.string.set_small),
+                    "large" to ctx.getString(R.string.set_large)
                 ),
                 category = SettingCategories.VISUAL
             )
             .addSliderSetting(
                 id = CommonSettingIds.BRIGHTNESS,
-                displayName = "Brightness",
-                description = "Overall brightness of the vinyl",
+                displayName = ctx.getString(R.string.set_brightness_title),
+                description = ctx.getString(R.string.set_brightness_desc),
                 defaultValue = 1.0f,
                 minValue = 0.1f,
                 maxValue = 1.0f,

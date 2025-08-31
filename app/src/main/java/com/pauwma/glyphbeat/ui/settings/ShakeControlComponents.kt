@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -133,11 +134,15 @@ fun TimeoutSlider(
     currentValue: Long,
     onValueChange: (Long) -> Unit,
     minLabel: String? = null,
-    offLabel: String = "Disabled",
+    offLabel: String? = null,
     useAlternateColors: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
+    
+    // Use string resource as default
+    val actualOffLabel = offLabel ?: context.getString(R.string.disabled)
     val timeoutOptions = ShakeControlSettings.TIMEOUT_OPTIONS
     val timeoutOptionsShort = ShakeControlSettings.TIMEOUT_OPTIONS_SHORT
     val currentIndex = timeoutOptions.indexOfFirst { it.first == currentValue }.let {
@@ -165,7 +170,7 @@ fun TimeoutSlider(
             )
             
             Text(
-                text = if (currentValue == 0L) offLabel else timeoutOptions[currentIndex].second,
+                text = if (currentValue == 0L) actualOffLabel else timeoutOptions[currentIndex].second,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontFamily = customFont,
                     fontSize = 15.sp
@@ -252,11 +257,15 @@ fun ShortTimeoutSlider(
     currentValue: Long,
     onValueChange: (Long) -> Unit,
     minLabel: String? = null,
-    offLabel: String = "Disabled",
+    offLabel: String? = null,
     useAlternateColors: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
+    
+    // Use string resource as default
+    val actualOffLabel = offLabel ?: context.getString(R.string.disabled)
     val timeoutOptions = ShakeControlSettings.TIMEOUT_OPTIONS_SHORT
     val currentIndex = timeoutOptions.indexOfFirst { it.first == currentValue }.let {
         if (it == -1) 0 else it
@@ -283,7 +292,7 @@ fun ShortTimeoutSlider(
             )
             
             Text(
-                text = if (currentValue == 0L) offLabel else timeoutOptions[currentIndex].second,
+                text = if (currentValue == 0L) actualOffLabel else timeoutOptions[currentIndex].second,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontFamily = customFont,
                     fontSize = 15.sp
@@ -372,6 +381,8 @@ fun BatteryAwarenessSettings(
     useAlternateColors: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
     
     Column(
@@ -389,7 +400,7 @@ fun BatteryAwarenessSettings(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "Battery Awareness",
+                    text = context.getString(R.string.auto_start_battery_title),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = customFont,
                         fontSize = 15.sp
@@ -400,7 +411,7 @@ fun BatteryAwarenessSettings(
                 Spacer(modifier = Modifier.height(2.dp))
                 
                 Text(
-                    text = "Disable auto-start below battery threshold",
+                    text = context.getString(R.string.auto_start_battery_desc),
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 11.sp
                     ),
@@ -449,7 +460,7 @@ fun BatteryAwarenessSettings(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Battery Threshold",
+                        text = context.getString(R.string.auto_start_battery_threshold),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = customFont,
                             fontSize = 14.sp
@@ -523,8 +534,6 @@ fun EnhancedToggleSetting(
     description: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    enabledLabel: String = "Enabled",
-    disabledLabel: String = "Disabled",
     useAlternateColors: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -588,21 +597,5 @@ fun EnhancedToggleSetting(
                 )
             }
         }
-        
-        // State label
-        Text(
-            text = if (checked) enabledLabel else disabledLabel,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = customFont,
-                fontSize = 11.sp
-            ),
-            color = if (checked) 
-                MaterialTheme.colorScheme.primary 
-            else 
-                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier
-                .align(Alignment.End)
-                .padding(top = 4.dp)
-        )
     }
 }

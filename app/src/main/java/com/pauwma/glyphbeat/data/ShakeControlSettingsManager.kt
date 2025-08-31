@@ -242,7 +242,7 @@ class ShakeControlSettingsManager(private val context: Context) {
                 apply()
             }
             
-            Log.i(LOG_TAG, "Migrated to unified shake condition: ${shakeCondition.displayName}")
+            Log.i(LOG_TAG, "Migrated to unified shake condition: ${shakeCondition.getDisplayName}")
         } catch (e: Exception) {
             Log.e(LOG_TAG, "Error migrating shake control settings from v2 to v3", e)
         }

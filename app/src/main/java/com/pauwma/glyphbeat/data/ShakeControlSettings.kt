@@ -1,23 +1,57 @@
 package com.pauwma.glyphbeat.data
 
+import android.content.Context
+import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.services.shake.ShakeDetector
 
 /**
  * Enum representing different shake control behaviors
  */
-enum class ShakeBehavior(val id: String, val displayName: String, val description: String) {
-    SKIP("skip", "Skip", "Advance to next track on shake"),
-    PLAY_PAUSE("play_pause", "Play/Pause", "Toggle playback state on shake"),
-    AUTO_START("auto_start", "Auto-Start", "Toggle Auto-Start setting on shake")
+enum class ShakeBehavior(
+    val id: String, 
+    val getDisplayName: (Context) -> String, 
+    val getDescription: (Context) -> String
+) {
+    SKIP(
+        "skip", 
+        { context -> context.getString(R.string.shake_behavior_skip) },
+        { context -> context.getString(R.string.shake_behavior_skip_desc) }
+    ),
+    PLAY_PAUSE(
+        "play_pause", 
+        { context -> context.getString(R.string.shake_behavior_play_pause) },
+        { context -> context.getString(R.string.shake_behavior_play_pause_desc) }
+    ),
+    AUTO_START(
+        "auto_start", 
+        { context -> context.getString(R.string.shake_behavior_auto_start) },
+        { context -> context.getString(R.string.shake_behavior_auto_start_desc) }
+    )
 }
 
 /**
  * Enum representing when shake controls should be active
  */
-enum class ShakeCondition(val id: String, val displayName: String, val description: String) {
-    ALWAYS("always", "Always", "Shake controls work in all conditions"),
-    LOCKED_ONLY("locked_only", "When Locked", "Shake controls only work when phone is locked"),
-    UNLOCKED_ONLY("unlocked_only", "When Unlocked", "Shake controls only work when phone is unlocked")
+enum class ShakeCondition(
+    val id: String, 
+    val getDisplayName: (Context) -> String, 
+    val getDescription: (Context) -> String
+) {
+    ALWAYS(
+        "always", 
+        { context -> context.getString(R.string.shake_condition_always) },
+        { context -> context.getString(R.string.shake_condition_always_desc) }
+    ),
+    LOCKED_ONLY(
+        "locked_only", 
+        { context -> context.getString(R.string.shake_condition_locked) },
+        { context -> context.getString(R.string.shake_condition_locked_desc) }
+    ),
+    UNLOCKED_ONLY(
+        "unlocked_only", 
+        { context -> context.getString(R.string.shake_condition_unlocked) },
+        { context -> context.getString(R.string.shake_condition_unlocked_desc) }
+    )
 }
 
 /**

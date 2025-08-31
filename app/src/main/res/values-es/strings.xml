@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Glyph Beat</string>
+    <string name="toy_name_media_player">Reproductor multimedia</string>
+    <string name="toy_summary_media_player">Interfaz visual de reproducción de música en la matrix.</string>
+    <string name="toy_name_next_track">Siguiente pista</string>
+    <string name="toy_summary_next_track">Mantén presionado para saltar a la pista siguiente.</string>
+    <string name="toy_name_previous_track">Pista anterior</string>
+    <string name="toy_summary_previous_track">Mantén presionado para regresar a la pista anterior.</string>
+
+    <!--  THEMES  -->
+    <string name="vinyl_record">Disco Vinilo</string>
+    <string name="notification_access_working">Servicio Funcionando</string>
+    <string name="notification_access_grant">Permitir Acceso a Notificaciones</string>
+    <string name="enabled">Activado</string>
+    <string name="disabled">Desactivado</string>
+
+
+</resources>

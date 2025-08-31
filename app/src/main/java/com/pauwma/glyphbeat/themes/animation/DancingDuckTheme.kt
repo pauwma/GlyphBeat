@@ -1,9 +1,11 @@
 package com.pauwma.glyphbeat.themes.animation
 
+import android.content.Context
 import kotlin.math.sqrt
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.themes.base.FrameTransition
 import com.pauwma.glyphbeat.ui.settings.*
+import com.pauwma.glyphbeat.R
 
 /**
  * Dancing Duck theme extending ThemeTemplate with comprehensive features.
@@ -11,7 +13,7 @@ import com.pauwma.glyphbeat.ui.settings.*
  * Now extends ThemeTemplate for enhanced features including state-specific frames
  * and supports customizable settings.
  */
-class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
+class DancingDuckTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvider {
     
     // Settings-driven properties with default values
     private var currentDancingSpeed: Long = 150L
@@ -31,8 +33,8 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
     // THEME METADATA - Dancing duck theme information
     // =================================================================================
     
-    override val titleTheme: String = "Dancing Duck"
-    override val descriptionTheme: String = "He knows exactly what he's doing"
+    override val titleTheme: String = ctx.getString(R.string.theme_dancing_duck_title)
+    override val descriptionTheme: String = ctx.getString(R.string.theme_dancing_duck_desc)
     override val authorName: String = "pauwma"
     override val version: String = "1.0.0" 
     override val category: String = "Fun"
@@ -137,21 +139,21 @@ class DancingDuckTheme : ThemeTemplate(), ThemeSettingsProvider {
         return ThemeSettingsBuilder(getSettingsId())
             .addDropdownSetting(
                 id = "animation_pattern",
-                displayName = "Animation Pattern",
-                description = "Style of duck dancing",
+                displayName = ctx.getString(R.string.set_duck_pattern_title),
+                description = ctx.getString(R.string.set_duck_pattern_desc),
                 defaultValue = "normal",
                 optionsMap = mapOf(
-                    "normal" to "Default",
-                    "head" to "Nodders",
-                    "bouncy" to "Bouncy",
-                    "fast" to "Fast"
+                    "normal" to ctx.getString(R.string.set_duck_pattern_default),
+                    "head" to ctx.getString(R.string.set_duck_pattern_nodders),
+                    "bouncy" to ctx.getString(R.string.set_duck_pattern_bouncy),
+                    "fast" to ctx.getString(R.string.set_duck_pattern_fast)
                 ),
                 category = SettingCategories.ANIMATION
             )
             .addSliderSetting(
                 id = "duck_brightness",
-                displayName = "Brightness",
-                description = "Brightness of the dancing duck",
+                displayName = ctx.getString(R.string.set_brightness_title),
+                description = ctx.getString(R.string.set_brightness_desc),
                 defaultValue = 1.0f,
                 minValue = 0.1f,
                 maxValue = 1.0f,

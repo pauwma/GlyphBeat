@@ -1,8 +1,10 @@
 package com.pauwma.glyphbeat.themes.animation
 
+import android.content.Context
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.themes.base.FrameTransition
 import com.pauwma.glyphbeat.ui.settings.*
+import com.pauwma.glyphbeat.R
 
 /**
  * Minimal Theme - A static, single-frame theme with state-specific frames.
@@ -13,15 +15,14 @@ import com.pauwma.glyphbeat.ui.settings.*
  * - Paused frame: Dimmed version of the pattern
  * - Offline frame: Dark with minimal accent pattern
  */
-class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
+class ShapeTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvider {
     
     // =================================================================================
     // THEME METADATA
     // =================================================================================
     
-    override val titleTheme: String = "Shapes"
-    
-    override val descriptionTheme: String = "Hmm... It goes in the square hole!"
+    override val titleTheme: String = ctx.getString(R.string.theme_shapes_title)
+    override val descriptionTheme: String = ctx.getString(R.string.theme_shapes_desc)
     
     override val authorName: String = "pauwma"
     
@@ -329,23 +330,23 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
         return ThemeSettingsBuilder(getSettingsId())
             .addDropdownSetting(
                 id = "pattern_style",
-                displayName = "Pattern Style",
-                description = "Choose the style of the minimal pattern",
+                displayName = ctx.getString(R.string.set_shapes_pattern_title),
+                description = ctx.getString(R.string.set_shapes_pattern_desc),
                 defaultValue = "cross",
                 optionsMap = mapOf(
-                    "cross" to "Cross",
-                    "dots" to "Dots",
-                    "lines" to "Lines",
-                    "border" to "Border",
-                    "diamond" to "Diamond",
-                    "grid" to "Grid"
+                    "cross" to ctx.getString(R.string.set_shapes_pattern_cross),
+                    "dots" to ctx.getString(R.string.set_shapes_pattern_dots),
+                    "lines" to ctx.getString(R.string.set_shapes_pattern_lines),
+                    "border" to ctx.getString(R.string.set_shapes_pattern_border),
+                    "diamond" to ctx.getString(R.string.set_shapes_pattern_diamond),
+                    "grid" to ctx.getString(R.string.set_shapes_pattern_grid)
                 ),
                 category = SettingCategories.LAYOUT
             )
             .addSliderSetting(
                 id = CommonSettingIds.BRIGHTNESS,
-                displayName = "Brightness",
-                description = "Adjust the brightness of the minimal pattern",
+                displayName = ctx.getString(R.string.set_brightness_title),
+                description = ctx.getString(R.string.set_brightness_desc),
                 defaultValue = 1.0f,
                 minValue = 0.1f,
                 maxValue = 1.0f,
@@ -356,8 +357,8 @@ class ShapeTheme : ThemeTemplate(), ThemeSettingsProvider {
             )
             .addSliderSetting(
                 id = "paused_opacity",
-                displayName = "Paused Opacity",
-                description = "How dim the pattern gets when paused",
+                displayName = ctx.getString(R.string.set_paused_opacity_title),
+                description = ctx.getString(R.string.set_paused_opacity_desc),
                 defaultValue = 0.5f,
                 minValue = 0.1f,
                 maxValue = 1.0f,

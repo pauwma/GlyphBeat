@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +43,8 @@ fun ShakeControlsSection(
     autoStartEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
+
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
     var mainExpanded by remember { mutableStateOf(false) }
     var generalExpanded by rememberSaveable { mutableStateOf(true) }
@@ -88,7 +91,7 @@ fun ShakeControlsSection(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Shake Controls",
+                        text = context.getString(R.string.shake_controls_title),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontFamily = customFont
                         ),
@@ -99,7 +102,7 @@ fun ShakeControlsSection(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "Configure different shake gesture controls",
+                        text = context.getString(R.string.shake_controls_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                     )
@@ -130,7 +133,7 @@ fun ShakeControlsSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Shake Controls",
+                    text = context.getString(R.string.shake_controls_title),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -180,8 +183,8 @@ fun ShakeControlsSection(
 
                     // General settings section
                     SettingsSection(
-                        title = "General Settings",
-                        description = "Universal settings for all shake behaviors",
+                        title = context.getString(R.string.shake_controls_general_title),
+                        description = context.getString(R.string.shake_controls_general_desc),
                         expanded = generalExpanded,
                         onExpandedChange = { generalExpanded = it }
                     ) {
@@ -224,8 +227,8 @@ fun ShakeControlsSection(
                     
                     // Behavior-specific settings section
                     SettingsSection(
-                        title = "${settings.behavior.displayName} Settings",
-                        description = settings.behavior.description,
+                        title = "${settings.behavior.getDisplayName(context)} Settings",
+                        description = settings.behavior.getDescription(context),
                         expanded = behaviorExpanded,
                         onExpandedChange = { behaviorExpanded = it }
                     ) {
@@ -275,21 +278,22 @@ private fun ShakeConditionDropdown(
     enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
     val conditions = ShakeCondition.entries.toTypedArray()
     
     val dropdownOptions = conditions.map { condition ->
         DropdownOption(
             value = condition.id,
-            label = condition.displayName,
-            description = condition.description
+            label = condition.getDisplayName(context),
+            description = condition.getDescription(context)
         )
     }
     
     val dropdownSetting = DropdownSetting(
         id = "shake_condition",
-        displayName = "Shake Control Condition",
-        description = "Choose when shake controls should be active",
+        displayName = context.getString(R.string.shake_condition_title),
+        description = context.getString(R.string.shake_condition_desc),
         defaultValue = selectedCondition.id,
         options = dropdownOptions
     )
@@ -314,7 +318,7 @@ private fun BehaviorSelectionDropdown(
     autoStartEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    val customFont = FontFamily(Font(R.font.ntype82regular))
+    val context = LocalContext.current
     val behaviors = ShakeBehavior.entries.toTypedArray()
     
     val dropdownOptions = behaviors.mapNotNull { behavior ->
@@ -323,23 +327,23 @@ private fun BehaviorSelectionDropdown(
             null
         } else {
             val label = if (behavior == ShakeBehavior.AUTO_START && !autoStartEnabled) {
-                "${behavior.displayName} (Auto-Start disabled)"
+                "${behavior.getDisplayName(context)} (Auto-Start disabled)"
             } else {
-                behavior.displayName
+                behavior.getDisplayName(context)
             }
             
             DropdownOption(
                 value = behavior.id,
                 label = label,
-                description = behavior.description
+                description = behavior.getDescription(context)
             )
         }
     }
     
     val dropdownSetting = DropdownSetting(
         id = "shake_behavior",
-        displayName = "Shake Behavior",
-        description = "Choose what action to perform when device is shaken",
+        displayName = context.getString(R.string.shake_behavior_title),
+        description = context.getString(R.string.shake_behavior_desc),
         defaultValue = selectedBehavior.id,
         options = dropdownOptions
     )
@@ -372,6 +376,7 @@ private fun GeneralShakeSettings(
     enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
     
     Column(
@@ -388,7 +393,7 @@ private fun GeneralShakeSettings(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Shake Sensitivity",
+                    text = context.getString(R.string.shake_sensitivity_title),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = customFont,
                         fontSize = 15.sp
@@ -401,9 +406,9 @@ private fun GeneralShakeSettings(
             
             Text(
                 text = when (sensitivity) {
-                    ShakeDetector.SENSITIVITY_HIGH -> "High - Gentle shake required"
-                    ShakeDetector.SENSITIVITY_MEDIUM -> "Medium - Moderate shake required"
-                    else -> "Low - Strong shake required"
+                    ShakeDetector.SENSITIVITY_HIGH -> context.getString(R.string.shake_sensitivity_desc_high)
+                    ShakeDetector.SENSITIVITY_MEDIUM -> context.getString(R.string.shake_sensitivity_desc_medium)
+                    else -> context.getString(R.string.shake_sensitivity_desc_low)
                 },
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontSize = 11.sp
@@ -467,12 +472,10 @@ private fun GeneralShakeSettings(
         
         // Haptic feedback toggle
         EnhancedToggleSetting(
-            title = "Haptic Feedback",
-            description = "Vibrate when shake gesture is detected",
+            title = context.getString(R.string.shake_haptic_title),
+            description = context.getString(R.string.shake_haptic_desc),
             checked = hapticFeedback,
             onCheckedChange = onHapticFeedbackChange,
-            enabledLabel = "Enabled",
-            disabledLabel = "Disabled",
             useAlternateColors = true
         )
         
@@ -497,9 +500,10 @@ private fun SkipBehaviorSettings(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Skip delay slider
+        val context = LocalContext.current
         ShortTimeoutSlider(
-            label = "Skip Delay",
-            description = "Delay between shake detections to prevent accidental skips",
+            label = context.getString(R.string.shake_behavior_skip_delay_title),
+            description = context.getString(R.string.shake_behavior_skip_delay_desc),
             currentValue = settings.skipDelay,
             onValueChange = { newDelay ->
                 onSettingsChange(settings.copy(skipDelay = newDelay))
@@ -510,8 +514,8 @@ private fun SkipBehaviorSettings(
         
         // Skip when paused toggle
         EnhancedToggleSetting(
-            title = "Skip When Paused",
-            description = "Allow skipping to next track even when media is paused",
+            title = context.getString(R.string.shake_behavior_skip_paused_title),
+            description = context.getString(R.string.shake_behavior_skip_paused_desc),
             checked = settings.skipWhenPaused,
             onCheckedChange = { newValue ->
                 onSettingsChange(settings.copy(skipWhenPaused = newValue))
@@ -533,9 +537,10 @@ private fun PlayPauseBehaviorSettings(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Auto-resume delay slider
+        val context = LocalContext.current
         TimeoutSlider(
-            label = "Auto-Resume Delay",
-            description = "Automatically resume playback after pausing via shake",
+            label = context.getString(R.string.shake_behavior_pp_auto_resume_title),
+            description = context.getString(R.string.shake_behavior_pp_auto_resume_desc),
             currentValue = settings.autoResumeDelay,
             onValueChange = { newDelay ->
                 onSettingsChange(settings.copy(autoResumeDelay = newDelay))
@@ -558,9 +563,10 @@ private fun AutoStartBehaviorSettings(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Timeout slider
+        val context = LocalContext.current
         TimeoutSlider(
-            label = "Re-enable Delay",
-            description = "Pause duration before re-enabling auto-start service",
+            label = context.getString(R.string.shake_behavior_auto_start_delay_title),
+            description = context.getString(R.string.shake_behavior_auto_start_delay_desc),
             currentValue = settings.timeout,
             onValueChange = { newTimeout ->
                 onSettingsChange(settings.copy(timeout = newTimeout))

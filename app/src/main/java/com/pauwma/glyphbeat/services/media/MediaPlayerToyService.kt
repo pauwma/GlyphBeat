@@ -914,7 +914,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     startListening()
                 }
                 
-                Log.i(LOG_TAG, "Shake detection started - behavior: ${currentShakeSettings.behavior.displayName}, sensitivity: ${currentShakeSettings.sensitivity}")
+                Log.i(LOG_TAG, "Shake detection started - behavior: ${currentShakeSettings.behavior.getDisplayName}, sensitivity: ${currentShakeSettings.sensitivity}")
             } else {
                 Log.d(LOG_TAG, "Shake detection disabled by user preference")
             }
@@ -927,7 +927,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
      * Handle shake event - execute configured behavior
      */
     private fun handleShakeDetected(force: Float) {
-        Log.d(LOG_TAG, "Shake detected with force: $force, behavior: ${currentShakeSettings.behavior.displayName}")
+        Log.d(LOG_TAG, "Shake detected with force: $force, behavior: ${currentShakeSettings.behavior.getDisplayName}")
         
         // Check if shake condition allows action based on lock state
         if (!isShakeConditionMet()) {
@@ -1163,7 +1163,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                         initializeShakeDetection(applicationContext)
                     }
                     
-                    Log.i(LOG_TAG, "Shake settings reloaded: behavior=${currentShakeSettings.behavior.displayName}, enabled=${currentShakeSettings.enabled}")
+                    Log.i(LOG_TAG, "Shake settings reloaded: behavior=${currentShakeSettings.behavior.getDisplayName}, enabled=${currentShakeSettings.enabled}")
                 } catch (e: Exception) {
                     Log.e(LOG_TAG, "Failed to reload shake settings: ${e.message}", e)
                 }

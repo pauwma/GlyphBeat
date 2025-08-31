@@ -4,13 +4,13 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.util.Log
-import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 import com.pauwma.glyphbeat.sound.MediaControlHelper
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.themes.base.FrameTransition
 import com.pauwma.glyphbeat.themes.animation.preview.CoverArtPreviewManager
 import com.pauwma.glyphbeat.themes.animation.preview.CoverArtPreviewRenderer
 import com.pauwma.glyphbeat.ui.settings.*
+import com.pauwma.glyphbeat.R
 
 /**
  * CoverArtTheme - A dynamic theme that displays the album cover of currently playing media.
@@ -30,7 +30,7 @@ import com.pauwma.glyphbeat.ui.settings.*
  * - Efficient bitmap processing and caching
  * - Customizable brightness, contrast, and opacity settings
  */
-class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettingsProvider {
+class CoverArtTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvider {
     
     // Settings-driven properties with default values
     private var coverBrightness: Float = 1.0f
@@ -52,9 +52,9 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     // THEME METADATA
     // =================================================================================
     
-    override val titleTheme: String = "Cover Art"
+    override val titleTheme: String = ctx.getString(R.string.theme_cover_art_title)
     
-    override val descriptionTheme: String = "Try to guess what cover thats suppose to be!"
+    override val descriptionTheme: String = ctx.getString(R.string.theme_cover_art_desc)
     
     override val authorName: String = "pauwma"
     
@@ -126,7 +126,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     // =================================================================================
     
     private val mediaHelper: MediaControlHelper by lazy { 
-        MediaControlHelper(context).also { helper ->
+        MediaControlHelper(ctx).also { helper ->
             // Load saved rotation state first
             loadRotationState()
             
@@ -173,7 +173,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     
     // SharedPreferences for rotation state persistence
     private val rotationPrefs: SharedPreferences by lazy { 
-        context.getSharedPreferences("cover_art_rotation_state", Context.MODE_PRIVATE)
+        ctx.getSharedPreferences("cover_art_rotation_state", Context.MODE_PRIVATE)
     }
     
     // =================================================================================
@@ -593,7 +593,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     fun getPreviewFrame(settings: ThemeSettings? = null): IntArray {
         // Initialize preview manager if needed
         if (previewManager == null) {
-            previewManager = CoverArtPreviewManager(context)
+            previewManager = CoverArtPreviewManager(ctx)
         }
         
         return previewManager?.generatePreviewFrame(settings ?: getSettingsSchema()) 
@@ -659,7 +659,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
      */
     fun getPreviewManager(): CoverArtPreviewManager {
         if (previewManager == null) {
-            previewManager = CoverArtPreviewManager(context)
+            previewManager = CoverArtPreviewManager(ctx)
         }
         return previewManager!!
     }
@@ -680,8 +680,8 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
         return ThemeSettingsBuilder(getSettingsId())
             .addSliderSetting(
                 id = "cover_brightness",
-                displayName = "Cover Brightness",
-                description = "Brightness multiplier for album art",
+                displayName = ctx.getString(R.string.set_cover_brightness_title),
+                description = ctx.getString(R.string.set_cover_brightness_desc),
                 defaultValue = 1.0f,
                 minValue = 0.1f,
                 maxValue = 1.0f,
@@ -691,22 +691,22 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             )
             .addToggleSetting(
                 id = "enhance_contrast",
-                displayName = "Enhance Contrast",
-                description = "Apply contrast enhancement to improve visibility",
+                displayName = ctx.getString(R.string.set_cover_contrast_title),
+                description = ctx.getString(R.string.set_cover_contrast_desc),
                 defaultValue = true,
                 category = SettingCategories.EFFECTS
             )
             .addToggleSetting(
                 id = "enable_rotation",
-                displayName = "Enable Rotation",
-                description = "Rotate the album art continuously",
+                displayName = ctx.getString(R.string.set_cover_rotation_title),
+                description = ctx.getString(R.string.set_cover_rotation_desc),
                 defaultValue = false,
                 category = SettingCategories.ANIMATION
             )
             .addSliderSetting(
                 id = "rotation_speed",
-                displayName = "Rotation Speed",
-                description = "How fast the cover art rotates",
+                displayName = ctx.getString(R.string.set_rotation_speed_title),
+                description = ctx.getString(R.string.set_cover_rotation_speed_desc),
                 defaultValue = 150L,
                 minValue = 50L,
                 maxValue = 1000L,
@@ -716,8 +716,8 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             )
             .addSliderSetting(
                 id = "rotation_smoothness",
-                displayName = "Rotation Smoothness",
-                description = "Number of steps per rotation (more = smoother)",
+                displayName = ctx.getString(R.string.set_cover_rotation_smooth_title),
+                description = ctx.getString(R.string.set_cover_rotation_smooth_desc),
                 defaultValue = 30,
                 minValue = 12,
                 maxValue = 36,
@@ -727,8 +727,8 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             )
             .addSliderSetting(
                 id = "paused_opacity",
-                displayName = "Paused Opacity",
-                description = "Opacity when media is paused",
+                displayName = ctx.getString(R.string.set_paused_opacity_title),
+                description = ctx.getString(R.string.set_paused_opacity_desc),
                 defaultValue = 0.4f,
                 minValue = 0.1f,
                 maxValue = 0.8f,

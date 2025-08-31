@@ -5,8 +5,8 @@ import android.util.Log
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.ui.settings.*
 import com.pauwma.glyphbeat.utils.TextRenderer
-import com.pauwma.glyphbeat.utils.PixelFont
 import com.pauwma.glyphbeat.sound.MediaControlHelper
+import com.pauwma.glyphbeat.R
 
 /**
  * Text scrolling theme that displays song metadata with smooth horizontal scrolling.
@@ -17,7 +17,7 @@ import com.pauwma.glyphbeat.sound.MediaControlHelper
  * - Comprehensive customization settings
  * - Optimized performance with text caching
  */
-class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettingsProvider {
+class ScrollTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvider {
 
     companion object {
         private const val LOG_TAG = "ScrollTheme"
@@ -29,7 +29,7 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
 
     // Media helper for getting track info
     private val mediaHelper: MediaControlHelper by lazy {
-        MediaControlHelper(context)
+        MediaControlHelper(ctx)
     }
 
     // Scroll state
@@ -68,8 +68,8 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
     // THEME METADATA
     // =================================================================================
 
-    override val titleTheme: String = "Scroll Text"
-    override val descriptionTheme: String = "Title, artist, album all flexin’ on a nonstop scroll"
+    override val titleTheme: String = ctx.getString(R.string.theme_scroll_title)
+    override val descriptionTheme: String = ctx.getString(R.string.theme_scroll_desc)
     override val authorName: String = "GlyphBeat Team"
     override val version: String = "1.0.0"
     override val category: String = "Information"
@@ -373,8 +373,8 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
         return ThemeSettingsBuilder(getSettingsId())
             .addSliderSetting(
                 id = "scroll_speed",
-                displayName = "Scroll Speed",
-                description = "Text scrolling speed",
+                displayName = ctx.getString(R.string.set_scroll_speed_title),
+                description = ctx.getString(R.string.set_scroll_speed_desc),
                 defaultValue = 5,
                 minValue = 1,
                 maxValue = 10,
@@ -383,33 +383,33 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
             )
             .addDropdownSetting(
                 id = "pause_mode",
-                displayName = "Pause Behavior",
-                description = "How text behaves when paused",
+                displayName = ctx.getString(R.string.set_pause_mode_title),
+                description = ctx.getString(R.string.set_pause_mode_desc),
                 defaultValue = "slow_motion",
                 options = listOf(
-                    DropdownOption("slow_motion", "Slow Motion", "Continue scrolling slowly"),
-                    DropdownOption("freeze", "Freeze", "Stop scrolling completely")
+                    DropdownOption("slow_motion", ctx.getString(R.string.set_pause_mode_slow_title), ctx.getString(R.string.set_pause_mode_slow_desc)),
+                    DropdownOption("freeze", ctx.getString(R.string.set_pause_mode_freeze_title), ctx.getString(R.string.set_pause_mode_freeze_desc))
                 ),
                 category = SettingCategories.ANIMATION
             )
             .addToggleSetting(
                 id = "show_artist",
-                displayName = "Show Artist",
-                description = "Display artist name",
+                displayName = ctx.getString(R.string.set_show_artist_title),
+                description = ctx.getString(R.string.set_show_artist_desc),
                 defaultValue = true,
                 category = SettingCategories.DESIGN
             )
             .addToggleSetting(
                 id = "show_album",
-                displayName = "Show Album",
-                description = "Display album name",
+                displayName = ctx.getString(R.string.set_show_album_title),
+                description = ctx.getString(R.string.set_show_album_desc),
                 defaultValue = false,
                 category = SettingCategories.DESIGN
             )
             .addSliderSetting(
                 id = "text_spacing",
-                displayName = "Character Spacing",
-                description = "Space between characters",
+                displayName = ctx.getString(R.string.set_text_spacing_title),
+                description = ctx.getString(R.string.set_text_spacing_desc),
                 defaultValue = 2,
                 minValue = 1,
                 maxValue = 5,
@@ -419,8 +419,8 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
             )
             .addSliderSetting(
                 id = "brightness",
-                displayName = "Brightness",
-                description = "Text brightness level",
+                displayName = ctx.getString(R.string.set_scroll_brightness_title),
+                description = ctx.getString(R.string.set_scroll_brightness_desc),
                 defaultValue = 1.0f,
                 minValue = 0.1f,
                 maxValue = 1.0f,
@@ -429,8 +429,8 @@ class ScrollTheme(private val context: Context) : ThemeTemplate(), ThemeSettings
             )
             .addSliderSetting(
                 id = "paused_opacity",
-                displayName = "Paused Opacity",
-                description = "Opacity when media is paused",
+                displayName = ctx.getString(R.string.set_paused_opacity_title),
+                description = ctx.getString(R.string.set_paused_opacity_desc),
                 defaultValue = 0.2f,
                 minValue = 0.1f,
                 maxValue = 0.8f,
