@@ -78,6 +78,9 @@
         <package android:name="fm.castbox.audiobook.radio.podcast" />
         <package android:name="com.wondery.app" />
         <package android:name="com.audible.application" />
+        
+        <!-- Plex Music Player -->
+        <package android:name="tv.plex.labs.plexamp" />
     </queries>
 
     <application

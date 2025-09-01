@@ -82,7 +82,8 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
             "com.spotify.lite" to "Spotify Lite",
             "fm.castbox.audiobook.radio.podcast" to "Castbox",
             "com.wondery.app" to "Wondery",
-            "com.audible.application" to "Audible"
+            "com.audible.application" to "Audible",
+            "tv.plex.labs.plexamp" to "Plexamp"
         )
     }
     
