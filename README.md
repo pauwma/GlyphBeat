@@ -23,7 +23,7 @@
 
 ## 🆕 Latest Update
 
-### What's New in v2.0 [![Tweet](https://img.shields.io/badge/View%20Tweet-1DA1F2?style=flat-square&logo=twitter&logoColor=white)](https://x.com/pauwmaa/status/1958513508523323762)
+### What's New in v2.0 [![Tweet](https://img.shields.io/badge/View%20Tweet-1DA1F2?style=flat-square&logo=twitter&logoColor=white)](https://x.com/pauwmaa/status/1962401209161015384)
 
 - 🔤 **Scroll-Text Theme** - Title, artist, album all flexin' on a nonstop scroll
 - ⚡ **Auto-Start** - Pops up on the Matrix instantly. Zero taps, full vibes
