@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +46,9 @@ fun TrackControlScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val themeManager = remember { TrackControlThemeManager.getInstance(context) }
+    val configuration = LocalConfiguration.current
+    val localeContext = remember(configuration) { context }
+    val themeManager = remember(configuration) { TrackControlThemeManager.refreshForLocaleChange(localeContext) }
     val selectedThemeIndex by themeManager.selectedThemeIndexFlow.collectAsState()
     val settingsChanged by themeManager.settingsChangedFlow.collectAsState()
     val scope = rememberCoroutineScope()
@@ -77,7 +80,7 @@ fun TrackControlScreen(
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = "Track Control Themes",
+                    text = localeContext.getString(R.string.screen_track_control_themes),
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontFamily = customFont
@@ -153,7 +156,9 @@ private fun TrackControlThemeCard(
     onSettings: () -> Unit
 ) {
     val context = LocalContext.current
-    val themeManager = remember { TrackControlThemeManager.getInstance(context) }
+    val configuration = LocalConfiguration.current
+    val localeContext = remember(configuration) { context }
+    val themeManager = remember(configuration) { TrackControlThemeManager.refreshForLocaleChange(localeContext) }
     
     Card(
         modifier = Modifier

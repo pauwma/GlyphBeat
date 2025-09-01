@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.fontResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -41,7 +42,9 @@ fun ThemeSelectionScreen(
     onNavigateToSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val themeRepository = remember { ThemeRepository.getInstance(context) }
+    val configuration = LocalConfiguration.current
+    val localeContext = remember(configuration) { context }
+    val themeRepository = remember(configuration) { ThemeRepository.refreshForLocaleChange(localeContext) }
     val selectedThemeIndex by themeRepository.selectedThemeIndex
     val customFont = FontFamily(Font(R.font.ntype82regular))
     
@@ -90,7 +93,7 @@ fun ThemeSelectionScreen(
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Text(
-                        text = "Animation Themes",
+                        text = localeContext.getString(R.string.screen_animation_themes),
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontWeight = FontWeight.Bold,
                             fontFamily = customFont

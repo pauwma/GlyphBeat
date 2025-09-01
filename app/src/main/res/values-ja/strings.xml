@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- - ────────── - Main - ────────── - -->
+    <string name="app_name">グリフビート</string>
+    <string name="toy_name_media_player">メディアプレーヤー</string>
+    <string name="toy_summary_media_player">グリフマトリクス上に視覚的な音楽プレーヤーインターフェースを表示します。</string>
+    <string name="toy_name_next_track">次のトラック</string>
+    <string name="toy_summary_next_track">長押しで次のトラックへスキップ。</string>
+    <string name="toy_name_previous_track">前のトラック</string>
+    <string name="toy_summary_previous_track">長押しで前のトラックへスキップ。</string>
+
+
+    <!-- - ────────── - Navigation Labels - ────────── - -->
+    <string name="nav_player">プレーヤー</string>
+    <string name="nav_controls">コントロール</string>
+    <string name="nav_settigns">設定</string>
+
+
+    <!-- - ────────── - Screen Titles - ────────── - -->
+    <string name="screen_animation_themes">アニメーションテーマ</string>
+    <string name="screen_track_control_themes">トラックコントロールテーマ</string>
+    <string name="screen_settings">設定</string>
+
+
+
+
+    <!-- - ────────── - THEMES - ────────── - -->
+
+    <!-- ───── Themes ───── -->
+    <string name="theme_vinyl_record_title">レコード</string>
+    <string name="theme_vinyl_record_desc">完全レトロに\nDJ気分を満喫しよう！</string>
+
+    <string name="theme_dancing_duck_title">ダンシングダック</string>
+    <string name="theme_dancing_duck_desc">彼は自分が何をしているか分かっている</string>
+
+    <string name="theme_cover_art_title">カバーアート</string>
+    <string name="theme_cover_art_desc">どのジャケットかわかるかな？</string>
+
+    <string name="theme_minimal_title">ミニマル</string>
+    <string name="theme_minimal_desc">何も要らない、空っぽがいい</string>
+
+    <string name="theme_scroll_title">スクロールテキスト</string>
+    <string name="theme_scroll_desc">タイトル・アーティスト・アルバムを途切れなくスクロール表示</string>
+
+    <string name="theme_glyphy_title">グリフィー</string>
+    <string name="theme_glyphy_desc">良いAIになるため修行中。今は見てるだけ…</string>
+
+    <string name="theme_shapes_title">シェイプ</string>
+    <string name="theme_shapes_desc">うーん…四角い穴に入るよ！</string>
+
+
+    <!-- ───── General settings ───── -->
+    <string name="set_brightness_title">明るさ</string>
+    <string name="set_brightness_desc">明るさレベル</string>
+
+    <string name="set_paused_opacity_title">ポーズ時の不透明度</string>
+    <string name="set_paused_opacity_desc">メディアが一時停止中の不透明度</string>
+
+    <string name="set_rotation_speed_title">回転速度</string>
+
+    <string name="set_small">小</string>
+    <string name="set_large">大</string>
+
+
+    <!-- ───── Theme Sections ───── -->
+    <string name="section_animation">アニメーション</string>
+    <string name="section_design">デザイン</string>
+    <string name="section_layout">レイアウト</string>
+    <string name="section_visual">ビジュアル</string>
+    <string name="section_timing">タイミング</string>
+    <string name="section_behavior">挙動</string>
+    <string name="section_effects">エフェクト</string>
+    <string name="section_audio">オーディオ</string>
+
+
+    <!-- ───── Vinyl Record settings ───── -->
+    <string name="set_vinyl_rotation_speed_desc">レコードの回転速度</string>
+    <string name="set_vinyl_size_title">レコードサイズ</string>
+    <string name="set_vinyl_size_desc">レコード表示のサイズ</string>
+
+
+    <!-- ───── Dancing Duck settings ───── -->
+    <string name="set_duck_pattern_title">アニメーションパターン</string>
+    <string name="set_duck_pattern_desc">ダックのダンスパターン</string>
+    <string name="set_duck_pattern_default">デフォルト</string>
+    <string name="set_duck_pattern_nodders">ノッダーズ</string>
+    <string name="set_duck_pattern_bouncy">バウンシー</string>
+    <string name="set_duck_pattern_fast">高速</string>
+
+    <string name="set_duck_brightness_title">明るさ</string>
+    <string name="set_duck_brightness_desc">ダンシングダックの明るさ</string>
+
+
+    <!-- ───── Cover Art settings ───── -->
+    <string name="set_cover_brightness_title">カバーの明るさ</string>
+    <string name="set_cover_brightness_desc">アルバムアートの明るさ乗数</string>
+
+    <string name="set_cover_contrast_title">コントラスト強調</string>
+    <string name="set_cover_contrast_desc">コントラストを強調して視認性を向上</string>
+
+    <string name="set_cover_rotation_title">回転を有効化</string>
+    <string name="set_cover_rotation_desc">アルバムアートを連続回転</string>
+
+    <string name="set_cover_rotation_speed_desc">カバーアートの回転速度</string>
+
+    <string name="set_cover_rotation_smooth_title">回転の滑らかさ</string>
+    <string name="set_cover_rotation_smooth_desc">1回転あたりのステップ数（多いほど滑らか）</string>
+
+
+    <!-- ───── Minimal settings ───── -->
+    <string name="set_min_border_title">枠線</string>
+    <string name="set_min_border_desc">外枠線を有効化</string>
+
+    <string name="set_min_brightness_title">明るさ</string>
+    <string name="set_min_brightness_desc">アイコンの明るさ乗数</string>
+
+
+    <!-- ───── Scroll Text settings ───── -->
+    <string name="set_scroll_speed_title">スクロール速度</string>
+    <string name="set_scroll_speed_desc">テキストのスクロール速度</string>
+
+    <string name="set_pause_mode_title">ポーズ時の挙動</string>
+    <string name="set_pause_mode_desc">ポーズ時のテキスト挙動</string>
+
+    <string name="set_pause_mode_slow_title">スローモーション</string>
+    <string name="set_pause_mode_slow_desc">ゆっくりスクロールを継続</string>
+    <string name="set_pause_mode_freeze_title">停止</string>
+    <string name="set_pause_mode_freeze_desc">スクロールを完全に停止</string>
+
+    <string name="set_show_artist_title">アーティストを表示</string>
+    <string name="set_show_artist_desc">アーティスト名を表示</string>
+
+    <string name="set_show_album_title">アルバムを表示</string>
+    <string name="set_show_album_desc">アルバム名を表示</string>
+
+    <string name="set_text_spacing_title">文字間隔</string>
+    <string name="set_text_spacing_desc">文字間のスペース</string>
+
+    <string name="set_scroll_brightness_title">明るさ</string>
+    <string name="set_scroll_brightness_desc">テキストの明るさレベル</string>
+
+
+    <!-- ───── Glyphy settings ───── -->
+    <string name="set_glyphy_pattern_title">アニメーションパターン</string>
+    <string name="set_glyphy_pattern_desc">アニメーションのスタイル</string>
+
+    <string name="set_glyphy_pattern_dance">ダンス</string>
+    <string name="set_glyphy_pattern_blink">点滅</string>
+    <string name="set_glyphy_pattern_jam">ジャミング</string>
+
+
+    <!-- ───── Shapes settings ───── -->
+    <string name="set_shapes_pattern_title">パターンスタイル</string>
+    <string name="set_shapes_pattern_desc">さまざまな形のスタイル</string>
+    <string name="set_shapes_pattern_cross">クロス</string>
+    <string name="set_shapes_pattern_dots">ドット</string>
+    <string name="set_shapes_pattern_lines">ライン</string>
+    <string name="set_shapes_pattern_border">ボーダー</string>
+    <string name="set_shapes_pattern_diamond">ダイヤモンド</string>
+    <string name="set_shapes_pattern_grid">グリッド</string>
+
+
+
+
+    <!-- - ────────── - SETTINGS - ────────── - -->
+
+    <!-- ───── General UI Labels ───── -->
+    <string name="disabled">無効</string>
+
+    <!-- ───── Notification Access ───── -->
+    <string name="notification_access_title">通知アクセス</string>
+    <string name="notification_access_desc">Spotify や YouTube Music などの再生を検出し制御するために必要です</string>
+    <string name="notification_access_grant">通知アクセスを許可</string>
+    <string name="notification_access_fix">サービス接続を修復</string>
+    <string name="notification_access_working">サービス動作中</string>
+    <string name="no_music_playing">音楽が再生されていません</string>
+    <string name="no_active_session">アクティブな音楽セッションが見つかりません</string>
+    <string name="start_playing_music">接続をテストするには音楽を再生してください</string>
+    <string name="notification_test_failed">テスト失敗</string>
+    <string name="notification_test_error">アクティブセッションは見つかったがトラック情報が取得できません</string>
+
+
+    <!-- ───── Glyph Interface ───── -->
+    <string name="glyph_interface_title">Glyphインターフェース</string>
+    <string name="glyph_interface_desc">Glyph Toys の設定にアクセス</string>
+    <string name="glyph_interface_button">Glyph Toys</string>
+
+
+    <!-- ───── Auto Start ───── -->
+    <string name="auto_start_title">自動起動</string>
+    <string name="auto_start_desc">音楽再生開始時に自動起動</string>
+    <string name="auto_start_service">自動起動サービス</string>
+    <string name="auto_start_note">注: 自動起動時は Glyph ボタン操作は利用できません。シェイク操作は使用可能です。</string>
+    <string name="auto_start_battery_title">バッテリー監視</string>
+    <string name="auto_start_battery_desc">バッテリー残量がしきい値を下回ると自動起動を無効化</string>
+    <string name="auto_start_battery_threshold">バッテリーしきい値</string>
+
+    <string name="auto_start_apps_title">インストール済み音楽アプリ</string>
+    <string name="auto_start_apps_desc">音楽再生を検出した際に自動起動をトリガーするアプリを選択</string>
+
+
+    <!-- ───── Shake Controls ───── -->
+    <string name="shake_controls_title">シェイクコントロール</string>
+    <string name="shake_controls_desc">シェイクジェスチャの設定</string>
+
+    <string name="shake_controls_general_title">一般設定</string>
+    <string name="shake_controls_general_desc">すべてのシェイク挙動の共通設定</string>
+
+    <string name="shake_sensitivity_title">シェイク感度</string>
+    <string name="shake_sensitivity_desc_high">高 - 軽いシェイクで動作</string>
+    <string name="shake_sensitivity_desc_medium">中 - 普通のシェイクで動作</string>
+    <string name="shake_sensitivity_desc_low">低 - 強いシェイクで動作</string>
+
+    <string name="shake_haptic_title">触覚フィードバック</string>
+    <string name="shake_haptic_desc">シェイク検出時に振動</string>
+
+    <string name="shake_condition_title">シェイク操作条件</string>
+    <string name="shake_condition_desc">シェイク操作を有効にする条件</string>
+
+    <string name="shake_condition_always">常に</string>
+    <string name="shake_condition_always_desc">すべての状況でシェイク操作が動作</string>
+    <string name="shake_condition_locked">ロック時</string>
+    <string name="shake_condition_locked_desc">ロック中のみシェイク操作が動作</string>
+    <string name="shake_condition_unlocked">アンロック時</string>
+    <string name="shake_condition_unlocked_desc">アンロック中のみシェイク操作が動作</string>
+
+    <string name="shake_behavior_title">シェイク動作</string>
+    <string name="shake_behavior_desc">端末を振ったときの動作を選択</string>
+
+    <string name="shake_behavior_skip">スキップ</string>
+    <string name="shake_behavior_skip_desc">シェイクで次のトラックへ</string>
+    <string name="shake_behavior_play_pause">再生/一時停止</string>
+    <string name="shake_behavior_play_pause_desc">シェイクで再生状態を切替</string>
+    <string name="shake_behavior_auto_start">自動起動</string>
+    <string name="shake_behavior_auto_start_desc">シェイクで自動起動を切替</string>
+
+    <string name="shake_behavior_skip_delay_title">スキップ遅延</string>
+    <string name="shake_behavior_skip_delay_desc">誤操作防止のためのシェイク検出間隔</string>
+    <string name="shake_behavior_skip_paused_title">ポーズ中にスキップ</string>
+    <string name="shake_behavior_skip_paused_desc">メディアが一時停止中でもスキップを許可</string>
+
+    <string name="shake_behavior_pp_auto_resume_title">自動再開遅延</string>
+    <string name="shake_behavior_pp_auto_resume_desc">シェイクで一時停止後に自動で再生を再開する遅延</string>
+
+    <string name="shake_behavior_auto_start_delay_title">再有効化遅延</string>
+    <string name="shake_behavior_auto_start_delay_desc">自動起動サービスを再度有効にするまでの遅延</string>
+
+
+    <!-- ───── Bugs Report & Support ───── -->
+    <string name="bug_report_title">バグ報告 &amp; サポート</string>
+    <string name="bug_report_desc">バグを見つけた、または支援が必要な場合はご連絡ください。</string>
+    <string name="contact_button">連絡</string>
+
+
+    <!-- ───── Support GlyphBeat ───── -->
+    <string name="support_title">GlyphBeatを支援する</string>
+    <string name="support_desc">GlyphBeatは広告なしで愛情を込めて開発されています。気に入っていただけたら、新機能開発のためにコーヒーを一杯ご支援ください。感謝！ 🎵 🤍</string>
+
+
+    <!-- ───── Tutorial ───── -->
+    <string name="tutorial_title">チュートリアル</string>
+    <string name="tutorial_desc">アプリの紹介と設定ガイドを再表示</string>
+    <string name="tutorial_button">チュートリアルを再生</string>
+
+
+    <!-- ───── Language Settings ───── -->
+    <string name="language_settings_title">言語</string>
+    <string name="language_settings_desc">好きな言語を選択</string>
+    <string name="language_english">英語</string>
+    <string name="language_spanish">スペイン語</string>
+
+    <!-- ───── App Information ───── -->
+    <string name="app_info_title">アプリ情報</string>
+    <string name="app_info_desc">GlyphBeat - Glyph Matrix用アニメーションメディアプレーヤートイ</string>
+    <string name="version">バージョン</string>
+
+
+
+
+    <!-- - ────────── - Tutorial - ────────── - -->
+
+    <!-- ───── Welcome Page ───── -->
+    <string name="tutorial_welcome_title">Glyph Beat</string>
+    <string name="tutorial_welcome_description">NothingデバイスのGlyph Matrixをインタラクティブな音楽ビジュアライザー兼メディアコントローラーに変身させよう</string>
+    <string name="tutorial_welcome_feature_music_title">音楽ビジュアライゼーション</string>
+    <string name="tutorial_welcome_feature_music_desc">音楽に合わせたカスタムアニメーション</string>
+    <string name="tutorial_welcome_feature_themes_title">カスタマイズ可能なテーマ</string>
+    <string name="tutorial_welcome_feature_themes_desc">さまざまなアニメーションスタイルから選択</string>
+    <string name="tutorial_welcome_feature_control_title">トラックコントロール</string>
+    <string name="tutorial_welcome_feature_control_desc">直感的なジェスチャで再生を操作</string>
+    <string name="tutorial_welcome_get_started">はじめる</string>
+
+    <!-- ───── Permissions Page ───── -->
+    <string name="tutorial_permissions_title">必要な権限</string>
+    <string name="tutorial_permissions_subtitle">すべての機能を有効にするには権限を付与してください</string>
+    <string name="tutorial_permissions_all_granted">すべての権限が許可されました！</string>
+    <string name="tutorial_permissions_notification_title">通知アクセス</string>
+    <string name="tutorial_permissions_notification_desc">音楽再生を検出し、任意のアプリのメディアを制御するために必要</string>
+    <string name="tutorial_permissions_glyph_title">Glyph Matrixアクセス</string>
+    <string name="tutorial_permissions_glyph_desc_granted">Glyph Matrix対応デバイスでは自動で許可されます</string>
+    <string name="tutorial_permissions_glyph_desc_unsupported">%sでは利用できません（Glyph Matrix非対応）</string>
+    <string name="tutorial_permissions_glyph_desc_unavailable">このデバイスでは利用できません（Glyph Matrix対応Nothing Phoneが必要）</string>
+    <string name="tutorial_permissions_why_title">なぜこれらの権限が必要？</string>
+    <string name="tutorial_permissions_why_desc">Glyph Beat が音楽とアニメーションを同期させるために必要な権限です。メディア再生データのみを読み取り、音楽アプリに限定できます。</string>
+    <string name="tutorial_permissions_back">戻る</string>
+    <string name="tutorial_permissions_continue">続行</string>
+    <string name="tutorial_permissions_skip">今はスキップ</string>
+    <string name="tutorial_permissions_grant">権限を付与</string>
+    <string name="tutorial_permissions_granted">許可済み</string>
+
+    <!-- ───── Theme Guide Page ───── -->
+    <string name="tutorial_theme_title">テーマシステム</string>
+    <string name="tutorial_theme_subtitle">Glyph Matrixアニメーションをカスタマイズ</string>
+    <string name="tutorial_theme_categories_title">テーマカテゴリ</string>
+    <string name="tutorial_theme_media_player">メディアプレーヤー</string>
+    <string name="tutorial_theme_media_player_desc">多彩なアニメーション</string>
+    <string name="tutorial_theme_track_control">トラックコントロール</string>
+    <string name="tutorial_theme_track_control_desc">再生フィードバック</string>
+    <string name="tutorial_theme_customization_title">カスタマイズ</string>
+    <string name="tutorial_theme_brightness_title">明るさ</string>
+    <string name="tutorial_theme_brightness_desc">強度を調整</string>
+    <string name="tutorial_theme_speed_title">速度</string>
+    <string name="tutorial_theme_speed_desc">テンポを調整</string>
+    <string name="tutorial_theme_settings_title">設定</string>
+    <string name="tutorial_theme_settings_desc">他にも多数</string>
+    <string name="tutorial_theme_back">戻る</string>
+    <string name="tutorial_theme_continue">続行</string>
+
+    <!-- ───── Completion Page ───── -->
+    <string name="tutorial_completion_title">準備完了！</string>
+    <string name="tutorial_completion_subtitle">Glyph Beat の準備ができました。音楽体験を変革しましょう</string>
+    <string name="tutorial_completion_next_title">次にすること</string>
+    <string name="tutorial_completion_step_glyph">Glyph インターフェースにトイを追加</string>
+    <string name="tutorial_completion_step_music">音楽を再生してクールなアニメーションを見よう</string>
+    <string name="tutorial_completion_step_control">長押しで再生/一時停止</string>
+    <string name="tutorial_completion_step_customize">設定でテーマをカスタマイズ</string>
+    <string name="tutorial_completion_step_explore">すべてのアニメーションスタイルを試す</string>
+    <string name="tutorial_completion_tip">ヒント: 設定からいつでもチュートリアルを再生できます</string>
+    <string name="tutorial_completion_start">さっそく体験</string>
+
+</resources>

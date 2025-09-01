@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -37,11 +38,13 @@ fun ThemePreviewCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val themeRepository = remember { ThemeRepository.getInstance(context) }
+    val configuration = LocalConfiguration.current
+    val localeContext = remember(configuration) { context }
+    val themeRepository = remember(configuration) { ThemeRepository.refreshForLocaleChange(localeContext) }
     
     // Check if theme supports settings and has custom settings
-    var hasCustomSettings by remember(theme) { mutableStateOf(false) }
-    var currentSettings by remember(theme) { mutableStateOf<com.pauwma.glyphbeat.ui.settings.ThemeSettings?>(null) }
+    var hasCustomSettings by remember(theme, configuration) { mutableStateOf(false) }
+    var currentSettings by remember(theme, configuration) { mutableStateOf<com.pauwma.glyphbeat.ui.settings.ThemeSettings?>(null) }
     val supportsSettings = theme is ThemeSettingsProvider
     
     // Initial settings load - fully on IO thread to prevent ANR
@@ -137,23 +140,24 @@ fun ThemePreviewCard(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Theme Name
-            Text(
-                text = theme.getThemeName(),
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                    fontSize = 18.sp
-                ),
-                color = if (isSelected) 
-                    MaterialTheme.colorScheme.primary 
-                else 
-                    MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
+            // Theme Name - use key() to force recomposition on locale changes
+            key(configuration) {
+                Text(
+                    text = theme.getThemeName(),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                        fontSize = 18.sp
+                    ),
+                    color = if (isSelected) 
+                        MaterialTheme.colorScheme.primary 
+                    else 
+                        MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
                 // Theme Description
                 Text(
                     text = theme.getDescription(),
@@ -168,6 +172,7 @@ fun ThemePreviewCard(
                     maxLines = 2
                 )
             }
+        }
             
             // Settings button and custom indicator - only show for selected themes that support settings
             if (supportsSettings && isSelected) {

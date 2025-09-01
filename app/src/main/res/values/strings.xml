@@ -16,6 +16,15 @@
     <string name="nav_controls">Controls</string>
     <string name="nav_settigns">Settings</string>
 
+
+    <!-- - ────────── - Screen Titles - ────────── - -->
+    <string name="screen_animation_themes">Animation Themes</string>
+    <string name="screen_track_control_themes">Track Control Themes</string>
+    <string name="screen_settings">Settings</string>
+
+
+
+
     <!-- - ────────── - THEMES - ────────── - -->
 
     <!-- ───── Themes ───── -->
@@ -259,7 +268,8 @@
     <string name="language_settings_title">Language</string>
     <string name="language_settings_desc">Select your preferred language</string>
     <string name="language_english">English</string>
-    <string name="language_spanish">Español</string>
+    <string name="language_spanish">Spanish</string>
+    <string name="language_japanese">Japanese</string>
 
     <!-- ───── App Information ───── -->
     <string name="app_info_title">App Information</string>

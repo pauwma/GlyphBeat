@@ -10,7 +10,10 @@
     <string name="toy_name_previous_track">Pista anterior</string>
     <string name="toy_summary_previous_track">Mantén pulsado para retroceder a la pista anterior.</string>
 
-
+    <!-- - ────────── - Screen Titles - ────────── - -->
+    <string name="screen_animation_themes">Temas de Animación</string>
+    <string name="screen_track_control_themes">Temas de Control de Pista</string>
+    <string name="screen_settings">Ajustes</string>
 
     <!-- - ────────── - THEMES - ────────── - -->
 
@@ -210,11 +213,11 @@
 
 
     <string name="shake_condition_always">Siempre</string>
-    <string name="shake_condition_always_desc">Los controles por sacudida funcionan en todas las condiciones</string>
-    <string name="shake_condition_locked">Cuando está bloqueado</string>
-    <string name="shake_condition_locked_desc">Los controles por sacudida solo funcionan cuando el teléfono está bloqueado</string>
-    <string name="shake_condition_unlocked">Cuando está desbloqueado</string>
-    <string name="shake_condition_unlocked_desc">Los controles por sacudida solo funcionan cuando el teléfono está desbloqueado</string>
+    <string name="shake_condition_always_desc">Funcionan en todas las condiciones</string>
+    <string name="shake_condition_locked">Bloqueado</string>
+    <string name="shake_condition_locked_desc">Funcionan cuando el teléfono está bloqueado</string>
+    <string name="shake_condition_unlocked">Desbloqueado</string>
+    <string name="shake_condition_unlocked_desc">Funcionan cuando el teléfono está desbloqueado</string>
 
 
     <string name="shake_behavior_title">Comportamiento de sacudida</string>

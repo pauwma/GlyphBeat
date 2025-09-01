@@ -42,6 +42,17 @@ class ThemeRepository private constructor(private val context: Context) {
                 INSTANCE ?: ThemeRepository(context.applicationContext).also { INSTANCE = it }
             }
         }
+        
+        /**
+         * Clears the singleton instance to force recreation with new context.
+         * This is useful when locale changes and theme objects need fresh string resources.
+         */
+        fun refreshForLocaleChange(context: Context): ThemeRepository {
+            synchronized(this) {
+                INSTANCE = null  // Clear the cached instance
+                return getInstance(context)  // Create new instance with current context
+            }
+        }
     }
     
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

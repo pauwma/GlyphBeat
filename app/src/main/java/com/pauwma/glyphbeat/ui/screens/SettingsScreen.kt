@@ -72,6 +72,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.os.LocaleListCompat
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import com.pauwma.glyphbeat.theme.NothingRed
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -390,10 +395,16 @@ fun SettingsScreen(
     
     // Language settings state
     var currentLanguage by remember { mutableStateOf("en") }
-    val availableLanguages = remember {
+    
+    // Create locale-aware context for dynamic string updates
+    val configuration = LocalConfiguration.current
+    val localeContext = remember(configuration) { context }
+    
+    val availableLanguages = remember(configuration) {
         listOf(
-            LanguageInfo("en", context.getString(R.string.language_english), null),
-            LanguageInfo("es", context.getString(R.string.language_spanish), "@pauwma")
+            LanguageInfo("en", localeContext.getString(R.string.language_english), null),
+            LanguageInfo("es", localeContext.getString(R.string.language_spanish), "@pauwma"),
+            LanguageInfo("ja", localeContext.getString(R.string.language_japanese), "@pauwma")
         )
     }
     
@@ -438,14 +449,16 @@ fun SettingsScreen(
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     
-    // Function to change app language
+    // Function to change app language with immediate UI update
     fun changeLanguage(languageCode: String) {
+        // Update state immediately for UI reactivity
         currentLanguage = languageCode
+        
+        // Save preference
         prefs.edit().putString("app_language", languageCode).apply()
         
-        // Note: Language change will take effect on next app restart
-        // This prevents theme disruption that occurs with immediate recreation
-        Log.d("SettingsScreen", "Language preference saved: $languageCode (will apply on next app start)")
+        // Apply locale change - this will trigger configuration change
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageCode))
     }
     
     // Function to load and sort music apps
@@ -496,11 +509,40 @@ fun SettingsScreen(
             batteryAwarenessEnabled = prefs.getBoolean("battery_awareness_enabled", false)
             batteryThreshold = prefs.getInt("battery_threshold", 10)
             
-            // Load language preference
-            currentLanguage = prefs.getString("app_language", "en") ?: "en"
+            // Load language preference - ensure it matches current app locale
+            val savedLanguage = prefs.getString("app_language", "en") ?: "en"
+            val currentAppLocales = AppCompatDelegate.getApplicationLocales()
+            val currentAppLanguage = if (!currentAppLocales.isEmpty) {
+                currentAppLocales[0]?.language ?: "en"
+            } else {
+                "en"
+            }
+            
+            // Use the current app locale if it differs from saved preference
+            currentLanguage = if (currentAppLanguage != savedLanguage && currentAppLanguage in listOf("en", "es")) {
+                currentAppLanguage
+            } else {
+                savedLanguage
+            }
             
             // Load music apps
             loadMusicApps()
+        }
+    }
+    
+    // Listen for configuration changes and update UI accordingly
+    LaunchedEffect(configuration) {
+        // When configuration changes due to locale change, update language state if needed
+        val currentAppLocales = AppCompatDelegate.getApplicationLocales()
+        val currentAppLanguage = if (!currentAppLocales.isEmpty) {
+            currentAppLocales[0]?.language ?: "en"
+        } else {
+            "en"
+        }
+        
+        // Update currentLanguage if app locale changed but state didn't
+        if (currentAppLanguage != currentLanguage && currentAppLanguage in listOf("en", "es")) {
+            currentLanguage = currentAppLanguage
         }
     }
     
@@ -575,7 +617,7 @@ fun SettingsScreen(
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = "Settings",
+                    text = localeContext.getString(R.string.screen_settings),
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontFamily = customFont
@@ -1451,7 +1493,7 @@ fun SettingsScreen(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = context.getString(R.string.language_settings_title),
+                    text = localeContext.getString(R.string.language_settings_title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont
                     ),
@@ -1460,45 +1502,53 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = context.getString(R.string.language_settings_desc),
+                    text = localeContext.getString(R.string.language_settings_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
                 // Language selection dropdown using consistent SettingsDropdown
-                val languageDropdownOptions = availableLanguages.map { language ->
-                    DropdownOption(
-                        value = language.code,
-                        label = buildString {
-                            append(language.displayName)
-                            append(" - ")
-                            append(language.code.uppercase())
-                            language.author?.let { author ->
-                                append(" ")
-                                append(author)
-                            }
-                        },
-                        description = null
+                // Create options reactively based on current configuration
+                val languageDropdownOptions = remember(configuration, currentLanguage) {
+                    availableLanguages.map { language ->
+                        DropdownOption(
+                            value = language.code,
+                            label = buildString {
+                                append(language.displayName)
+                                append(" - ")
+                                append(language.code.uppercase())
+                                language.author?.let { author ->
+                                    append(" ")
+                                    append(author)
+                                }
+                            },
+                            description = null
+                        )
+                    }
+                }
+
+                val languageDropdownSetting = remember(configuration, currentLanguage) {
+                    DropdownSetting(
+                        id = "app_language",
+                        displayName = "",
+                        description = "",
+                        defaultValue = currentLanguage,
+                        options = languageDropdownOptions
                     )
                 }
 
-                val languageDropdownSetting = DropdownSetting(
-                    id = "app_language",
-                    displayName = "",
-                    description = "",
-                    defaultValue = currentLanguage,
-                    options = languageDropdownOptions
-                )
-
-                SettingsDropdown(
-                    setting = languageDropdownSetting,
-                    currentValue = currentLanguage,
-                    onValueChange = { newLanguageCode ->
-                        changeLanguage(newLanguageCode)
-                    },
-                    modifier = Modifier.padding(top = 12.dp)
-                )
+                // Use key() to force recomposition when language changes
+                key(currentLanguage) {
+                    SettingsDropdown(
+                        setting = languageDropdownSetting,
+                        currentValue = currentLanguage,
+                        onValueChange = { newLanguageCode ->
+                            changeLanguage(newLanguageCode)
+                        },
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
+                }
             }
         }
 
