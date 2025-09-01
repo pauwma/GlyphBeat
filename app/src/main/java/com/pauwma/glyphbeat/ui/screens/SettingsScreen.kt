@@ -454,8 +454,11 @@ fun SettingsScreen(
         // Update state immediately for UI reactivity
         currentLanguage = languageCode
         
-        // Save preference
-        prefs.edit().putString("app_language", languageCode).apply()
+        // Save preference and mark as manually set
+        prefs.edit()
+            .putString("app_language", languageCode)
+            .putBoolean("user_language_manually_set", true)  // Mark as manually chosen
+            .apply()
         
         // Apply locale change - this will trigger configuration change
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageCode))
@@ -519,7 +522,7 @@ fun SettingsScreen(
             }
             
             // Use the current app locale if it differs from saved preference
-            currentLanguage = if (currentAppLanguage != savedLanguage && currentAppLanguage in listOf("en", "es")) {
+            currentLanguage = if (currentAppLanguage != savedLanguage && currentAppLanguage in listOf("en", "es", "ja")) {
                 currentAppLanguage
             } else {
                 savedLanguage

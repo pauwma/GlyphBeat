@@ -63,6 +63,9 @@ class MainActivity : AppCompatActivity() {
         // Update version tracking
         UpdatePreferences.updateLastLaunchVersion(this, AppConfig.VERSION_CODE)
         
+        // Initialize app language based on system locale (first install only)
+        initializeAppLanguage(this)
+        
         enableEdgeToEdge()
         
         // Check and request notification access permission if not in tutorial
@@ -238,4 +241,53 @@ suspend fun isMediaControlServiceWorking(context: android.content.Context): Bool
 fun openNotificationAccessSettings(context: android.content.Context) {
     val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
     context.startActivity(intent)
+}
+
+/**
+ * Detects the system language and returns the corresponding app language code.
+ * Supports: en, es, ja
+ * Falls back to "en" for unsupported languages.
+ */
+fun detectSystemLanguage(): String {
+    val systemLocale = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+        android.content.res.Resources.getSystem().configuration.locales[0]
+    } else {
+        @Suppress("DEPRECATION")
+        android.content.res.Resources.getSystem().configuration.locale
+    }
+    
+    // Map system language to supported app languages
+    return when (systemLocale.language) {
+        "es" -> "es"  // Spanish
+        "ja" -> "ja"  // Japanese
+        else -> "en"  // Default to English for all other languages
+    }
+}
+
+/**
+ * Initializes app language on first install by detecting system language.
+ * Only sets language if user hasn't manually chosen one before.
+ */
+fun initializeAppLanguage(context: android.content.Context) {
+    val prefs = context.getSharedPreferences("glyph_settings", android.content.Context.MODE_PRIVATE)
+    
+    // Check if user has manually set language before
+    val isManuallySet = prefs.getBoolean("user_language_manually_set", false)
+    val hasLanguagePreference = prefs.contains("app_language")
+    
+    // Only auto-detect on first install (no existing language preference) and not manually set
+    if (!hasLanguagePreference && !isManuallySet) {
+        val systemLanguage = detectSystemLanguage()
+        
+        // Save the detected system language
+        prefs.edit()
+            .putString("app_language", systemLanguage)
+            .putBoolean("user_language_manually_set", false)  // Mark as auto-detected, not manual
+            .apply()
+        
+        // Apply the detected language
+        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+            androidx.core.os.LocaleListCompat.forLanguageTags(systemLanguage)
+        )
+    }
 }
