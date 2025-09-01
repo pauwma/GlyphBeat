@@ -91,7 +91,7 @@ fun PermissionsPage(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
-                    text = "Required Permissions",
+                    text = context.getString(R.string.tutorial_permissions_title),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontFamily = customFont
@@ -102,7 +102,7 @@ fun PermissionsPage(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "Grant permissions to enable all features",
+                    text = context.getString(R.string.tutorial_permissions_subtitle),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -137,7 +137,7 @@ fun PermissionsPage(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = "All permissions granted!",
+                            text = context.getString(R.string.tutorial_permissions_all_granted),
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.SemiBold
                             ),
@@ -160,8 +160,8 @@ fun PermissionsPage(
             ) {
                 // Notification Access Permission
                 PermissionCard(
-                    title = "Notification Access",
-                    description = "Required to detect music playback and control media from any app",
+                    title = context.getString(R.string.tutorial_permissions_notification_title),
+                    description = context.getString(R.string.tutorial_permissions_notification_desc),
                     icon = Icons.Default.Notifications,
                     isGranted = notificationGranted,
                     onRequestPermission = {
@@ -172,11 +172,11 @@ fun PermissionsPage(
                 
                 // Glyph Matrix Permission (only for specific Nothing phones)
                 PermissionCard(
-                    title = "Glyph Matrix Access",
+                    title = context.getString(R.string.tutorial_permissions_glyph_title),
                     description = when {
-                        isNothingDevice -> "Automatically granted for Glyph Matrix devices"
-                        deviceManufacturer.equals("Nothing", ignoreCase = true) -> "Not available on $deviceModel (Glyph Matrix not supported)"
-                        else -> "Not available on this device (Nothing Phone with Glyph Matrix required)"
+                        isNothingDevice -> context.getString(R.string.tutorial_permissions_glyph_desc_granted)
+                        deviceManufacturer.equals("Nothing", ignoreCase = true) -> context.getString(R.string.tutorial_permissions_glyph_desc_unsupported, deviceModel)
+                        else -> context.getString(R.string.tutorial_permissions_glyph_desc_unavailable)
                     },
                     icon = Icons.Default.GridOn,
                     isGranted = glyphGranted,
@@ -217,7 +217,7 @@ fun PermissionsPage(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Why these permissions?",
+                            text = context.getString(R.string.tutorial_permissions_why_title),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 fontFamily = customFont
@@ -229,7 +229,7 @@ fun PermissionsPage(
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Text(
-                        text = "Glyph Beat needs these permissions only to sync its glyph animations with your music. We read media-playback data only, and you can restrict access only to music apps.",
+                        text = context.getString(R.string.tutorial_permissions_why_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -264,7 +264,7 @@ fun PermissionsPage(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Back")
+                    Text(context.getString(R.string.tutorial_permissions_back))
                     Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on left
                 }
                 
@@ -280,7 +280,7 @@ fun PermissionsPage(
                 ) {
                     if (allGranted) {
                         Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on right
-                        Text("Continue")
+                        Text(context.getString(R.string.tutorial_permissions_continue))
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
                             imageVector = Icons.Default.ArrowForward,
@@ -290,7 +290,7 @@ fun PermissionsPage(
                     } else {
                         Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on right
                         Text(
-                            text = "Skip for Now",
+                            text = context.getString(R.string.tutorial_permissions_skip),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(8.dp))

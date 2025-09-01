@@ -36,9 +36,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.theme.*
 
 data class PillNavItem(
@@ -48,34 +50,35 @@ data class PillNavItem(
     val contentDescription: String
 )
 
-val pillNavItems = listOf(
-    PillNavItem(
-        route = "media_player",
-        icon = Icons.Filled.MusicNote,
-        label = "Player",
-        contentDescription = "Media Player"
-    ),
-    PillNavItem(
-        route = "track_control",
-        icon = Icons.Filled.SkipNext,
-        label = "Controls",
-        contentDescription = "Track Control"
-    ),
-    PillNavItem(
-        route = "settings",
-        icon = Icons.Filled.Settings,
-        label = "Settings",
-        contentDescription = "Settings"
-    )
-)
-
 @Composable
 fun PillNavigationBar(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    
+    val pillNavItems = listOf(
+        PillNavItem(
+            route = "media_player",
+            icon = Icons.Filled.MusicNote,
+            label = context.getString(R.string.nav_player),
+            contentDescription = "Media Player"
+        ),
+        PillNavItem(
+            route = "track_control",
+            icon = Icons.Filled.SkipNext,
+            label = context.getString(R.string.nav_controls),
+            contentDescription = "Track Control"
+        ),
+        PillNavItem(
+            route = "settings",
+            icon = Icons.Filled.Settings,
+            label = context.getString(R.string.nav_settigns),
+            contentDescription = "Settings"
+        )
+    )
     
     Box(
         modifier = modifier
@@ -222,8 +225,30 @@ fun PillNavigationBarAlternative(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    
+    val pillNavItems = listOf(
+        PillNavItem(
+            route = "media_player",
+            icon = Icons.Filled.MusicNote,
+            label = context.getString(R.string.nav_player),
+            contentDescription = "Media Player"
+        ),
+        PillNavItem(
+            route = "track_control",
+            icon = Icons.Filled.SkipNext,
+            label = context.getString(R.string.nav_controls),
+            contentDescription = "Track Control"
+        ),
+        PillNavItem(
+            route = "settings",
+            icon = Icons.Filled.Settings,
+            label = context.getString(R.string.nav_settigns),
+            contentDescription = "Settings"
+        )
+    )
     
     // Alternative design with individual pills
     Box(

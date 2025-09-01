@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -42,6 +43,7 @@ fun ThemeGuidePage(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var animationStarted by remember { mutableStateOf(false) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
     
@@ -82,7 +84,7 @@ fun ThemeGuidePage(
                 Spacer(modifier = Modifier.height(12.dp))
                 
                 Text(
-                    text = "Theme System",
+                    text = context.getString(R.string.tutorial_theme_title),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontFamily = customFont
@@ -93,7 +95,7 @@ fun ThemeGuidePage(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "Customize your Glyph Matrix animations",
+                    text = context.getString(R.string.tutorial_theme_subtitle),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -112,7 +114,7 @@ fun ThemeGuidePage(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Theme Categories",
+                    text = context.getString(R.string.tutorial_theme_categories_title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = customFont
@@ -125,8 +127,8 @@ fun ThemeGuidePage(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     CategoryCardWithPreview(
-                        title = "Media Player",
-                        description = "Different animations",
+                        title = context.getString(R.string.tutorial_theme_media_player),
+                        description = context.getString(R.string.tutorial_theme_media_player_desc),
                         previewResIds = listOf(
                             R.drawable.vinyl_preview,
                             R.drawable.duck_preview,
@@ -138,8 +140,8 @@ fun ThemeGuidePage(
                     )
                     
                     CategoryCardWithPreview(
-                        title = "Track Control",
-                        description = "Playback feedback",
+                        title = context.getString(R.string.tutorial_theme_track_control),
+                        description = context.getString(R.string.tutorial_theme_track_control_desc),
                         previewResIds = listOf(
                             R.drawable.skip_arrow_preview,
                             R.drawable.minimal_arrow_preview,
@@ -163,7 +165,7 @@ fun ThemeGuidePage(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "Customization",
+                    text = context.getString(R.string.tutorial_theme_customization_title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = customFont
@@ -177,24 +179,24 @@ fun ThemeGuidePage(
                 ) {
                     EnhancedCustomizationItem(
                         icon = Icons.Default.LightMode,
-                        title = "Brightness",
-                        description = "Adjust intensity",
+                        title = context.getString(R.string.tutorial_theme_brightness_title),
+                        description = context.getString(R.string.tutorial_theme_brightness_desc),
                         customFont = customFont,
                         modifier = Modifier.weight(1f)
                     )
                     
                     EnhancedCustomizationItem(
                         icon = Icons.Default.Speed,
-                        title = "Speed",
-                        description = "Control tempo",
+                        title = context.getString(R.string.tutorial_theme_speed_title),
+                        description = context.getString(R.string.tutorial_theme_speed_desc),
                         customFont = customFont,
                         modifier = Modifier.weight(1f)
                     )
                     
                     EnhancedCustomizationItem(
                         icon = Icons.Default.Tune,
-                        title = "Settings",
-                        description = "And much more",
+                        title = context.getString(R.string.tutorial_theme_settings_title),
+                        description = context.getString(R.string.tutorial_theme_settings_desc),
                         customFont = customFont,
                         modifier = Modifier.weight(1f)
                     )
@@ -229,7 +231,7 @@ fun ThemeGuidePage(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Back")
+                    Text(context.getString(R.string.tutorial_theme_back))
                     Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on left
                 }
                 
@@ -244,7 +246,7 @@ fun ThemeGuidePage(
                     shape = RoundedCornerShape(28.dp)
                 ) {
                     Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on right
-                    Text("Continue")
+                    Text(context.getString(R.string.tutorial_theme_continue))
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Default.ArrowForward,

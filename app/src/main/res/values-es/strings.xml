@@ -15,6 +15,7 @@
     <!-- - ────────── - THEMES - ────────── - -->
 
     <!-- ───── Themes ───── -->
+    <string name="nav_settigns">Ajustes</string>
     <string name="theme_vinyl_record_title">Disco de vinilo</string>
     <string name="theme_vinyl_record_desc">Ponte retro\n¡Activa el modo DJ!</string>
 
@@ -258,6 +259,7 @@
 
 
     <!-- ───── Language Settings ───── -->
+    <string name="tutorial_button">Reproducir Tutorial</string>
     <string name="language_settings_title">Idioma</string>
     <string name="language_settings_desc">Selecciona tu idioma preferido</string>
     <string name="language_english">Inglés</string>
@@ -274,6 +276,68 @@
 
     <!-- - ────────── - Tutorial - ────────── - -->
 
+    <!-- ───── Welcome Page ───── -->
+    <string name="tutorial_welcome_title">Glyph Beat</string>
+    <string name="tutorial_welcome_description">Transforma la Glyph Matrix de tu dispositivo Nothing en un visualizador musical interactivo y controlador multimedia</string>
+    <string name="tutorial_welcome_feature_music_title">Visualización Musical</string>
+    <string name="tutorial_welcome_feature_music_desc">Animaciones personalizadas con tu música</string>
+    <string name="tutorial_welcome_feature_themes_title">Temas Personalizables</string>
+    <string name="tutorial_welcome_feature_themes_desc">Elige entre varios estilos de animación</string>
+    <string name="tutorial_welcome_feature_control_title">Control de Pistas</string>
+    <string name="tutorial_welcome_feature_control_desc">Controla la reproducción con gestos intuitivos</string>
+    <string name="tutorial_welcome_get_started">Comenzar</string>
+
+    <!-- ───── Permissions Page ───── -->
+    <string name="tutorial_permissions_title">Permisos Requeridos</string>
+    <string name="tutorial_permissions_subtitle">Concede permisos para habilitar todas las funciones</string>
+    <string name="tutorial_permissions_all_granted">¡Todos los permisos concedidos!</string>
+    <string name="tutorial_permissions_notification_title">Acceso a Notificaciones</string>
+    <string name="tutorial_permissions_notification_desc">Necesario para detectar la reproducción de música y controlar medios desde cualquier aplicación</string>
+    <string name="tutorial_permissions_glyph_title">Acceso a Glyph Matrix</string>
+    <string name="tutorial_permissions_glyph_desc_granted">Concedido automáticamente para dispositivos Glyph Matrix</string>
+    <string name="tutorial_permissions_glyph_desc_unsupported">No disponible en %s (Glyph Matrix no compatible)</string>
+    <string name="tutorial_permissions_glyph_desc_unavailable">No disponible en este dispositivo (se requiere Nothing Phone con Glyph Matrix)</string>
+    <string name="tutorial_permissions_why_title">¿Por qué estos permisos?</string>
+    <string name="tutorial_permissions_why_desc">Glyph Beat necesita estos permisos solo para sincronizar sus animaciones glyph con tu música. Solo leemos datos de reproducción multimedia, y puedes restringir el acceso solo a aplicaciones de música.</string>
+    <string name="tutorial_permissions_back">Atrás</string>
+    <string name="tutorial_permissions_continue">Continuar</string>
+    <string name="tutorial_permissions_skip">Omitir por Ahora</string>
+    <string name="tutorial_permissions_grant">Conceder Permiso</string>
+    <string name="tutorial_permissions_granted">Concedido</string>
+
+    <!-- ───── Theme Guide Page ───── -->
+    <string name="tutorial_theme_title">Sistema de Temas</string>
+    <string name="tutorial_theme_subtitle">Personaliza las animaciones de tu Glyph Matrix</string>
+    <string name="tutorial_theme_categories_title">Categorías de Temas</string>
+    <string name="tutorial_theme_media_player">Reproductor Multimedia</string>
+    <string name="tutorial_theme_media_player_desc">Diferentes tipos de animaciones</string>
+    <string name="tutorial_theme_track_control">Control de Pistas</string>
+    <string name="tutorial_theme_track_control_desc">Retroalimentación de reproducción</string>
+    <string name="tutorial_theme_customization_title">Personalización</string>
+    <string name="tutorial_theme_brightness_title">Brillo</string>
+    <string name="tutorial_theme_brightness_desc">Ajustar intensidad</string>
+    <string name="tutorial_theme_speed_title">Velocidad</string>
+    <string name="tutorial_theme_speed_desc">Controlar tempo</string>
+    <string name="tutorial_theme_settings_title">Configuración</string>
+    <string name="tutorial_theme_settings_desc">Y mucho más</string>
+    <string name="tutorial_theme_back">Atrás</string>
+    <string name="tutorial_theme_continue">Continuar</string>
+
+    <!-- ───── Completion Page ───── -->
+    <string name="tutorial_completion_title">¡Todo Listo!</string>
+    <string name="tutorial_completion_subtitle">Tu Glyph Beat está listo para transformar tu experiencia musical</string>
+    <string name="tutorial_completion_next_title">¿Qué Sigue?</string>
+    <string name="tutorial_completion_step_glyph">Agregar el juguete a la Interfaz Glyph</string>
+    <string name="tutorial_completion_step_music">Reproduce música para ver animaciones geniales</string>
+    <string name="tutorial_completion_step_control">Mantén pulsado para reproducir/pausar la reproducción</string>
+    <string name="tutorial_completion_step_customize">Personalizar temas en configuración</string>
+    <string name="tutorial_completion_step_explore">Explora todos los estilos de animación</string>
+    <string name="tutorial_completion_tip">Consejo: Puedes repetir este tutorial desde Ajustes</string>
+    <string name="tutorial_completion_start">Comenzar a Explorar</string>
+    <string name="auto_start_note">Nota: los controles del botón Glyph no están disponibles cuando se inicia automáticamente. El control mediante sacudida sigue funcionando.</string>
+    <string name="auto_start_battery_title">Uso de batería</string>
+    <string name="nav_player">Audio</string>
+    <string name="nav_controls">Controles</string>
 
 
 </resources>

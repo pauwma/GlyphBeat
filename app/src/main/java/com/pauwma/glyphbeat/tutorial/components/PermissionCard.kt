@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.Font
@@ -38,6 +39,7 @@ fun PermissionCard(
     customFont: FontFamily = FontFamily(Font(R.font.ntype82regular)),
     isAvailable: Boolean = true
 ) {
+    val context = LocalContext.current
     val cardColor by animateColorAsState(
         targetValue = when {
             isGranted -> Color(0xFF2E7D32).copy(alpha = 0.1f)
@@ -127,7 +129,7 @@ fun PermissionCard(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Check,
-                                    contentDescription = "Granted",
+                                    contentDescription = context.getString(R.string.tutorial_permissions_granted),
                                     tint = Color.White,
                                     modifier = Modifier.size(14.dp)
                                 )
@@ -156,7 +158,7 @@ fun PermissionCard(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Text(
-                                text = "Grant Permission",
+                                text = context.getString(R.string.tutorial_permissions_grant),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Spacer(modifier = Modifier.width(4.dp))

@@ -44,6 +44,7 @@ fun WelcomePage(
     onGetStarted: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var animationStarted by remember { mutableStateOf(false) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
     
@@ -99,7 +100,7 @@ fun WelcomePage(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Glyph Beat",
+                    text = context.getString(R.string.tutorial_welcome_title),
                     style = MaterialTheme.typography.displayMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 36.sp,
@@ -125,7 +126,7 @@ fun WelcomePage(
             enter = fadeIn(animationSpec = tween(1000, delayMillis = 600))
         ) {
             Text(
-                text = "Transform your Nothing device's Glyph Matrix into an interactive music visualizer and media controller",
+                text = context.getString(R.string.tutorial_welcome_description),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -146,22 +147,22 @@ fun WelcomePage(
             ) {
                 FeatureCard(
                     icon = Icons.Outlined.MusicNote,
-                    title = "Music Visualization",
-                    description = "Custom animations with your music",
+                    title = context.getString(R.string.tutorial_welcome_feature_music_title),
+                    description = context.getString(R.string.tutorial_welcome_feature_music_desc),
                     customFont = customFont
                 )
 
                 FeatureCard(
                     icon = Icons.Outlined.Palette,
-                    title = "Customizable Themes",
-                    description = "Choose from various animation styles",
+                    title = context.getString(R.string.tutorial_welcome_feature_themes_title),
+                    description = context.getString(R.string.tutorial_welcome_feature_themes_desc),
                     customFont = customFont
                 )
                 
                 FeatureCard(
                     icon = Icons.Outlined.TouchApp,
-                    title = "Track Control",
-                    description = "Control playback with intuitive gestures",
+                    title = context.getString(R.string.tutorial_welcome_feature_control_title),
+                    description = context.getString(R.string.tutorial_welcome_feature_control_desc),
                     customFont = customFont
                 )
             }
@@ -186,7 +187,7 @@ fun WelcomePage(
             ) {
                 Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on right
                 Text(
-                    text = "Get Started",
+                    text = context.getString(R.string.tutorial_welcome_get_started),
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.SemiBold
                     )
