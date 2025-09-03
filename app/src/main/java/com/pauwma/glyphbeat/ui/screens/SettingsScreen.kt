@@ -38,6 +38,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Pix
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -825,41 +827,78 @@ fun SettingsScreen(
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
-                // Glyph Toys button
-                Button(
-                    onClick = {
-                        try {
-                            val intent = Intent().apply {
-                                component = android.content.ComponentName(
-                                    "com.nothing.thirdparty",
-                                    "com.nothing.thirdparty.matrix.toys.preview.ToysPreviewActivity"
-                                )
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            context.startActivity(intent)
-                            Log.d("SettingsScreen", "Opened Glyph Toys preview")
-                        } catch (e: Exception) {
-                            Log.e("SettingsScreen", "Failed to open Glyph Toys: ${e.message}")
-                            try {
-                                // Fallback to general settings
-                                val fallbackIntent = Intent(android.provider.Settings.ACTION_SETTINGS)
-                                context.startActivity(fallbackIntent)
-                            } catch (e2: Exception) {
-                                Log.e("SettingsScreen", "Failed to open settings: ${e2.message}")
-                            }
-                        }
-                    },
+                // Glyph Toys buttons row
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp)
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Pix,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(context.getString(R.string.glyph_interface_button))
+                    // Main Manage Glyph Toys button
+                    Button(
+                        onClick = {
+                            try {
+                                val intent = Intent().apply {
+                                    component = android.content.ComponentName(
+                                        "com.nothing.thirdparty",
+                                        "com.nothing.thirdparty.matrix.toys.manager.ToysManagerActivity"
+                                    )
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                                Log.d("SettingsScreen", "Opened Glyph Toys manager")
+                            } catch (e: Exception) {
+                                Log.e("SettingsScreen", "Failed to open Glyph Toys: ${e.message}")
+                                try {
+                                    // Fallback to general settings
+                                    val fallbackIntent = Intent(android.provider.Settings.ACTION_SETTINGS)
+                                    context.startActivity(fallbackIntent)
+                                } catch (e2: Exception) {
+                                    Log.e("SettingsScreen", "Failed to open settings: ${e2.message}")
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Pix,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(context.getString(R.string.glyph_interface_button))
+                    }
+                    
+                    // Test Toy preview button
+                    FilledIconButton(
+                        onClick = {
+                            try {
+                                val intent = Intent().apply {
+                                    component = android.content.ComponentName(
+                                        "com.nothing.thirdparty",
+                                        "com.nothing.thirdparty.matrix.toys.preview.ToysPreviewActivity"
+                                    )
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                                Log.d("SettingsScreen", "Opened Glyph Toys preview")
+                            } catch (e: Exception) {
+                                Log.e("SettingsScreen", "Failed to open Glyph Toys preview: ${e.message}")
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(0.16f)
+                            .width(48.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Test toy preview",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }

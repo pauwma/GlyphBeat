@@ -184,7 +184,7 @@
     <!-- ───── Glyph Interface ───── -->
     <string name="glyph_interface_title">Glyph Interface</string>
     <string name="glyph_interface_desc">Access Glyph Toys configuration</string>
-    <string name="glyph_interface_button">Glyph Toys</string>
+    <string name="glyph_interface_button">Manage Toys</string>
 
 
     <!-- ───── Auto Start ───── -->

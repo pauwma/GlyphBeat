@@ -174,7 +174,7 @@
     <!-- ───── Glyph Interface ───── -->
     <string name="glyph_interface_title">Interfaz Glyph</string>
     <string name="glyph_interface_desc">Acceder a la configuración de Glyph Toys</string>
-    <string name="glyph_interface_button">Glyph Toys</string>
+    <string name="glyph_interface_button">Gestionar Toys</string>
 
 
     <!-- ───── Auto Start ───── -->
@@ -270,6 +270,7 @@
 
 
     <!-- ───── App Information ───── -->
+    <string name="language_japanese">Japonés</string>
     <string name="app_info_title">Información de la aplicación</string>
     <string name="app_info_desc">GlyphBeat - Juguete de reproductor multimedia animado para Glyph Matrix</string>
     <string name="version">Versión</string>
