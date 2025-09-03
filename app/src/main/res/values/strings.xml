@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!--
+    ┌─────────────────────────────────────────────────────────────────────────────┐
+    │                         🌍 Translation Instructions                         │
+    ├─────────────────────────────────────────────────────────────────────────────┤
+    │                                                                             │
+    │  Thank you for helping translate GlyphBeat! 🙏                              │
+    │                                                                             │
+    │  To add a new language:                                                     │
+    │  1. Copy this entire file to values-[language_code]/strings.xml             │
+    │     Examples: values-fr/strings.xml, values-de/strings.xml, etc.            │
+    │                                                                             │
+    │  2. Translate all <string> content while keeping the name="" attributes     │
+    │     unchanged                                                               │
+    │                                                                             │
+    │  Need help? Open an issue at: https://github.com/pauwma/GlyphBeat/issues    │
+    │                                                                             │
+    └─────────────────────────────────────────────────────────────────────────────┘
+
     <!-- - ────────── - Main - ────────── - -->
     <string name="app_name">Glyph Beat</string>
     <string name="toy_name_media_player">Media Player</string>
