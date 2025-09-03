@@ -85,7 +85,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
-    implementation(files("libs/glyphsdk_0606.aar"))
+    implementation(files("libs/glyph-matrix-sdk-1.0.aar"))
     
     // Material Icons Extended
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
