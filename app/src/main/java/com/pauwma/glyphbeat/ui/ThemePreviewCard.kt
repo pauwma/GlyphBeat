@@ -97,33 +97,26 @@ fun ThemePreviewCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onSelect() }
-            .padding(4.dp),
+            .padding(4.dp)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) 
+                    MaterialTheme.colorScheme.primary 
+                else 
+                    MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp)
+            ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (isSelected) 
+                MaterialTheme.colorScheme.surfaceVariant 
+            else 
+                MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isSelected) 4.dp else 0.dp
         )
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = if (isSelected) 
-                        MaterialTheme.colorScheme.surfaceVariant 
-                    else 
-                        MaterialTheme.colorScheme.surface
-                )
-                .border(
-                    width = if (isSelected) 2.dp else 1.dp,
-                    color = if (isSelected) 
-                        MaterialTheme.colorScheme.primary 
-                    else 
-                        MaterialTheme.colorScheme.outline,
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .clip(RoundedCornerShape(12.dp))
-        ) {
+        Box {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -142,28 +135,30 @@ fun ThemePreviewCard(
             
             // Theme Name - use key() to force recomposition on locale changes
             key(configuration) {
-                Text(
+                com.pauwma.glyphbeat.ui.components.AutoScalingText(
                     text = theme.getThemeName(),
+                    maxFontSize = 18.sp,
+                    minFontSize = 14.sp,
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                        fontSize = 18.sp
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                     ),
                     color = if (isSelected) 
                         MaterialTheme.colorScheme.primary 
                     else 
                         MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 1
                 )
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 // Theme Description
-                Text(
+                com.pauwma.glyphbeat.ui.components.AutoScalingText(
                     text = theme.getDescription(),
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 12.sp
-                    ),
+                    maxFontSize = 12.sp,
+                    minFontSize = 10.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     modifier = Modifier

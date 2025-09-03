@@ -42,6 +42,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.theme.*
+import com.pauwma.glyphbeat.ui.components.AutoScalingText
 
 data class PillNavItem(
     val route: String,
@@ -209,10 +210,12 @@ private fun PillNavigationItem(
                 modifier = Modifier.size(22.dp)
             )
             if (isSelected) {
-                Text(
+                AutoScalingText(
                     text = item.label,
                     color = iconColor,
-                    fontSize = 14.sp,
+                    maxFontSize = 14.sp,
+                    minFontSize = 11.sp,
+                    maxLines = 1,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -319,10 +322,12 @@ fun PillNavigationBarAlternative(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    Text(
+                    AutoScalingText(
                         text = item.label,
                         color = if (isSelected) NothingRed else NothingWhite.copy(alpha = 0.5f),
-                        fontSize = 11.sp,
+                        maxFontSize = 11.sp,
+                        minFontSize = 9.sp,
+                        maxLines = 1,
                         fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
                         textAlign = TextAlign.Center
                     )
