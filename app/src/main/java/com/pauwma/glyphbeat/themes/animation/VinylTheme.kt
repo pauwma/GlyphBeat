@@ -1,6 +1,7 @@
 package com.pauwma.glyphbeat.themes.animation
 
 import android.content.Context
+import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.ui.settings.*
 
@@ -20,8 +21,8 @@ class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
     // THEME METADATA - Custom vinyl record theme information
     // =================================================================================
     
-    override val titleTheme: String = "Vinyl Record"
-    override val descriptionTheme: String = "Go full retro\nGo full DJ mode!"
+    override val titleTheme: String = ctx.getString(R.string.theme_vinyl_record_title)
+    override val descriptionTheme: String = ctx.getString(R.string.theme_vinyl_record_desc)
     override val authorName: String = "pauwma"
     override val version: String = "1.0.0" 
     override val category: String = "Music"

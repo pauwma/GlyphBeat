@@ -90,6 +90,20 @@ import com.pauwma.glyphbeat.ui.settings.ShakeControlsSection
 import com.pauwma.glyphbeat.ui.settings.BatteryAwarenessSettings
 import com.pauwma.glyphbeat.data.ShakeControlSettings
 import com.pauwma.glyphbeat.data.ShakeControlSettingsManager
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.material.icons.filled.Settings
+import androidx.core.os.LocaleListCompat
+import androidx.compose.ui.platform.LocalConfiguration
+import java.util.Locale
+
+/**
+ * Data class representing a language option
+ */
+data class LanguageInfo(
+    val code: String,           // Language code like "en", "es"
+    val displayName: String,    // Localized display name
+    val author: String? = null  // Optional translator attribution
+)
 
 @Composable
 private fun TestResultCard(
@@ -381,6 +395,22 @@ fun SettingsScreen(
     var isLoadingMusicApps by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
     
+    // Language settings state
+    var currentLanguage by remember { mutableStateOf("en") }
+    
+    // Create locale-aware context for dynamic string updates
+    val configuration = LocalConfiguration.current
+    val localeContext = remember(configuration) { context }
+    
+    val availableLanguages = remember(configuration) {
+        listOf(
+            LanguageInfo("en", localeContext.getString(R.string.language_english), null),
+            LanguageInfo("es", localeContext.getString(R.string.language_spanish), "@pauwma"),
+            LanguageInfo("ja", localeContext.getString(R.string.language_japanese), "@pauwma"),
+            LanguageInfo("nl", localeContext.getString(R.string.language_dutch), "@pauwma")
+        )
+    }
+    
     // App priority for sorting (most popular apps first)
     val appPriority = mapOf(
         "com.spotify.music"                       to 1,
@@ -421,6 +451,21 @@ fun SettingsScreen(
     
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    
+    // Function to change app language with immediate UI update
+    fun changeLanguage(languageCode: String) {
+        // Update state immediately for UI reactivity
+        currentLanguage = languageCode
+        
+        // Save preference
+        prefs.edit()
+            .putString("app_language", languageCode)
+            .putBoolean("user_language_manually_set", true)
+            .apply()
+        
+        // Apply locale change - this will trigger configuration change
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageCode))
+    }
     
     // Function to load and sort music apps
     fun loadMusicApps() {
@@ -470,6 +515,22 @@ fun SettingsScreen(
             batteryAwarenessEnabled = prefs.getBoolean("battery_awareness_enabled", false)
             batteryThreshold = prefs.getInt("battery_threshold", 10)
             
+            // Load language preference - ensure it matches current app locale
+            val savedLanguage = prefs.getString("app_language", "en") ?: "en"
+            val currentAppLocales = AppCompatDelegate.getApplicationLocales()
+            val currentAppLanguage = if (!currentAppLocales.isEmpty) {
+                currentAppLocales[0]?.language ?: "en"
+            } else {
+                "en"
+            }
+            
+            // Use the current app locale if it differs from saved preference
+            currentLanguage = if (currentAppLanguage != savedLanguage && currentAppLanguage in listOf("en", "es", "ja", "nl")) {
+                currentAppLanguage
+            } else {
+                savedLanguage
+            }
+            
             // Load music apps
             loadMusicApps()
         }
@@ -515,6 +576,22 @@ fun SettingsScreen(
         
         onDispose {
             prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+    
+    // Listen for configuration changes and update UI accordingly
+    LaunchedEffect(configuration) {
+        // When configuration changes due to locale change, update language state if needed
+        val currentAppLocales = AppCompatDelegate.getApplicationLocales()
+        val currentAppLanguage = if (!currentAppLocales.isEmpty) {
+            currentAppLocales[0]?.language ?: "en"
+        } else {
+            "en"
+        }
+        
+        // Update currentLanguage if app locale changed but state didn't
+        if (currentAppLanguage != currentLanguage && currentAppLanguage in listOf("en", "es", "ja", "nl")) {
+            currentLanguage = currentAppLanguage
         }
     }
     
@@ -722,73 +799,109 @@ fun SettingsScreen(
             }
         }
 
-
-        // Glyph Interface Settings Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF1A1A1A)
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "Glyph Interface",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = customFont
-                    ),
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-
-                Text(
-                    text = "Access Glyph Toys configuration",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
-                // Glyph Toys button
-                Button(
-                    onClick = {
-                        try {
-                            val intent = Intent().apply {
-                                component = android.content.ComponentName(
-                                    "com.nothing.thirdparty",
-                                    "com.nothing.thirdparty.matrix.toys.preview.ToysPreviewActivity"
-                                )
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            context.startActivity(intent)
-                            Log.d("SettingsScreen", "Opened Glyph Toys preview")
-                        } catch (e: Exception) {
-                            Log.e("SettingsScreen", "Failed to open Glyph Toys: ${e.message}")
-                            try {
-                                // Fallback to general settings
-                                val fallbackIntent = Intent(android.provider.Settings.ACTION_SETTINGS)
-                                context.startActivity(fallbackIntent)
-                            } catch (e2: Exception) {
-                                Log.e("SettingsScreen", "Failed to open settings: ${e2.message}")
-                            }
-                        }
-                    },
+                // Glyph Interface Settings Card
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Pix,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF1A1A1A)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Glyph Toys")
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = context.getString(R.string.glyph_interface_title),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = customFont
+                            ),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+
+                        Text(
+                            text = context.getString(R.string.glyph_interface_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+
+                        // Glyph Toys buttons row
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Main Manage Glyph Toys button
+                            Button(
+                                onClick = {
+                                    try {
+                                        val intent = Intent().apply {
+                                            component = android.content.ComponentName(
+                                                "com.nothing.thirdparty",
+                                                "com.nothing.thirdparty.matrix.toys.manager.ToysManagerActivity"
+                                            )
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
+                                        context.startActivity(intent)
+                                        Log.d("SettingsScreen", "Opened Glyph Toys manager")
+                                    } catch (e: Exception) {
+                                        Log.e("SettingsScreen", "Failed to open Glyph Toys: ${e.message}")
+                                        try {
+                                            // Fallback to general settings
+                                            val fallbackIntent = Intent(android.provider.Settings.ACTION_SETTINGS)
+                                            context.startActivity(fallbackIntent)
+                                        } catch (e2: Exception) {
+                                            Log.e("SettingsScreen", "Failed to open settings: ${e2.message}")
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Pix,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(context.getString(R.string.glyph_interface_button))
+                            }
+
+                            // Test Toy preview button
+                            FilledIconButton(
+                                onClick = {
+                                    try {
+                                        val intent = Intent().apply {
+                                            component = android.content.ComponentName(
+                                                "com.nothing.thirdparty",
+                                                "com.nothing.thirdparty.matrix.toys.preview.ToysPreviewActivity"
+                                            )
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
+                                        context.startActivity(intent)
+                                        Log.d("SettingsScreen", "Opened Glyph Toys preview")
+                                    } catch (e: Exception) {
+                                        Log.e("SettingsScreen", "Failed to open Glyph Toys preview: ${e.message}")
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(0.16f)
+                                    .width(48.dp),
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = "Test toy preview",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
                 }
-            }
-        }
 
         // Auto-Start Service Card
         Card(
@@ -1337,6 +1450,78 @@ fun SettingsScreen(
                 }
             }
         }
+
+                // Language Settings Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF1A1A1A)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = localeContext.getString(R.string.language_settings_title),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = customFont
+                            ),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+
+                        Text(
+                            text = localeContext.getString(R.string.language_settings_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+
+                        // Language selection dropdown using consistent SettingsDropdown
+                        // Create options reactively based on current configuration
+                        val languageDropdownOptions = remember(configuration, currentLanguage) {
+                            availableLanguages.map { language ->
+                                DropdownOption(
+                                    value = language.code,
+                                    label = buildString {
+                                        append(language.displayName)
+                                        append(" - ")
+                                        append(language.code.uppercase())
+                                        language.author?.let { author ->
+                                            append(" ")
+                                            append(author)
+                                        }
+                                    },
+                                    description = null
+                                )
+                            }
+                        }
+
+                        val languageDropdownSetting = remember(configuration, currentLanguage) {
+                            DropdownSetting(
+                                id = "app_language",
+                                displayName = "",
+                                description = "",
+                                defaultValue = currentLanguage,
+                                options = languageDropdownOptions
+                            )
+                        }
+
+                        // Use key() to force recomposition when language changes
+                        key(currentLanguage) {
+                            SettingsDropdown(
+                                setting = languageDropdownSetting,
+                                currentValue = currentLanguage,
+                                onValueChange = { newLanguageCode ->
+                                    changeLanguage(newLanguageCode)
+                                },
+                                modifier = Modifier.padding(top = 12.dp)
+                            )
+                        }
+                    }
+                }
 
         // Tutorial Card
         Card(

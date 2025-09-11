@@ -34,7 +34,7 @@ fun SettingsSlider(
 ) {
     val customFont = FontFamily(Font(R.font.ntype82regular))
     val floatValue = currentValue.toFloat()
-    
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -54,7 +54,7 @@ fun SettingsSlider(
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             if (setting.showValue) {
                 val displayValue = when {
                     setting.unit == "x" -> {
@@ -66,7 +66,7 @@ fun SettingsSlider(
                     else -> String.format(java.util.Locale.ROOT, "%.1f", currentValue.toFloat())
                 }
                 val valueText = if (setting.unit != null) "$displayValue${setting.unit}" else displayValue
-                
+
                 Text(
                     text = valueText,
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -77,9 +77,9 @@ fun SettingsSlider(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(2.dp))
-        
+
         // Description
         Text(
             text = setting.description,
@@ -88,9 +88,9 @@ fun SettingsSlider(
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )
-        
+
         Spacer(modifier = Modifier.height(6.dp))
-        
+
         // Slider with min/max labels
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -103,7 +103,7 @@ fun SettingsSlider(
                 }
                 else -> setting.minValue.toString()
             }
-            
+
             Text(
                 text = minLabel,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -114,14 +114,14 @@ fun SettingsSlider(
                 modifier = Modifier.width(32.dp),
                 textAlign = TextAlign.Start
             )
-            
+
             Slider(
                 value = floatValue,
                 onValueChange = { newValue ->
                     // Snap to step size
                     val steps = ((newValue - setting.minValue.toFloat()) / setting.stepSize.toFloat()).roundToInt()
                     val snappedValue = setting.minValue.toFloat() + (steps * setting.stepSize.toFloat())
-                    
+
                     // Convert back to appropriate number type
                     val finalValue = when {
                         setting.stepSize.toFloat() % 1 == 0f -> snappedValue.toInt()
@@ -137,7 +137,7 @@ fun SettingsSlider(
                     inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             )
-            
+
             val maxLabel = when {
                 setting.unit == "x" -> {
                     val multiplier = setting.maxValue.toFloat()
@@ -145,7 +145,7 @@ fun SettingsSlider(
                 }
                 else -> setting.maxValue.toString()
             }
-            
+
             Text(
                 text = maxLabel,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -172,7 +172,7 @@ fun SettingsToggle(
     modifier: Modifier = Modifier
 ) {
     val customFont = FontFamily(Font(R.font.ntype82regular))
-    
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -194,9 +194,9 @@ fun SettingsToggle(
                     ),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 Spacer(modifier = Modifier.height(2.dp))
-                
+
                 Text(
                     text = setting.description,
                     style = MaterialTheme.typography.bodySmall.copy(
@@ -205,9 +205,9 @@ fun SettingsToggle(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             // Custom toggle switch
             Box(
                 modifier = Modifier
@@ -230,7 +230,7 @@ fun SettingsToggle(
                 )
             }
         }
-        
+
         // State label
         Text(
             text = if (currentValue) setting.enabledLabel else setting.disabledLabel,
@@ -238,9 +238,9 @@ fun SettingsToggle(
                 fontFamily = customFont,
                 fontSize = 11.sp
             ),
-            color = if (currentValue) 
-                MaterialTheme.colorScheme.primary 
-            else 
+            color = if (currentValue)
+                MaterialTheme.colorScheme.primary
+            else
                 MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
         )
@@ -262,35 +262,39 @@ fun SettingsDropdown(
     val customFont = FontFamily(Font(R.font.ntype82regular))
     var expanded by remember { mutableStateOf(false) }
     val currentOption = setting.options.find { it.value == currentValue }
-    
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
     ) {
-        // Setting name
-        Text(
-            text = setting.displayName,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontFamily = customFont,
-                fontSize = 15.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        Spacer(modifier = Modifier.height(2.dp))
-        
-        // Description
-        Text(
-            text = setting.description,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 11.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-        )
-        
-        Spacer(modifier = Modifier.height(6.dp))
-        
+        // Setting name (only show if not empty)
+        if (setting.displayName.isNotEmpty()) {
+            Text(
+                text = setting.displayName,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = customFont,
+                    fontSize = 15.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+        }
+
+        // Description (only show if not empty)
+        if (setting.description.isNotEmpty()) {
+            Text(
+                text = setting.description,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 11.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+        }
+
         // Dropdown trigger
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -303,9 +307,9 @@ fun SettingsDropdown(
                     .clip(RoundedCornerShape(8.dp))
                     .border(
                         width = 1.dp,
-                        color = if (expanded) 
-                            MaterialTheme.colorScheme.primary 
-                        else 
+                        color = if (expanded)
+                            MaterialTheme.colorScheme.primary
+                        else
                             MaterialTheme.colorScheme.outline,
                         shape = RoundedCornerShape(8.dp)
                     )
@@ -327,7 +331,7 @@ fun SettingsDropdown(
                         ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    
+
                     Icon(
                         imageVector = Icons.Default.ArrowDropDown,
                         contentDescription = "Expand",
@@ -335,7 +339,7 @@ fun SettingsDropdown(
                     )
                 }
             }
-            
+
             // Dropdown menu
             ExposedDropdownMenu(
                 expanded = expanded,
@@ -356,7 +360,7 @@ fun SettingsDropdown(
                                     else
                                         MaterialTheme.colorScheme.onSurface
                                 )
-                                
+
                                 option.description?.let { desc ->
                                     Text(
                                         text = desc,

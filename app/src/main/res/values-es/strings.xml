@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+    ┌─────────────────────────────────────────────────────────────────────────────┐
+    │                         🌍 Translation Instructions                         │
+    ├─────────────────────────────────────────────────────────────────────────────┤
+    │                                                                             │
+    │  Thank you for helping translate GlyphBeat! 🙏                              │
+    │                                                                             │
+    │  To add a new language:                                                     │
+    │  1. Copy this entire file to values-[language_code]/strings.xml             │
+    │     Examples: values-fr/strings.xml, values-de/strings.xml, etc.            │
+    │                                                                             │
+    │  2. Translate all <string> content while keeping the name="" attributes     │
+    │     unchanged                                                               │
+    │                                                                             │
+    │  Need help? Open an issue at: https://github.com/pauwma/GlyphBeat/issues    │
+    │                                                                             │
+    └─────────────────────────────────────────────────────────────────────────────┘
+
+    <!- - ────────── - Main - ────────── - -->
+    <string name="app_name">Glyph Beat</string>
+    <string name="toy_name_media_player">Reproductor de música</string>
+    <string name="toy_summary_media_player">Interfaz visual del reproductor de música en la Glyph Matrix.</string>
+    <string name="toy_name_next_track">Siguiente pista</string>
+    <string name="toy_summary_next_track">Mantén pulsado para saltar a la siguiente pista.</string>
+    <string name="toy_name_previous_track">Pista anterior</string>
+    <string name="toy_summary_previous_track">Mantén pulsado para retroceder a la pista anterior.</string>
+
+
+    <!-- - ────────── - Navigation Labels - ────────── - -->
+    <string name="nav_player">Reproductor</string>
+    <string name="nav_controls">Controles</string>
+    <string name="nav_settigns">Ajustes</string>
+
+
+    <!-- - ────────── - Screen Titles - ────────── - -->
+    <string name="screen_animation_themes">Temas de animación</string>
+    <string name="screen_track_control_themes">Temas de control de pistas</string>
+    <string name="screen_settings">Ajustes</string>
+
+
+
+
+    <!-- - ────────── - THEMES - ────────── - -->
+
+    <!-- ───── Themes ───── -->
+    <string name="theme_vinyl_record_title">Disco de vinilo</string>
+    <string name="theme_vinyl_record_desc">Ponte retro\n¡Activa el modo DJ!</string>
+
+    <string name="theme_dancing_duck_title">Pato bailarín</string>
+    <string name="theme_dancing_duck_desc">Sabe exactamente lo que está haciendo</string>
+
+    <string name="theme_cover_art_title">Portada</string>
+    <string name="theme_cover_art_desc">¡Intenta adivinar de qué portada se trata!</string>
+
+    <string name="theme_minimal_title">Minimalista</string>
+    <string name="theme_minimal_desc">Me siento vacío por dentro, solo quiero eso</string>
+
+    <string name="theme_scroll_title">Texto desplazable</string>
+    <string name="theme_scroll_desc">Título, artista y álbum en un desplazamiento sin fin</string>
+
+    <string name="theme_glyphy_title">Glyphy</string>
+    <string name="theme_glyphy_desc">Entrenando para ser una buena IA, pero por ahora míralo...</string>
+
+    <string name="theme_shapes_title">Formas</string>
+    <string name="theme_shapes_desc">Hmm... ¡Entra en el agujero cuadrado!</string>
+
+
+    <!-- ───── General settings ───── -->
+    <string name="set_brightness_title">Brillo</string>
+    <string name="set_brightness_desc">Valor del nivel de brillo</string>
+
+    <string name="set_paused_opacity_title">Opacidad en pausa</string>
+    <string name="set_paused_opacity_desc">Opacidad cuando el medio está en pausa</string>
+
+    <string name="set_rotation_speed_title">Velocidad de rotación</string>
+
+    <string name="set_small">Pequeño</string>
+    <string name="set_large">Grande</string>
+
+    <string name="set_settings">Ajustes</string>
+
+
+    <!-- ───── Theme Sections ───── -->
+    <string name="section_animation">Animación</string>
+    <string name="section_design">Diseño</string>
+    <string name="section_layout">Disposición</string>
+    <string name="section_visual">Visual</string>
+    <string name="section_timing">Tiempo</string>
+    <string name="section_behavior">Comportamiento</string>
+    <string name="section_effects">Efectos</string>
+    <string name="section_audio">Audio</string>
+
+
+    <!-- ───── Vinyl Record settings ───── -->
+    <string name="set_vinyl_rotation_speed_desc">Qué tan rápido gira el disco de vinilo</string>
+    <string name="set_vinyl_size_title">Tamaño del vinilo</string>
+    <string name="set_vinyl_size_desc">Tamaño de la pantalla del disco de vinilo</string>
+
+
+    <!-- ───── Dancing Duck settings ───── -->
+    <string name="set_duck_pattern_title">Patrón de animación</string>
+    <string name="set_duck_pattern_desc">Patrón de baile para la animación del pato</string>
+    <string name="set_duck_pattern_default">Por defecto</string>
+    <string name="set_duck_pattern_nodders">Cabeceadores</string>
+    <string name="set_duck_pattern_bouncy">Saltarín</string>
+    <string name="set_duck_pattern_fast">Rápido</string>
+
+    <string name="set_duck_brightness_title">Brillo</string>
+    <string name="set_duck_brightness_desc">Brillo del pato bailarín</string>
+
+
+    <!-- ───── Cover Art settings ───── -->
+    <string name="set_cover_brightness_title">Brillo de la portada</string>
+    <string name="set_cover_brightness_desc">Multiplicador de brillo para el arte del álbum</string>
+
+    <string name="set_cover_contrast_title">Mejorar contraste</string>
+    <string name="set_cover_contrast_desc">Mejora del contraste para mejorar la visibilidad</string>
+
+    <string name="set_cover_rotation_title">Habilitar rotación</string>
+    <string name="set_cover_rotation_desc">Rotar el arte del álbum continuamente</string>
+
+    <string name="set_cover_rotation_speed_desc">Qué tan rápido rota el arte de la portada</string>
+
+    <string name="set_cover_rotation_smooth_title">Suavidad de rotación</string>
+    <string name="set_cover_rotation_smooth_desc">Número de pasos por rotación (más = más suave)</string>
+
+
+    <!-- ───── Minimal settings ───── -->
+    <string name="set_min_border_title">Borde</string>
+    <string name="set_min_border_desc">Habilitar trazo del borde exterior</string>
+
+    <string name="set_min_brightness_title">Brillo</string>
+    <string name="set_min_brightness_desc">Multiplicador de brillo para iconos</string>
+
+
+    <!-- ───── Scroll Text settings ───── -->
+    <string name="set_scroll_speed_title">Velocidad de desplazamiento</string>
+    <string name="set_scroll_speed_desc">Velocidad de desplazamiento del texto</string>
+
+    <string name="set_pause_mode_title">Comportamiento de pausa</string>
+    <string name="set_pause_mode_desc">Cómo se comporta el texto cuando está pausado</string>
+
+    <string name="set_pause_mode_slow_title">Cámara lenta</string>
+    <string name="set_pause_mode_slow_desc">Continuar desplazándose lentamente</string>
+    <string name="set_pause_mode_freeze_title">Congelar</string>
+    <string name="set_pause_mode_freeze_desc">Detener el desplazamiento completamente</string>
+
+    <string name="set_show_artist_title">Mostrar artista</string>
+    <string name="set_show_artist_desc">Mostrar nombre del artista</string>
+
+    <string name="set_show_album_title">Mostrar álbum</string>
+    <string name="set_show_album_desc">Mostrar nombre del álbum</string>
+
+    <string name="set_text_spacing_title">Espaciado de caracteres</string>
+    <string name="set_text_spacing_desc">Espacio entre caracteres</string>
+
+    <string name="set_scroll_brightness_title">Brillo</string>
+    <string name="set_scroll_brightness_desc">Nivel de brillo del texto</string>
+
+
+    <!-- ───── Scroll Text settings ───── -->
+    <string name="set_glyphy_pattern_title">Patrón de animación</string>
+    <string name="set_glyphy_pattern_desc">Estilo de la animación</string>
+
+    <string name="set_glyphy_pattern_dance">Baile</string>
+    <string name="set_glyphy_pattern_blink">Parpadeo</string>
+    <string name="set_glyphy_pattern_jam">Jam</string>
+
+
+    <!-- ───── Scroll Text settings ───── -->
+    <string name="set_shapes_pattern_title">Estilo del patrón</string>
+    <string name="set_shapes_pattern_desc">Diferentes estilos de forma</string>
+    <string name="set_shapes_pattern_cross">Cruz</string>
+    <string name="set_shapes_pattern_dots">Puntos</string>
+    <string name="set_shapes_pattern_lines">Líneas</string>
+    <string name="set_shapes_pattern_border">Borde</string>
+    <string name="set_shapes_pattern_diamond">Diamante</string>
+    <string name="set_shapes_pattern_grid">Cuadrícula</string>
+
+
+
+
+    <!-- - ────────── - SETTINGS - ────────── - -->
+
+    <!-- ───── General UI Labels ───── -->
+    <string name="disabled">Deshabilitado</string>
+
+    <!-- ───── Notification Access ───── -->
+    <string name="notification_access_title">Acceso a notificaciones</string>
+    <string name="notification_access_desc">Requerido para detectar y controlar la reproducción de música desde aplicaciones como Spotify, YouTube Music, etc</string>
+    <string name="notification_access_grant">Conceder acceso a notificaciones</string>
+    <string name="notification_access_fix">Arreglar conexión del servicio</string>
+    <string name="notification_access_working">Servicio funcionando</string>
+    <string name="no_music_playing">No hay música reproduciéndose</string>
+    <string name="no_active_session">No se encontraron sesiones de música activas</string>
+    <string name="start_playing_music">Empieza a reproducir música para probar la conexión</string>
+    <string name="notification_test_failed">Prueba fallida</string>
+    <string name="notification_test_error">Sesión activa encontrada pero la información de la pista no está disponible</string>
+
+
+    <!-- ───── Glyph Interface ───── -->
+    <string name="glyph_interface_title">Interfaz Glyph</string>
+    <string name="glyph_interface_desc">Acceder a la configuración de Glyph Toys</string>
+    <string name="glyph_interface_button">Gestionar juguetes</string>
+
+
+    <!-- ───── Auto Start ───── -->
+    <string name="auto_start_title">Inicio automático</string>
+    <string name="auto_start_desc">Activar automáticamente cuando empiece a reproducirse música</string>
+    <string name="auto_start_service">Servicio de inicio automático</string>
+    <string name="auto_start_note">Nota: Los controles del botón Glyph no están disponibles cuando se inicia automáticamente. Los controles de sacudida siguen funcionando.</string>
+    <string name="auto_start_battery_title">Conciencia de batería</string>
+    <string name="auto_start_battery_desc">Deshabilitar inicio automático por debajo del umbral de batería</string>
+    <string name="auto_start_battery_threshold">Umbral de batería</string>
+
+    <string name="auto_start_apps_title">Aplicaciones de música instaladas</string>
+    <string name="auto_start_apps_desc">Selecciona qué aplicaciones deben activar el inicio automático cuando se detecte reproducción de música</string>
+
+
+    <!-- ───── Shake Controls ───── -->
+    <string name="shake_controls_title">Controles de sacudida</string>
+    <string name="shake_controls_desc">Configurar diferentes controles de gesto de sacudida</string>
+
+    <string name="shake_controls_general_title">Configuración general</string>
+    <string name="shake_controls_general_desc">Configuración universal para todos los comportamientos de sacudida</string>
+
+    <string name="shake_sensitivity_title">Sensibilidad de sacudida</string>
+    <string name="shake_sensitivity_desc_high">Alta - Se requiere sacudida suave</string>
+    <string name="shake_sensitivity_desc_medium">Media - Se requiere sacudida moderada</string>
+    <string name="shake_sensitivity_desc_low">Baja - Se requiere sacudida fuerte</string>
+
+    <string name="shake_haptic_title">Retroalimentación háptica</string>
+    <string name="shake_haptic_desc">Vibrar cuando se detecte el gesto de sacudida</string>
+
+    <string name="shake_condition_title">Condición de control de sacudida</string>
+    <string name="shake_condition_desc">Elige cuándo deben estar activos los controles de sacudida</string>
+
+    <string name="shake_condition_always">Siempre</string>
+    <string name="shake_condition_always_desc">Los controles de sacudida funcionan en todas las condiciones</string>
+    <string name="shake_condition_locked">Cuando está bloqueado</string>
+    <string name="shake_condition_locked_desc">Los controles de sacudida solo funcionan cuando el teléfono está bloqueado</string>
+    <string name="shake_condition_unlocked">Cuando está desbloqueado</string>
+    <string name="shake_condition_unlocked_desc">Los controles de sacudida solo funcionan cuando el teléfono está desbloqueado</string>
+
+    <string name="shake_behavior_title">Comportamiento de sacudida</string>
+    <string name="shake_behavior_desc">Elige qué acción realizar cuando el dispositivo se sacude</string>
+
+    <string name="shake_behavior_skip">Saltar</string>
+    <string name="shake_behavior_skip_desc">Avanzar a la siguiente pista al sacudir</string>
+    <string name="shake_behavior_play_pause">Reproducir/Pausar</string>
+    <string name="shake_behavior_play_pause_desc">Cambiar el estado de reproducción al sacudir</string>
+    <string name="shake_behavior_auto_start">Inicio automático</string>
+    <string name="shake_behavior_auto_start_desc">Cambiar la configuración de inicio automático al sacudir</string>
+
+    <string name="shake_behavior_skip_delay_title">Retraso de salto</string>
+    <string name="shake_behavior_skip_delay_desc">Retraso entre detecciones de sacudida para evitar saltos accidentales</string>
+    <string name="shake_behavior_skip_paused_title">Saltar cuando esté pausado</string>
+    <string name="shake_behavior_skip_paused_desc">Permitir saltar a la siguiente pista incluso cuando el medio está pausado</string>
+
+    <string name="shake_behavior_pp_auto_resume_title">Retraso de reanudación automática</string>
+    <string name="shake_behavior_pp_auto_resume_desc">Reanudar automáticamente la reproducción después de pausar mediante sacudida</string>
+
+    <string name="shake_behavior_auto_start_delay_title">Retraso de reactivación</string>
+    <string name="shake_behavior_auto_start_delay_desc">Duración de la pausa antes de reactivar el servicio de inicio automático</string>
+
+
+    <!-- ───── Bugs Report & Support ───── -->
+    <string name="bug_report_title">Informe de errores y soporte</string>
+    <string name="bug_report_desc">¿Encontraste un error o necesitas ayuda? Contáctame para soporte</string>
+    <string name="contact_button">Contactar</string>
+
+
+    <!-- ───── Support GlyphBeat ───── -->
+    <string name="support_title">Apoya GlyphBeat</string>
+    <string name="support_desc">GlyphBeat está libre de anuncios y creado con amor. ¿Lo estás disfrutando? Cómprame un café para alimentar nuevas funciones, cada poquito ayuda. ¡Gracias! 🎵 🤍</string>
+
+
+    <!-- ───── Tutorial ───── -->
+    <string name="tutorial_title">Tutorial</string>
+    <string name="tutorial_desc">Ver la introducción de la aplicación y la guía de configuración nuevamente</string>
+    <string name="tutorial_button">Reproducir tutorial</string>
+
+
+    <!-- ───── Language Settings ───── -->
+    <string name="language_settings_title">Idioma</string>
+    <string name="language_settings_desc">Selecciona tu idioma preferido</string>
+    <string name="language_english">Inglés</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_japanese">Japonés</string>
+    <string name="language_dutch">Holandés</string>
+
+    <!-- ───── App Information ───── -->
+    <string name="app_info_title">Información de la aplicación</string>
+    <string name="app_info_desc">GlyphBeat - Juguete reproductor de medios animado para Glyph Matrix</string>
+    <string name="version">Versión</string>
+
+
+
+
+    <!-- - ────────── - Tutorial - ────────── - -->
+
+    <!-- ───── Welcome Page ───── -->
+    <string name="tutorial_welcome_title">Glyph Beat</string>
+    <string name="tutorial_welcome_description">Transforma la Glyph Matrix de tu dispositivo Nothing en un visualizador de música interactivo y controlador de medios</string>
+    <string name="tutorial_welcome_feature_music_title">Visualización de música</string>
+    <string name="tutorial_welcome_feature_music_desc">Animaciones personalizadas con tu música</string>
+    <string name="tutorial_welcome_feature_themes_title">Temas personalizables</string>
+    <string name="tutorial_welcome_feature_themes_desc">Elige entre varios estilos de animación</string>
+    <string name="tutorial_welcome_feature_control_title">Control de pistas</string>
+    <string name="tutorial_welcome_feature_control_desc">Controla la reproducción con gestos intuitivos</string>
+    <string name="tutorial_welcome_get_started">Comenzar</string>
+
+    <!-- ───── Permissions Page ───── -->
+    <string name="tutorial_permissions_title">Permisos requeridos</string>
+    <string name="tutorial_permissions_subtitle">Concede permisos para habilitar todas las características</string>
+    <string name="tutorial_permissions_all_granted">¡Todos los permisos concedidos!</string>
+    <string name="tutorial_permissions_notification_title">Acceso a notificaciones</string>
+    <string name="tutorial_permissions_notification_desc">Requerido para detectar reproducción de música y controlar medios desde cualquier aplicación</string>
+    <string name="tutorial_permissions_glyph_title">Acceso a Glyph Matrix</string>
+    <string name="tutorial_permissions_glyph_desc_granted">Concedido automáticamente para dispositivos Glyph Matrix</string>
+    <string name="tutorial_permissions_glyph_desc_unsupported">No disponible en %s (Glyph Matrix no compatible)</string>
+    <string name="tutorial_permissions_glyph_desc_unavailable">No disponible en este dispositivo (se requiere Nothing Phone con Glyph Matrix)</string>
+    <string name="tutorial_permissions_why_title">¿Por qué estos permisos?</string>
+    <string name="tutorial_permissions_why_desc">Glyph Beat necesita estos permisos solo para sincronizar sus animaciones glyph con tu música. Solo leemos datos de reproducción de medios, y puedes restringir el acceso solo a aplicaciones de música.</string>
+    <string name="tutorial_permissions_back">Atrás</string>
+    <string name="tutorial_permissions_continue">Continuar</string>
+    <string name="tutorial_permissions_skip">Saltar por ahora</string>
+    <string name="tutorial_permissions_grant">Conceder permiso</string>
+    <string name="tutorial_permissions_granted">Concedido</string>
+
+    <!-- ───── Theme Guide Page ───── -->
+    <string name="tutorial_theme_title">Sistema de temas</string>
+    <string name="tutorial_theme_subtitle">Personaliza las animaciones de tu Glyph Matrix</string>
+    <string name="tutorial_theme_categories_title">Categorías de temas</string>
+    <string name="tutorial_theme_media_player">Reproductor de medios</string>
+    <string name="tutorial_theme_media_player_desc">Diferentes animaciones</string>
+    <string name="tutorial_theme_track_control">Control de pistas</string>
+    <string name="tutorial_theme_track_control_desc">Retroalimentación de reproducción</string>
+    <string name="tutorial_theme_customization_title">Personalización</string>
+    <string name="tutorial_theme_brightness_title">Brillo</string>
+    <string name="tutorial_theme_brightness_desc">Ajustar intensidad</string>
+    <string name="tutorial_theme_speed_title">Velocidad</string>
+    <string name="tutorial_theme_speed_desc">Controlar tempo</string>
+    <string name="tutorial_theme_settings_title">Configuración</string>
+    <string name="tutorial_theme_settings_desc">Y mucho más</string>
+    <string name="tutorial_theme_back">Atrás</string>
+    <string name="tutorial_theme_continue">Continuar</string>
+
+    <!-- ───── Completion Page ───── -->
+    <string name="tutorial_completion_title">¡Ya estás listo!</string>
+    <string name="tutorial_completion_subtitle">Tu Glyph Beat está listo para transformar tu experiencia musical</string>
+    <string name="tutorial_completion_next_title">¿Qué sigue?</string>
+    <string name="tutorial_completion_step_glyph">Agregar el juguete en la interfaz Glyph</string>
+    <string name="tutorial_completion_step_music">Reproducir música para ver animaciones geniales</string>
+    <string name="tutorial_completion_step_control">Mantener presionado para reproducir/pausar reproducción</string>
+    <string name="tutorial_completion_step_customize">Personalizar temas en configuración</string>
+    <string name="tutorial_completion_step_explore">Explorar todos los estilos de animación</string>
+    <string name="tutorial_completion_tip">Consejo: Puedes reproducir este tutorial desde Configuración</string>
+    <string name="tutorial_completion_start">Comenzar a explorar</string>
+
+
+</resources>

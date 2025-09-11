@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+    ┌─────────────────────────────────────────────────────────────────────────────┐
+    │                         🌍 Translation Instructions                         │
+    ├─────────────────────────────────────────────────────────────────────────────┤
+    │                                                                             │
+    │  Thank you for helping translate GlyphBeat! 🙏                              │
+    │                                                                             │
+    │  To add a new language:                                                     │
+    │  1. Copy this entire file to values-[language_code]/strings.xml             │
+    │     Examples: values-fr/strings.xml, values-de/strings.xml, etc.            │
+    │                                                                             │
+    │  2. Translate all <string> content while keeping the name="" attributes     │
+    │     unchanged                                                               │
+    │                                                                             │
+    │  Need help? Open an issue at: https://github.com/pauwma/GlyphBeat/issues    │
+    │                                                                             │
+    └─────────────────────────────────────────────────────────────────────────────┘
+
+    <!- - ────────── - Main - ────────── - -->
+    <string name="app_name">Glyph Beat</string>
+    <string name="toy_name_media_player">Mediaspeler</string>
+    <string name="toy_summary_media_player">Visuele muziekspelerinterface op de glyphmatrix.</string>
+    <string name="toy_name_next_track">Volgende nummer</string>
+    <string name="toy_summary_next_track">Lang indrukken om naar het volgende nummer te gaan.</string>
+    <string name="toy_name_previous_track">Vorige nummer</string>
+    <string name="toy_summary_previous_track">Lang indrukken om naar het vorige nummer te gaan.</string>
+
+
+    <!-- - ────────── - Navigation Labels - ────────── - -->
+    <string name="nav_player">Speler</string>
+    <string name="nav_controls">Bediening</string>
+    <string name="nav_settigns">Instellingen</string>
+
+
+    <!-- - ────────── - Screen Titles - ────────── - -->
+    <string name="screen_animation_themes">Animatiethema\'s</string>
+    <string name="screen_track_control_themes">Trackcontrole-thema\'s</string>
+    <string name="screen_settings">Instellingen</string>
+
+
+
+
+    <!-- - ────────── - THEMES - ────────── - -->
+
+    <!-- ───── Themes ───── -->
+    <string name="theme_vinyl_record_title">Vinylplaat</string>
+    <string name="theme_vinyl_record_desc">Ga helemaal retro\nGa helemaal in de DJ-modus!</string>
+
+    <string name="theme_dancing_duck_title">Dansende Eend</string>
+    <string name="theme_dancing_duck_desc">Hij weet precies wat hij doet</string>
+
+    <string name="theme_cover_art_title">Omslag Kunst</string>
+    <string name="theme_cover_art_desc">Probeer te raden welke cover dit moet voorstellen!</string>
+
+    <string name="theme_minimal_title">Minimaal</string>
+    <string name="theme_minimal_desc">Ik ben leeg van binnen, ik wil gewoon niets</string>
+
+    <string name="theme_scroll_title">Scrollende Tekst</string>
+    <string name="theme_scroll_desc">Titel, artiest en album scrollen allemaal rond in een non-stop scroll</string>
+
+    <string name="theme_glyphy_title">Glyphy</string>
+    <string name="theme_glyphy_desc">Hij traint om een ​​goede AI te worden, maar kijk hem nu eens...</string>
+
+    <string name="theme_shapes_title">Vormen</string>
+    <string name="theme_shapes_desc">Hmm... Hij past in het vierkante gat!</string>
+
+
+    <!-- ───── General settings ───── -->
+    <string name="set_brightness_title">Helderheid</string>
+    <string name="set_brightness_desc">Waarde helderheidsniveau</string>
+
+    <string name="set_paused_opacity_title">Pauzeer Helderheid</string>
+    <string name="set_paused_opacity_desc">Helderheid wanneer de media is gepauzeerd</string>
+
+    <string name="set_rotation_speed_title">Draaisnelheid</string>
+
+    <string name="set_small">Klein</string>
+    <string name="set_large">Groot</string>
+
+
+    <!-- ───── Theme Sections ───── -->
+    <string name="section_animation">Animatie</string>
+    <string name="section_design">Ontwerp</string>
+    <string name="section_layout">Indeling</string>
+    <string name="section_visual">Visueel</string>
+    <string name="section_timing">Timing</string>
+    <string name="section_behavior">Gedrag</string>
+    <string name="section_effects">Effecten</string>
+    <string name="section_audio">Audio</string>
+
+
+    <!-- ───── Vinyl Record settings ───── -->
+    <string name="set_vinyl_rotation_speed_desc">Hoe snel de vinylplaat draait</string>
+    <string name="set_vinyl_size_title">Vinylgrootte</string>
+    <string name="set_vinyl_size_desc">Grootte van de vinylplaat</string>
+
+
+    <!-- ───── Dancing Duck settings ───── -->
+    <string name="set_duck_pattern_title">Animatiepatroon</string>
+    <string name="set_duck_pattern_desc">Danspatroon voor de eendanimatie</string>
+    <string name="set_duck_pattern_default">Standaard</string>
+    <string name="set_duck_pattern_nodders">Knikken</string>
+    <string name="set_duck_pattern_bouncy">Stuiterend</string>
+    <string name="set_duck_pattern_fast">Snel</string>
+
+    <string name="set_duck_brightness_title">Helderheid</string>
+    <string name="set_duck_brightness_desc">Helderheid van de dansende eend</string>
+
+
+    <!-- ───── Cover Art settings ───── -->
+    <string name="set_cover_brightness_title">Omslag Helderheid</string>
+    <string name="set_cover_brightness_desc">Helderheidsvermenigvuldiger voor albumhoezen</string>
+
+    <string name="set_cover_contrast_title">Verbeter het contrast</string>
+    <string name="set_cover_contrast_desc">Contrastverbetering om de zichtbaarheid te verbeteren</string>
+
+    <string name="set_cover_rotation_title">Ronddraaien inschakelen</string>
+    <string name="set_cover_rotation_desc">Draai de albumhoes continu</string>
+
+    <string name="set_cover_rotation_speed_desc">Hoe snel de albumhoes roteert</string>
+
+    <string name="set_cover_rotation_smooth_title">Draai-soepelheid</string>
+    <string name="set_cover_rotation_smooth_desc">Aantal stappen per draai (meer = vloeiender)</string>
+
+
+    <!-- ───── Minimal settings ───── -->
+    <string name="set_min_border_title">Buitenrand</string>
+    <string name="set_min_border_desc">Buitenrandstreep inschakelen</string>
+
+    <string name="set_min_brightness_title">Helderheid</string>
+    <string name="set_min_brightness_desc">Helderheidsvermenigvuldiger voor pictogrammen</string>
+
+
+    <!-- ───── Scroll Text settings ───── -->
+    <string name="set_scroll_speed_title">Scrollsnelheid</string>
+    <string name="set_scroll_speed_desc">Scrollsnelheid van tekst</string>
+
+    <string name="set_pause_mode_title">Pauzegedrag</string>
+    <string name="set_pause_mode_desc">Hoe tekst zich gedraagt ​​wanneer gepauzeerd</string>
+
+    <string name="set_pause_mode_slow_title">Slowmotion</string>
+    <string name="set_pause_mode_slow_desc">Blijf langzaam scrollen</string>
+    <string name="set_pause_mode_freeze_title">Bevriezen</string>
+    <string name="set_pause_mode_freeze_desc">Stop helemaal met scrollen</string>
+
+    <string name="set_show_artist_title">Toon artiest</string>
+    <string name="set_show_artist_desc">Naam van artiest weergeven</string>
+
+    <string name="set_show_album_title">Toon album</string>
+    <string name="set_show_album_desc">Albumnaam weergeven</string>
+
+    <string name="set_text_spacing_title">Tekenafstand</string>
+    <string name="set_text_spacing_desc">Ruimte tussen karakters</string>
+
+    <string name="set_scroll_brightness_title">Helderheid</string>
+    <string name="set_scroll_brightness_desc">Helderheidsniveau van tekst</string>
+
+
+    <!-- ───── Scroll Text settings ───── -->
+    <string name="set_glyphy_pattern_title">Animatiepatroon</string>
+    <string name="set_glyphy_pattern_desc">Stijl van de animatie</string>
+
+    <string name="set_glyphy_pattern_dance">Dansen</string>
+    <string name="set_glyphy_pattern_blink">Knipperen</string>
+    <string name="set_glyphy_pattern_jam">Jammen</string>
+
+
+    <!-- ───── Scroll Text settings ───── -->
+    <string name="set_shapes_pattern_title">Patroonstijl</string>
+    <string name="set_shapes_pattern_desc">Verschillende vormstijlen</string>
+    <string name="set_shapes_pattern_cross">Kruis</string>
+    <string name="set_shapes_pattern_dots">Punten</string>
+    <string name="set_shapes_pattern_lines">Lijnen</string>
+    <string name="set_shapes_pattern_border">Rand</string>
+    <string name="set_shapes_pattern_diamond">Diamant</string>
+    <string name="set_shapes_pattern_grid">Rooster</string>
+
+
+
+
+    <!-- - ────────── - SETTINGS - ────────── - -->
+
+    <!-- ───── General UI Labels ───── -->
+    <string name="disabled">Uitgeschakeld</string>
+
+    <!-- ───── Notification Access ───── -->
+    <string name="notification_access_title">Toegang tot meldingen</string>
+    <string name="notification_access_desc">Vereist om het afspelen van muziek te detecteren en te regelen via apps zoals Spotify, YouTube Music, enz.</string>
+    <string name="notification_access_grant">Verleen toegang tot meldingen</string>
+    <string name="notification_access_fix">Service repareren</string>
+    <string name="notification_access_working">Service werkt</string>
+    <string name="no_music_playing">Er wordt geen muziek afgespeeld</string>
+    <string name="no_active_session">Geen actieve muzieksessies gevonden</string>
+    <string name="start_playing_music">Start met het afspelen van muziek om de verbinding te testen</string>
+    <string name="notification_test_failed">Test mislukt</string>
+    <string name="notification_test_error">Actieve sessie gevonden, maar geen trackinfo beschikbaar</string>
+
+
+    <!-- ───── Glyph Interface ───── -->
+    <string name="glyph_interface_title">Glyph-interface</string>
+    <string name="glyph_interface_desc">Toegang tot Glyph Toys-configuratie</string>
+    <string name="glyph_interface_button">Beheer Toys</string>
+
+
+    <!-- ───── Auto Start ───── -->
+    <string name="auto_start_title">Auto-Start</string>
+    <string name="auto_start_desc">Automatisch activeren wanneer de muziek begint te spelen</string>
+    <string name="auto_start_service">Auto-Start Service</string>
+    <string name="auto_start_note">Let op: De bedieningselementen van de glyph-knoppen zijn niet beschikbaar bij automatisch starten. De schudbediening werkt nog wel.</string>
+    <string name="auto_start_battery_title">Batterijbewustzijn</string>
+    <string name="auto_start_battery_desc">Schakel automatisch starten uit onder de batterijdrempel</string>
+    <string name="auto_start_battery_threshold">Batterijdrempel</string>
+
+    <string name="auto_start_apps_title">Geïnstalleerde muziekapps</string>
+    <string name="auto_start_apps_desc">Selecteer welke apps automatisch moeten starten wanneer er muziek wordt afgespeeld</string>
+
+
+    <!-- ───── Shake Controls ───── -->
+    <string name="shake_controls_title">Schudbediening</string>
+    <string name="shake_controls_desc">Verschillende schudbewegingen configureren</string>
+
+    <string name="shake_controls_general_title">Algemene instellingen</string>
+    <string name="shake_controls_general_desc">Universele instellingen voor alle schudbewegingen</string>
+
+    <string name="shake_sensitivity_title">Schudgevoeligheid</string>
+    <string name="shake_sensitivity_desc_high">Hoog - Zachtjes schudden vereist</string>
+    <string name="shake_sensitivity_desc_medium">Medium - Matige schudbeweging vereist</string>
+    <string name="shake_sensitivity_desc_low">Laag - Sterk schudden vereist</string>
+
+    <string name="shake_haptic_title">Haptische feedback</string>
+    <string name="shake_haptic_desc">Trillen wanneer een schudbeweging wordt gedetecteerd</string>
+
+    <string name="shake_condition_title">Schudbediening voorwaarde</string>
+    <string name="shake_condition_desc">Kies wanneer de schudbediening actief moet zijn</string>
+
+    <string name="shake_condition_always">Altijd</string>
+    <string name="shake_condition_always_desc">Schudbediening werkt onder alle omstandigheden</string>
+    <string name="shake_condition_locked">Wanneer vergrendeld</string>
+    <string name="shake_condition_locked_desc">Schudbediening werkt alleen als de telefoon is vergrendeld</string>
+    <string name="shake_condition_unlocked">Wanneer ontgrendeld</string>
+    <string name="shake_condition_unlocked_desc">Schudbediening werkt alleen als de telefoon ontgrendeld is</string>
+
+    <string name="shake_behavior_title">Schudgedrag</string>
+    <string name="shake_behavior_desc">Kies welke actie moet worden uitgevoerd wanneer het apparaat wordt geschud</string>
+
+    <string name="shake_behavior_skip">Overslaan</string>
+    <string name="shake_behavior_skip_desc">Ga naar het volgende nummer bij schudden</string>
+    <string name="shake_behavior_play_pause">Afspelen/pauzeren</string>
+    <string name="shake_behavior_play_pause_desc">Afspelen/pauzeren omwisselen bij schudden</string>
+    <string name="shake_behavior_auto_start">Auto-Start</string>
+    <string name="shake_behavior_auto_start_desc">Auto-Start inschakelen in bij schudden</string>
+
+    <string name="shake_behavior_skip_delay_title">Vertraging overslaan</string>
+    <string name="shake_behavior_skip_delay_desc">Vertraging tussen schuddetecties om onbedoelde overslaan te voorkomen</string>
+    <string name="shake_behavior_skip_paused_title">Overslaan bij pauze</string>
+    <string name="shake_behavior_skip_paused_desc">Naar het volgende nummer springen, zelfs wanneer het is gepauzeerd</string>
+
+    <string name="shake_behavior_pp_auto_resume_title">Vertraging automatisch hervatten</string>
+    <string name="shake_behavior_pp_auto_resume_desc">Automatisch afspelen hervatten na pauzeren via schudden</string>
+
+    <string name="shake_behavior_auto_start_delay_title">Vertraging opnieuw inschakelen</string>
+    <string name="shake_behavior_auto_start_delay_desc">Pauzeduur voordat de Auto-Start opnieuw wordt ingeschakeld</string>
+
+
+    <!-- ───── Bugs Report & Support ───── -->
+    <string name="bug_report_title">Bugrapport &amp; ondersteuning</string>
+    <string name="bug_report_desc">Bug gevonden of hulp nodig? Neem contact met mij op.</string>
+    <string name="contact_button">Contact</string>
+
+
+    <!-- ───── Support GlyphBeat ───── -->
+    <string name="support_title">Steun GlyphBeat</string>
+    <string name="support_desc">GlyphBeat is advertentievrij en met liefde gemaakt. Bevalt het? Geef me een kop koffie om nieuwe functies te ontwikkelen, alle beetjes helpen. Bedankt! 🎵 🤍</string>
+
+
+    <!-- ───── Tutorial ───── -->
+    <string name="tutorial_title">Handleiding</string>
+    <string name="tutorial_desc">Bekijk de introductie en handleiding opnieuw</string>
+    <string name="tutorial_button">Handleiding opnieuw afspelen</string>
+
+
+    <!-- ───── Language Settings ───── -->
+    <string name="language_settings_title">Taal</string>
+    <string name="language_settings_desc">Selecteer je voorkeurstaal</string>
+    <string name="language_english">Engels</string>
+    <string name="language_spanish">Spaans</string>
+    <string name="language_japanese">Japans</string>
+
+    <!-- ───── App Information ───── -->
+    <string name="app_info_title">App-informatie</string>
+    <string name="app_info_desc">GlyphBeat - Geanimeerd mediaspeler Toy voor Glyph Matrix</string>
+    <string name="version">Versie</string>
+
+
+
+
+    <!-- - ────────── - Tutorial - ────────── - -->
+
+    <!-- ───── Welcome Page ───── -->
+    <string name="tutorial_welcome_title">Glyph Beat</string>
+    <string name="tutorial_welcome_description">Transformeer je Nothing device\'s Glyph Matrix in een interactieve muziekvisualisator en mediacontroller</string>
+    <string name="tutorial_welcome_feature_music_title">Muziekvisualisatie</string>
+    <string name="tutorial_welcome_feature_music_desc">Aangepaste animaties bij je muziek</string>
+    <string name="tutorial_welcome_feature_themes_title">Aanpasbare thema\'s</string>
+    <string name="tutorial_welcome_feature_themes_desc">Kies uit verschillende animatiestijlen</string>
+    <string name="tutorial_welcome_feature_control_title">Afspeel controle</string>
+    <string name="tutorial_welcome_feature_control_desc">Regel het afspelen met intuïtieve gebaren</string>
+    <string name="tutorial_welcome_get_started">Aan de slag</string>
+
+    <!-- ───── Permissions Page ───── -->
+    <string name="tutorial_permissions_title">Vereiste machtigingen</string>
+    <string name="tutorial_permissions_subtitle">Geef toestemming om alle functies in te schakelen</string>
+    <string name="tutorial_permissions_all_granted">Alle toestemmingen zijn verleend!</string>
+    <string name="tutorial_permissions_notification_title">Toegang tot meldingen</string>
+    <string name="tutorial_permissions_notification_desc">Vereist om muziekweergave te detecteren en media vanuit elke app te bedienen</string>
+    <string name="tutorial_permissions_glyph_title">Glyph Matrix Toegang</string>
+    <string name="tutorial_permissions_glyph_desc_granted">Automatisch toegekend voor Glyph Matrix-apparaten</string>
+    <string name="tutorial_permissions_glyph_desc_unsupported">Niet beschikbaar op %s (Glyph Matrix niet ondersteund)</string>
+    <string name="tutorial_permissions_glyph_desc_unavailable">Niet beschikbaar op dit apparaat (Nothing Phone met Glyph Matrix vereist)</string>
+    <string name="tutorial_permissions_why_title">Waarom deze toestemmingen?</string>
+    <string name="tutorial_permissions_why_desc">Glyph Beat heeft deze rechten alleen nodig om de glyph-animaties met je muziek te synchroniseren. We lezen alleen media-afspeelgegevens en je kunt de toegang beperken tot alleen muziek-apps.</string>
+    <string name="tutorial_permissions_back">Terug</string>
+    <string name="tutorial_permissions_continue">Doorgaan</string>
+    <string name="tutorial_permissions_skip">Nu overslaan</string>
+    <string name="tutorial_permissions_grant">Toestemming verlenen</string>
+    <string name="tutorial_permissions_granted">Toegekend</string>
+
+    <!-- ───── Theme Guide Page ───── -->
+    <string name="tutorial_theme_title">Thema Systeem</string>
+    <string name="tutorial_theme_subtitle">Pas uw Glyph Matrix-animaties aan</string>
+    <string name="tutorial_theme_categories_title">Themacategorieën</string>
+    <string name="tutorial_theme_media_player">Mediaspeler</string>
+    <string name="tutorial_theme_media_player_desc">Verschillende animaties</string>
+    <string name="tutorial_theme_track_control">Nummer Control</string>
+    <string name="tutorial_theme_track_control_desc">Afspeelfeedback</string>
+    <string name="tutorial_theme_customization_title">Aanpassingen</string>
+    <string name="tutorial_theme_brightness_title">Helderheid</string>
+    <string name="tutorial_theme_brightness_desc">Intensiteit aanpassen</string>
+    <string name="tutorial_theme_speed_title">Snelheid</string>
+    <string name="tutorial_theme_speed_desc">Control tempo</string>
+    <string name="tutorial_theme_settings_title">Instellingen</string>
+    <string name="tutorial_theme_settings_desc">En nog veel meer</string>
+    <string name="tutorial_theme_back">Terug</string>
+    <string name="tutorial_theme_continue">Doorgaan</string>
+
+    <!-- ───── Completion Page ───── -->
+    <string name="tutorial_completion_title">Je bent klaar!</string>
+    <string name="tutorial_completion_subtitle">Je Glyph Beat is klaar om je muziekervaring te transformeren</string>
+    <string name="tutorial_completion_next_title">Wat nu?</string>
+    <string name="tutorial_completion_step_glyph">Voeg de toy toe aan de Glyph-interface</string>
+    <string name="tutorial_completion_step_music">Speel muziek af om coole animaties te zien</string>
+    <string name="tutorial_completion_step_control">Lang indrukken om af te spelen/pauzeren</string>
+    <string name="tutorial_completion_step_customize">Pas thema\'s aan in instellingen</string>
+    <string name="tutorial_completion_step_explore">Ontdek alle animatiestijlen</string>
+    <string name="tutorial_completion_tip">Tip: U kunt deze tutorial opnieuw afspelen via instellingen</string>
+    <string name="tutorial_completion_start">Aan de slag</string>
+
+
+</resources>

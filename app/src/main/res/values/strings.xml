@@ -290,6 +290,7 @@
     <string name="language_english">English</string>
     <string name="language_spanish">Spanish</string>
     <string name="language_japanese">Japanese</string>
+    <string name="language_dutch">Dutch</string>
 
     <!-- ───── App Information ───── -->
     <string name="app_info_title">App Information</string>
