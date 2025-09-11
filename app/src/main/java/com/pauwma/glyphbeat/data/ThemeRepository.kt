@@ -86,7 +86,15 @@ class ThemeRepository private constructor(private val context: Context) {
 
     // Current selected theme
     val selectedTheme: AnimationTheme
-        get() = availableThemes[_selectedThemeIndex.value]
+        get() {
+            // Refresh from SharedPreferences to ensure we have the latest value
+            val currentPrefsValue = prefs.getInt(KEY_SELECTED_THEME_INDEX, DEFAULT_THEME_INDEX)
+            if (_selectedThemeIndex.value != currentPrefsValue) {
+                _selectedThemeIndex.value = currentPrefsValue
+                Log.d(TAG, "Theme index refreshed from preferences: $currentPrefsValue")
+            }
+            return availableThemes[_selectedThemeIndex.value]
+        }
 
     /**
      * Select a theme by index
