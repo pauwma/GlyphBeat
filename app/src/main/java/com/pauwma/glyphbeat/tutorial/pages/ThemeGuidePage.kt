@@ -2,16 +2,11 @@ package com.pauwma.glyphbeat.tutorial.pages
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.material.icons.Icons
@@ -21,7 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -42,9 +37,10 @@ fun ThemeGuidePage(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var animationStarted by remember { mutableStateOf(false) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
-    
+
     // Trigger animation when page becomes visible
     LaunchedEffect(isVisible) {
         if (isVisible) {
@@ -55,7 +51,7 @@ fun ThemeGuidePage(
             animationStarted = false
         }
     }
-    
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -63,7 +59,7 @@ fun ThemeGuidePage(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(40.dp))
-        
+
         // Title
         AnimatedVisibility(
             visible = animationStarted,
@@ -78,31 +74,31 @@ fun ThemeGuidePage(
                     tint = NothingRed,
                     modifier = Modifier.size(64.dp)
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Text(
-                    text = "Theme System",
+                    text = context.getString(R.string.tutorial_theme_title),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontFamily = customFont
                     ),
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
-                    text = "Customize your Glyph Matrix animations",
+                    text = context.getString(R.string.tutorial_theme_subtitle),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(32.dp))
-        
+
         // Theme Categories - Horizontal Layout
         AnimatedVisibility(
             visible = animationStarted,
@@ -112,21 +108,21 @@ fun ThemeGuidePage(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Theme Categories",
+                    text = context.getString(R.string.tutorial_theme_categories_title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = customFont
                     ),
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     CategoryCardWithPreview(
-                        title = "Media Player",
-                        description = "Different animations",
+                        title = context.getString(R.string.tutorial_theme_media_player),
+                        description = context.getString(R.string.tutorial_theme_media_player_desc),
                         previewResIds = listOf(
                             R.drawable.vinyl_preview,
                             R.drawable.duck_preview,
@@ -136,10 +132,10 @@ fun ThemeGuidePage(
                         modifier = Modifier.weight(1f),
                         customFont = customFont
                     )
-                    
+
                     CategoryCardWithPreview(
-                        title = "Track Control",
-                        description = "Playback feedback",
+                        title = context.getString(R.string.tutorial_theme_track_control),
+                        description = context.getString(R.string.tutorial_theme_track_control_desc),
                         previewResIds = listOf(
                             R.drawable.skip_arrow_preview,
                             R.drawable.minimal_arrow_preview,
@@ -151,9 +147,9 @@ fun ThemeGuidePage(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(48.dp))
-        
+
         // Customization Options - Horizontal Layout
         AnimatedVisibility(
             visible = animationStarted,
@@ -163,47 +159,47 @@ fun ThemeGuidePage(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "Customization",
+                    text = context.getString(R.string.tutorial_theme_customization_title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = customFont
                     ),
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     EnhancedCustomizationItem(
                         icon = Icons.Default.LightMode,
-                        title = "Brightness",
-                        description = "Adjust intensity",
+                        title = context.getString(R.string.tutorial_theme_brightness_title),
+                        description = context.getString(R.string.tutorial_theme_brightness_desc),
                         customFont = customFont,
                         modifier = Modifier.weight(1f)
                     )
-                    
+
                     EnhancedCustomizationItem(
                         icon = Icons.Default.Speed,
-                        title = "Speed",
-                        description = "Control tempo",
+                        title = context.getString(R.string.tutorial_theme_speed_title),
+                        description = context.getString(R.string.tutorial_theme_speed_desc),
                         customFont = customFont,
                         modifier = Modifier.weight(1f)
                     )
-                    
+
                     EnhancedCustomizationItem(
                         icon = Icons.Default.Tune,
-                        title = "Settings",
-                        description = "And much more",
+                        title = context.getString(R.string.tutorial_theme_settings_title),
+                        description = context.getString(R.string.tutorial_theme_settings_desc),
                         customFont = customFont,
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.weight(1f))
-        
+
         // Navigation Buttons
         AnimatedVisibility(
             visible = animationStarted,
@@ -229,10 +225,10 @@ fun ThemeGuidePage(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Back")
+                    Text(context.getString(R.string.tutorial_theme_back))
                     Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on left
                 }
-                
+
                 Button(
                     onClick = onContinue,
                     modifier = Modifier
@@ -244,7 +240,7 @@ fun ThemeGuidePage(
                     shape = RoundedCornerShape(28.dp)
                 ) {
                     Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on right
-                    Text("Continue")
+                    Text(context.getString(R.string.tutorial_theme_continue))
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Default.ArrowForward,
@@ -254,7 +250,7 @@ fun ThemeGuidePage(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
@@ -269,7 +265,7 @@ private fun CategoryCardWithPreview(
 ) {
     // State for carousel
     var currentImageIndex by remember { mutableStateOf(0) }
-    
+
     // Cache the vector resources to avoid repeated loading
     val cachedImages = remember(previewResIds) {
         previewResIds.map { id ->
@@ -277,7 +273,7 @@ private fun CategoryCardWithPreview(
             id
         }
     }
-    
+
     // Auto-advance carousel after initial delay to prevent lag
     LaunchedEffect(key1 = cachedImages) {
         if (cachedImages.size > 1) {
@@ -288,7 +284,7 @@ private fun CategoryCardWithPreview(
             }
         }
     }
-    
+
     // Animate the transition
     val imageAlpha by animateFloatAsState(
         targetValue = 1f,
@@ -298,7 +294,7 @@ private fun CategoryCardWithPreview(
         ),
         label = "imageAlpha"
     )
-    
+
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
@@ -335,7 +331,7 @@ private fun CategoryCardWithPreview(
                     )
                 }
             }
-            
+
             // Text Content
             Column(
                 modifier = Modifier
@@ -353,9 +349,9 @@ private fun CategoryCardWithPreview(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(2.dp))
-                
+
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
@@ -407,9 +403,9 @@ private fun EnhancedCustomizationItem(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(6.dp))
-            
+
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -418,7 +414,7 @@ private fun EnhancedCustomizationItem(
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,

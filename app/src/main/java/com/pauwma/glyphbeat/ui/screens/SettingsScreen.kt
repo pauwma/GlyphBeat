@@ -405,9 +405,9 @@ fun SettingsScreen(
     val availableLanguages = remember(configuration) {
         listOf(
             LanguageInfo("en", localeContext.getString(R.string.language_english), null),
-            LanguageInfo("es", localeContext.getString(R.string.language_spanish), "@pauwma"),
-            LanguageInfo("ja", localeContext.getString(R.string.language_japanese), "@pauwma"),
-            LanguageInfo("nl", localeContext.getString(R.string.language_dutch), "@pauwma")
+            LanguageInfo("es", localeContext.getString(R.string.language_spanish), null),
+            LanguageInfo("ja", localeContext.getString(R.string.language_japanese), null),
+            LanguageInfo("nl", localeContext.getString(R.string.language_dutch), "@sjuust")
         )
     }
     

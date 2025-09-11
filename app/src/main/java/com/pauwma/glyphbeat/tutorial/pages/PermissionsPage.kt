@@ -2,28 +2,21 @@ package com.pauwma.glyphbeat.tutorial.pages
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.theme.NothingRed
 import com.pauwma.glyphbeat.tutorial.TutorialViewModel
@@ -49,11 +42,11 @@ fun PermissionsPage(
     val context = LocalContext.current
     var animationStarted by remember { mutableStateOf(false) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
-    
+
     val notificationGranted = permissionsGranted[TutorialViewModel.PERMISSION_NOTIFICATION] ?: false
     val glyphGranted = permissionsGranted[TutorialViewModel.PERMISSION_GLYPH] ?: false
     val allGranted = notificationGranted && (glyphGranted || !isNothingDevice)
-    
+
     // Trigger animation when page becomes visible
     LaunchedEffect(isVisible) {
         if (isVisible) {
@@ -64,7 +57,7 @@ fun PermissionsPage(
             animationStarted = false
         }
     }
-    
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -72,7 +65,7 @@ fun PermissionsPage(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(60.dp))
-        
+
         // Title
         AnimatedVisibility(
             visible = animationStarted,
@@ -87,31 +80,31 @@ fun PermissionsPage(
                     tint = if (allGranted) Color.Green else NothingRed,
                     modifier = Modifier.size(48.dp)
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Text(
-                    text = "Required Permissions",
+                    text = context.getString(R.string.tutorial_permissions_title),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontFamily = customFont
                     ),
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
-                    text = "Grant permissions to enable all features",
+                    text = context.getString(R.string.tutorial_permissions_subtitle),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(32.dp))
-        
+
         // Status Summary
         if (allGranted) {
             AnimatedVisibility(
@@ -137,7 +130,7 @@ fun PermissionsPage(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = "All permissions granted!",
+                            text = context.getString(R.string.tutorial_permissions_all_granted),
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.SemiBold
                             ),
@@ -146,10 +139,10 @@ fun PermissionsPage(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
         }
-        
+
         // Permission Cards
         AnimatedVisibility(
             visible = animationStarted,
@@ -160,8 +153,8 @@ fun PermissionsPage(
             ) {
                 // Notification Access Permission
                 PermissionCard(
-                    title = "Notification Access",
-                    description = "Required to detect music playback and control media from any app",
+                    title = context.getString(R.string.tutorial_permissions_notification_title),
+                    description = context.getString(R.string.tutorial_permissions_notification_desc),
                     icon = Icons.Default.Notifications,
                     isGranted = notificationGranted,
                     onRequestPermission = {
@@ -169,14 +162,14 @@ fun PermissionsPage(
                     },
                     customFont = customFont
                 )
-                
+
                 // Glyph Matrix Permission (only for specific Nothing phones)
                 PermissionCard(
-                    title = "Glyph Matrix Access",
+                    title = context.getString(R.string.tutorial_permissions_glyph_title),
                     description = when {
-                        isNothingDevice -> "Automatically granted for Glyph Matrix devices"
-                        deviceManufacturer.equals("Nothing", ignoreCase = true) -> "Not available on $deviceModel (Glyph Matrix not supported)"
-                        else -> "Not available on this device (Nothing Phone with Glyph Matrix required)"
+                        isNothingDevice -> context.getString(R.string.tutorial_permissions_glyph_desc_granted)
+                        deviceManufacturer.equals("Nothing", ignoreCase = true) -> context.getString(R.string.tutorial_permissions_glyph_desc_unsupported, deviceModel)
+                        else -> context.getString(R.string.tutorial_permissions_glyph_desc_unavailable)
                     },
                     icon = Icons.Default.GridOn,
                     isGranted = glyphGranted,
@@ -188,9 +181,9 @@ fun PermissionsPage(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // Info Section
         AnimatedVisibility(
             visible = animationStarted,
@@ -217,7 +210,7 @@ fun PermissionsPage(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Why these permissions?",
+                            text = context.getString(R.string.tutorial_permissions_why_title),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 fontFamily = customFont
@@ -225,20 +218,20 @@ fun PermissionsPage(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     Text(
-                        text = "Glyph Beat needs these permissions only to sync its glyph animations with your music. We read media-playback data only, and you can restrict access only to music apps.",
+                        text = context.getString(R.string.tutorial_permissions_why_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.weight(1f))
-        
+
         // Navigation Buttons
         AnimatedVisibility(
             visible = animationStarted,
@@ -264,10 +257,10 @@ fun PermissionsPage(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Back")
+                    Text(context.getString(R.string.tutorial_permissions_back))
                     Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on left
                 }
-                
+
                 Button(
                     onClick = if (allGranted) onContinue else onSkip,
                     modifier = Modifier
@@ -280,7 +273,7 @@ fun PermissionsPage(
                 ) {
                     if (allGranted) {
                         Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on right
-                        Text("Continue")
+                        Text(context.getString(R.string.tutorial_permissions_continue))
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
                             imageVector = Icons.Default.ArrowForward,
@@ -290,7 +283,7 @@ fun PermissionsPage(
                     } else {
                         Spacer(modifier = Modifier.width(16.dp)) // Balance padding for icon on right
                         Text(
-                            text = "Skip for Now",
+                            text = context.getString(R.string.tutorial_permissions_skip),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -304,7 +297,7 @@ fun PermissionsPage(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 }

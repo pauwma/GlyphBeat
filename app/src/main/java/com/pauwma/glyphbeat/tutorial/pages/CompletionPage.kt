@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
@@ -20,7 +21,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.theme.NothingRed
 import kotlinx.coroutines.delay
@@ -34,9 +34,10 @@ fun CompletionPage(
     onStartApp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var animationStarted by remember { mutableStateOf(false) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
-    
+
     // Trigger animation when page becomes visible
     LaunchedEffect(isVisible) {
         if (isVisible) {
@@ -47,7 +48,7 @@ fun CompletionPage(
             animationStarted = false
         }
     }
-    
+
     // Success checkmark animation
     val infiniteTransition = rememberInfiniteTransition()
     val scale by infiniteTransition.animateFloat(
@@ -58,7 +59,7 @@ fun CompletionPage(
             repeatMode = RepeatMode.Reverse
         )
     )
-    
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -99,9 +100,9 @@ fun CompletionPage(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(40.dp))
-        
+
         // Success Message
         AnimatedVisibility(
             visible = animationStarted,
@@ -111,18 +112,18 @@ fun CompletionPage(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "You're All Set!",
+                    text = context.getString(R.string.tutorial_completion_title),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontFamily = customFont
                     ),
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Text(
-                    text = "Your Glyph Beat is ready to transform your music experience",
+                    text = context.getString(R.string.tutorial_completion_subtitle),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -130,9 +131,9 @@ fun CompletionPage(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(48.dp))
-        
+
         // Feature Summary
         AnimatedVisibility(
             visible = animationStarted,
@@ -152,7 +153,7 @@ fun CompletionPage(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "What's Next?",
+                        text = context.getString(R.string.tutorial_completion_next_title),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = customFont
@@ -162,34 +163,34 @@ fun CompletionPage(
 
                     FeatureItem(
                         icon = Icons.Default.Settings,
-                        text = "Add the toy into the Glyph Interface"
+                        text = context.getString(R.string.tutorial_completion_step_glyph)
                     )
-                    
+
                     FeatureItem(
                         icon = Icons.Default.PlayArrow,
-                        text = "Play music to see cool animations"
+                        text = context.getString(R.string.tutorial_completion_step_music)
                     )
-                    
+
                     FeatureItem(
                         icon = Icons.Default.TouchApp,
-                        text = "Long press to play/pause playback"
+                        text = context.getString(R.string.tutorial_completion_step_control)
                     )
-                    
+
                     FeatureItem(
                         icon = Icons.Default.Tune,
-                        text = "Customize themes in settings"
+                        text = context.getString(R.string.tutorial_completion_step_customize)
                     )
-                    
+
                     FeatureItem(
                         icon = Icons.Default.Explore,
-                        text = "Explore all animation styles"
+                        text = context.getString(R.string.tutorial_completion_step_explore)
                     )
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.weight(1f))
-        
+
         // Launch Button
         AnimatedVisibility(
             visible = animationStarted,
@@ -212,7 +213,7 @@ fun CompletionPage(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Tip: You can replay this tutorial from Settings",
+                        text = context.getString(R.string.tutorial_completion_tip),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -234,7 +235,7 @@ fun CompletionPage(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Start Exploring",
+                        text = context.getString(R.string.tutorial_completion_start),
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.SemiBold
                         )
@@ -243,7 +244,7 @@ fun CompletionPage(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
@@ -272,9 +273,9 @@ private fun FeatureItem(
                 modifier = Modifier.size(18.dp)
             )
         }
-        
+
         Spacer(modifier = Modifier.width(12.dp))
-        
+
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
