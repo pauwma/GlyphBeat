@@ -54,6 +54,7 @@
         <package android:name="com.bsbportal.music" />
         <package android:name="com.clearchannel.iheartradio.controller" />
         <package android:name="tunein.player" />
+        <package android:name="tv.plex.labs.plexamp" />
         
         <!-- Local music players -->
         <package android:name="com.globaldelight.boom" />

@@ -243,8 +243,8 @@ fun openNotificationAccessSettings(context: android.content.Context) {
 
 /**
  * Detects the system language and returns the corresponding app language code.
- * Supports: en, es, ja
- * Falls back to "en" for unsupported languages.
+ * Uses centralized language mapping from AppConfig.
+ * Falls back to default language for unsupported languages.
  */
 fun detectSystemLanguage(): String {
     val systemLocale = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -254,12 +254,7 @@ fun detectSystemLanguage(): String {
         android.content.res.Resources.getSystem().configuration.locale
     }
 
-    // Map system language to supported app languages
-    return when (systemLocale.language) {
-        "es" -> "es"  // Spanish
-        "ja" -> "ja"  // Japanese
-        else -> "en"  // Default to English for all other languages
-    }
+    return AppConfig.SupportedLanguages.mapSystemLanguage(systemLocale.language)
 }
 
 /**

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.draw.clip
@@ -26,10 +25,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Bento
 import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.MusicNote
@@ -45,8 +42,6 @@ import androidx.compose.material3.*
 import androidx.compose.ui.draw.rotate
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import com.pauwma.glyphbeat.core.AppConfig
-import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import com.pauwma.glyphbeat.services.autostart.MusicAppWhitelistManager
 import com.pauwma.glyphbeat.services.autostart.MusicDetectionService
 import androidx.compose.ui.Alignment
@@ -56,8 +51,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -94,16 +87,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.material.icons.filled.Settings
 import androidx.core.os.LocaleListCompat
 import androidx.compose.ui.platform.LocalConfiguration
-import java.util.Locale
-
-/**
- * Data class representing a language option
- */
-data class LanguageInfo(
-    val code: String,           // Language code like "en", "es"
-    val displayName: String,    // Localized display name
-    val author: String? = null  // Optional translator attribution
-)
+import com.pauwma.glyphbeat.core.AppConfig
 
 @Composable
 private fun TestResultCard(
@@ -113,7 +97,7 @@ private fun TestResultCard(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -178,7 +162,7 @@ private fun TestResultCard(
                             }
                         }
                     }
-                    
+
                     // Track info
                     Column(
                         modifier = Modifier.weight(1f),
@@ -194,7 +178,7 @@ private fun TestResultCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        
+
                         // Artist
                         Text(
                             text = trackInfo.artist,
@@ -203,16 +187,16 @@ private fun TestResultCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        
+
                         // App name with icon and brand colors
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            val brandColor = getAppBrandColor(trackInfo.appName) 
+                            val brandColor = getAppBrandColor(trackInfo.appName)
                                 ?: MaterialTheme.colorScheme.primary
                             val appIcon = getAppIcon(context, trackInfo.appName)
-                            
+
                             // Show app icon if available, otherwise music icon
                             if (appIcon != null) {
                                 Image(
@@ -230,7 +214,7 @@ private fun TestResultCard(
                                     tint = brandColor
                                 )
                             }
-                            
+
                             Text(
                                 text = getAppNameFromPackage(context, trackInfo.appName),
                                 style = MaterialTheme.typography.bodySmall.copy(
@@ -247,7 +231,7 @@ private fun TestResultCard(
             error != null -> {
                 // Error or no media state
                 val isNoActiveMedia = error.contains("No active")
-                
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -264,9 +248,9 @@ private fun TestResultCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (isNoActiveMedia) 
-                                Icons.Default.MusicOff 
-                            else 
+                            imageVector = if (isNoActiveMedia)
+                                Icons.Default.MusicOff
+                            else
                                 Icons.Default.Warning,
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
@@ -276,17 +260,17 @@ private fun TestResultCard(
                                 MaterialTheme.colorScheme.error
                         )
                     }
-                    
+
                     // Message
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = if (isNoActiveMedia) 
-                                "No Music Playing" 
-                            else 
-                                "Test Failed",
+                            text = if (isNoActiveMedia)
+                                context.getString(R.string.no_music_playing)
+                            else
+                                context.getString(R.string.notification_test_failed),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Medium
                             ),
@@ -294,7 +278,7 @@ private fun TestResultCard(
                         )
                         Text(
                             text = if (isNoActiveMedia)
-                                "Start playing music to test the connection"
+                                context.getString(R.string.start_playing_music)
                             else
                                 error,
                             style = MaterialTheme.typography.bodySmall,
@@ -375,14 +359,14 @@ fun SettingsScreen(
     var showTestResult by remember { mutableStateOf(false) }
     var isTestLoading by remember { mutableStateOf(false) }
     var testError by remember { mutableStateOf<String?>(null) }
-    
+
     // Shake control settings - enhanced with new behavior system
     val shakeSettingsManager = remember { ShakeControlSettingsManager(context) }
     var shakeControlSettings by remember { mutableStateOf(ShakeControlSettings()) }
-    
+
     // Legacy state variables for backward compatibility (removed after migration)
     var behaviour by remember { mutableStateOf("skip") }
-    
+
     // Auto-start settings state
     var autoStartEnabled by remember { mutableStateOf(false) }
     var autoStartPaused by remember { mutableStateOf(false) }
@@ -394,79 +378,75 @@ fun SettingsScreen(
     var musicApps by remember { mutableStateOf<List<MusicAppWhitelistManager.MusicAppInfo>>(emptyList()) }
     var isLoadingMusicApps by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
-    
+
     // Language settings state
     var currentLanguage by remember { mutableStateOf("en") }
-    
+
     // Create locale-aware context for dynamic string updates
     val configuration = LocalConfiguration.current
     val localeContext = remember(configuration) { context }
-    
+
     val availableLanguages = remember(configuration) {
-        listOf(
-            LanguageInfo("en", localeContext.getString(R.string.language_english), null),
-            LanguageInfo("es", localeContext.getString(R.string.language_spanish), null),
-            LanguageInfo("ja", localeContext.getString(R.string.language_japanese), null),
-            LanguageInfo("nl", localeContext.getString(R.string.language_dutch), "@sjuust")
-        )
+        AppConfig.SupportedLanguages.getAvailableLanguages(localeContext)
     }
-    
+
     // App priority for sorting (most popular apps first)
     val appPriority = mapOf(
         "com.spotify.music"                       to 1,
         "com.google.android.apps.youtube.music"   to 2,
         "com.google.android.youtube"              to 3,
-        "com.amazon.mp3"                         to 4,
-        "com.apple.android.music"                to 5,
-        "com.soundcloud.android"                 to 6,
-        "com.tidal.android"                      to 7,
-        "com.deezer.android.app"                 to 8,
-        "com.pandora.android"                    to 9,
-        "com.shazam.android"                     to 10,
+        "com.amazon.mp3"                          to 4,
+        "com.apple.android.music"                 to 5,
+        "com.soundcloud.android"                  to 6,
+        "com.tidal.android"                       to 7,
+        "com.deezer.android.app"                  to 8,
+        "com.pandora.android"                     to 9,
+        "tv.plex.labs.plexamp"                    to 10,
         "com.clearchannel.iheartradio.controller" to 11,
-        "com.maxmpz.audioplayer"                 to 12,
-        "in.krosbits.musicolet"                  to 13,
-        "org.videolan.vlc"                       to 14,
-        "com.jetappfactory.jetaudio"             to 15,
-        "com.aimp.player"                        to 16,
-        "com.tbig.playerprotrial"                to 17,
-        "com.musicplayer.blackplayerfree"        to 18,
-        "com.foobar2000.foobar2000"              to 19,
-        "com.jrtstudio.AnotherMusicPlayer"       to 20,
+        "com.maxmpz.audioplayer"                  to 12,
+        "in.krosbits.musicolet"                   to 13,
+        "org.videolan.vlc"                        to 14,
+        "com.jetappfactory.jetaudio"              to 15,
+        "com.aimp.player"                         to 16,
+        "com.tbig.playerprotrial"                 to 17,
+        "com.musicplayer.blackplayerfree"         to 18,
+        "com.foobar2000.foobar2000"               to 19,
+        "com.jrtstudio.AnotherMusicPlayer"        to 20,
         "com.gaana"                               to 21,
-        "com.jio.media.jiobeats"                 to 22,
-        "com.bsbportal.music"                    to 23,
-        "com.hungama.myplay.activity"            to 24,
-        "com.skysoft.kkbox.android"              to 25,
-        "com.tencent.qqmusic"                    to 26,
-        "com.tencent.ibg.joox"                   to 27,
-        "com.netease.cloudmusic"                 to 28,
-        "ru.yandex.music"                        to 29,
-        "com.bandcamp.android"                   to 30,
-        "com.napster.android"                    to 31,
-        "com.moonvideo.android.resso"            to 32,
-        "com.audiomack"                           to 33
+        "com.jio.media.jiobeats"                  to 22,
+        "com.bsbportal.music"                     to 23,
+        "com.hungama.myplay.activity"             to 24,
+        "com.skysoft.kkbox.android"               to 25,
+        "com.tencent.qqmusic"                     to 26,
+        "com.tencent.ibg.joox"                    to 27,
+        "com.netease.cloudmusic"                  to 28,
+        "ru.yandex.music"                         to 29,
+        "com.bandcamp.android"                    to 30,
+        "com.napster.android"                     to 31,
+        "com.moonvideo.android.resso"             to 32,
+        "com.audiomack"                           to 33,
+        "com.shazam.android"                      to 34,
     )
     val whitelistManager = remember { MusicAppWhitelistManager.getInstance(context) }
-    
+
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
-    
+
     // Function to change app language with immediate UI update
     fun changeLanguage(languageCode: String) {
         // Update state immediately for UI reactivity
         currentLanguage = languageCode
-        
-        // Save preference
+
+        // Save preference and mark as manually set
         prefs.edit()
             .putString("app_language", languageCode)
-            .putBoolean("user_language_manually_set", true)
+            .putBoolean("user_language_manually_set", true)  // Mark as manually chosen
             .apply()
-        
+
         // Apply locale change - this will trigger configuration change
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageCode))
     }
-    
+
     // Function to load and sort music apps
     fun loadMusicApps() {
         coroutineScope.launch {
@@ -495,7 +475,7 @@ fun SettingsScreen(
             isLoadingMusicApps = false
         }
     }
-    
+
     // Load initial values asynchronously
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -503,10 +483,10 @@ fun SettingsScreen(
             notificationAccessGranted = isNotificationAccessGranted(context)
             mediaServiceWorking = isMediaControlServiceWorking(context)
             isLoadingPermissions = false
-            
+
             // Load shake control settings using new manager
             shakeControlSettings = shakeSettingsManager.loadSettings()
-            
+
             // Load auto-start preferences
             autoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
             autoStartPaused = prefs.getBoolean("auto_start_paused", false)
@@ -514,7 +494,7 @@ fun SettingsScreen(
             autoStopDelay = prefs.getLong("auto_stop_delay", 3000L)
             batteryAwarenessEnabled = prefs.getBoolean("battery_awareness_enabled", false)
             batteryThreshold = prefs.getInt("battery_threshold", 10)
-            
+
             // Load language preference - ensure it matches current app locale
             val savedLanguage = prefs.getString("app_language", "en") ?: "en"
             val currentAppLocales = AppCompatDelegate.getApplicationLocales()
@@ -523,19 +503,35 @@ fun SettingsScreen(
             } else {
                 "en"
             }
-            
+
             // Use the current app locale if it differs from saved preference
-            currentLanguage = if (currentAppLanguage != savedLanguage && currentAppLanguage in listOf("en", "es", "ja", "nl")) {
+            currentLanguage = if (currentAppLanguage != savedLanguage && AppConfig.SupportedLanguages.isSupported(currentAppLanguage)) {
                 currentAppLanguage
             } else {
                 savedLanguage
             }
-            
+
             // Load music apps
             loadMusicApps()
         }
     }
-    
+
+    // Listen for configuration changes and update UI accordingly
+    LaunchedEffect(configuration) {
+        // When configuration changes due to locale change, update language state if needed
+        val currentAppLocales = AppCompatDelegate.getApplicationLocales()
+        val currentAppLanguage = if (!currentAppLocales.isEmpty) {
+            currentAppLocales[0]?.language ?: "en"
+        } else {
+            "en"
+        }
+
+        // Update currentLanguage if app locale changed but state didn't
+        if (currentAppLanguage != currentLanguage && currentAppLanguage in listOf("en", "es")) {
+            currentLanguage = currentAppLanguage
+        }
+    }
+
     // Automatically refresh permission and service status when app resumes
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -553,14 +549,14 @@ fun SettingsScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
-    
+
     // Live update auto-start switch when changed by shake controls or other sources
     DisposableEffect(Unit) {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "auto_start_enabled") {
                 val newAutoStartEnabled = prefs.getBoolean("auto_start_enabled", false)
                 autoStartEnabled = newAutoStartEnabled
-                
+
                 // Auto-switch shake behavior from AUTO_START to SKIP when auto-start is disabled
                 if (!newAutoStartEnabled && shakeControlSettings.behavior == ShakeBehavior.AUTO_START) {
                     val updatedSettings = shakeControlSettings.copy(behavior = ShakeBehavior.SKIP)
@@ -573,12 +569,12 @@ fun SettingsScreen(
             }
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
-        
+
         onDispose {
             prefs.unregisterOnSharedPreferenceChangeListener(listener)
         }
     }
-    
+
     // Listen for configuration changes and update UI accordingly
     LaunchedEffect(configuration) {
         // When configuration changes due to locale change, update language state if needed
@@ -588,13 +584,13 @@ fun SettingsScreen(
         } else {
             "en"
         }
-        
+
         // Update currentLanguage if app locale changed but state didn't
-        if (currentAppLanguage != currentLanguage && currentAppLanguage in listOf("en", "es", "ja", "nl")) {
+        if (currentAppLanguage != currentLanguage && AppConfig.SupportedLanguages.isSupported(currentAppLanguage)) {
             currentLanguage = currentAppLanguage
         }
     }
-    
+
     // Clear test result after 5 seconds
     LaunchedEffect(showTestResult) {
         if (showTestResult) {
@@ -604,7 +600,7 @@ fun SettingsScreen(
             testError = null
         }
     }
-    
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -713,7 +709,7 @@ fun SettingsScreen(
                             }
                         )
                     }
-                    
+
                     FilledIconButton(
                         onClick = {
                             coroutineScope.launch {
@@ -722,14 +718,14 @@ fun SettingsScreen(
                                     showTestResult = true
                                     testTrackInfo = null
                                     testError = null
-                                    
+
                                     withContext(Dispatchers.IO) {
                                         val mediaHelper = com.pauwma.glyphbeat.sound.MediaControlHelper(context)
                                         val controller = mediaHelper.getActiveMediaController()
                                         val trackInfo = mediaHelper.getTrackInfoForUI()
 
                                         isTestLoading = false
-                                        
+
                                         if (controller != null) {
                                             testTrackInfo = trackInfo
                                             if (trackInfo == null) {
@@ -752,9 +748,9 @@ fun SettingsScreen(
                         enabled = notificationAccessGranted,
                         modifier = Modifier.height(40.dp).width(48.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = if (notificationAccessGranted) 
-                                MaterialTheme.colorScheme.error 
-                            else 
+                            containerColor = if (notificationAccessGranted)
+                                MaterialTheme.colorScheme.error
+                            else
                                 MaterialTheme.colorScheme.surfaceVariant,
                             disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
@@ -763,15 +759,15 @@ fun SettingsScreen(
                             imageVector = Icons.Default.Audiotrack,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
-                            tint = if (notificationAccessGranted) 
-                                MaterialTheme.colorScheme.onError 
-                            else 
+                            tint = if (notificationAccessGranted)
+                                MaterialTheme.colorScheme.onError
+                            else
                                 MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
-                // Show test results card with animation  
+                // Show test results card with animation
                 AnimatedVisibility(
                     visible = showTestResult,
                     enter = expandVertically(
@@ -946,7 +942,7 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )
                     }
-                    
+
                     // Animated expand/collapse icon
                     val autoStartRotationAngle by animateFloatAsState(
                         targetValue = if (autoStartControlsExpanded) 180f else 0f,
@@ -973,11 +969,11 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground
                     )
-                    
+
                     // Custom toggle switch to match shake controls style
-                    val isControlledByShake = shakeControlSettings.enabled && 
+                    val isControlledByShake = shakeControlSettings.enabled &&
                                             shakeControlSettings.behavior == ShakeBehavior.AUTO_START
-                    
+
                     Box(
                         modifier = Modifier
                             .width(56.dp)
@@ -988,23 +984,23 @@ fun SettingsScreen(
                                 else MaterialTheme.colorScheme.surfaceVariant
                             )
                             .alpha(if (autoStartPaused) 0.5f else 1.0f)
-                            .clickable { 
+                            .clickable {
                                 val enabled = !autoStartEnabled
                                 autoStartEnabled = enabled
                                 prefs.edit()
                                     .putBoolean("auto_start_enabled", enabled)
                                     .putBoolean("auto_start_paused", false) // Clear paused state when manually toggling
                                     .apply()
-                                
+
                                 // Start/stop the detection service
                                 if (enabled) {
                                     MusicDetectionService.start(context)
                                 } else {
                                     MusicDetectionService.stop(context)
                                 }
-                                
+
                                 Log.d("SettingsScreen", "Auto-start service: $enabled")
-                                
+
                                 // Auto-expand when enabling, auto-collapse when disabling
                                 if (enabled && !autoStartControlsExpanded) {
                                     autoStartControlsExpanded = true
@@ -1037,7 +1033,7 @@ fun SettingsScreen(
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                         )
-                        
+
                         // Touch control limitation note
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1073,7 +1069,7 @@ fun SettingsScreen(
                             },
                             useAlternateColors = false
                         )
-                        
+
                         // Music Apps List
                         Column(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -1088,13 +1084,13 @@ fun SettingsScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onBackground
                                 )
-                                
+
                                 val refreshRotation by animateFloatAsState(
                                     targetValue = if (isLoadingMusicApps) 360f else 0f,
                                     animationSpec = tween(1000),
                                     label = "refreshRotation"
                                 )
-                                
+
                                 Box(
                                     modifier = Modifier
                                         .size(24.dp)
@@ -1114,21 +1110,21 @@ fun SettingsScreen(
                                         modifier = Modifier
                                             .size(20.dp)
                                             .rotate(refreshRotation),
-                                        tint = if (isLoadingMusicApps) 
-                                            MaterialTheme.colorScheme.primary 
-                                        else 
+                                        tint = if (isLoadingMusicApps)
+                                            MaterialTheme.colorScheme.primary
+                                        else
                                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                     )
                                 }
                             }
-                            
+
                             Text(
                                 text = "Select which apps should trigger auto-start when music playback is detected.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                 modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
                             )
-                            
+
                             if (isLoadingMusicApps) {
                                 Box(
                                     modifier = Modifier
@@ -1151,29 +1147,29 @@ fun SettingsScreen(
                                             animationSpec = tween(300),
                                             label = "iconRotation"
                                         )
-                                        
+
                                         val iconColor by animateColorAsState(
                                             targetValue = if (app.isWhitelisted) NothingRed else MaterialTheme.colorScheme.onSurfaceVariant,
                                             animationSpec = tween(300),
                                             label = "iconColor"
                                         )
-                                        
+
                                         var appIcon by remember(app.packageName) { mutableStateOf<android.graphics.Bitmap?>(null) }
-                                        
+
                                         // Load app icon asynchronously
                                         LaunchedEffect(app.packageName) {
                                             withContext(Dispatchers.IO) {
                                                 appIcon = getAppIcon(context, app.packageName)
                                             }
                                         }
-                                        
+
                                         OutlinedCard(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clickable {
                                                     val wasWhitelisted = app.isWhitelisted
                                                     whitelistManager.toggleWhitelist(app.packageName)
-                                                    
+
                                                     // Update only this item instead of refreshing entire list
                                                     musicApps = musicApps.map { appInfo ->
                                                         if (appInfo.packageName == app.packageName) {
@@ -1182,12 +1178,12 @@ fun SettingsScreen(
                                                             appInfo
                                                         }
                                                     }
-                                                    
-                                                    // Live update: If app was whitelisted and now disabled, 
+
+                                                    // Live update: If app was whitelisted and now disabled,
                                                     // and service is running, notify service to check if this app is currently active
                                                     if (wasWhitelisted && !app.isWhitelisted && autoStartEnabled) {
                                                         Log.d("SettingsScreen", "App ${app.appName} disabled - sending update to running service")
-                                                        
+
                                                         // Send broadcast to notify service that whitelist changed
                                                         val updateIntent = Intent("com.pauwma.glyphbeat.WHITELIST_CHANGED")
                                                         updateIntent.putExtra("changed_package", app.packageName)
@@ -1195,7 +1191,7 @@ fun SettingsScreen(
                                                         context.sendBroadcast(updateIntent)
                                                     } else if (!wasWhitelisted && app.isWhitelisted && autoStartEnabled) {
                                                         Log.d("SettingsScreen", "App ${app.appName} enabled - sending update to running service")
-                                                        
+
                                                         // Send broadcast to notify service of new whitelisted app
                                                         val updateIntent = Intent("com.pauwma.glyphbeat.WHITELIST_CHANGED")
                                                         updateIntent.putExtra("changed_package", app.packageName)
@@ -1238,7 +1234,7 @@ fun SettingsScreen(
                                                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                                     )
                                                 }
-                                                
+
                                                 // App info
                                                 Column(
                                                     modifier = Modifier.weight(1f)
@@ -1258,7 +1254,7 @@ fun SettingsScreen(
                                                         overflow = TextOverflow.Ellipsis
                                                     )
                                                 }
-                                                
+
                                                 // Add/Remove icon with rotation animation
                                                 Icon(
                                                     imageVector = Icons.Default.Add,
@@ -1435,7 +1431,7 @@ fun SettingsScreen(
                     ) {
                         Text("PayPal", style = MaterialTheme.typography.bodySmall)
                     }
-                    
+
                     OutlinedButton(
                         onClick = {
                             val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -1543,14 +1539,14 @@ fun SettingsScreen(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                
+
                 Text(
                     text = "View the app introduction and setup guide again",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp)
                 )
-                
+
                 Button(
                     onClick = {
                         // Reset tutorial and launch it
