@@ -7,9 +7,9 @@ import com.pauwma.glyphbeat.ui.settings.SettingCategories
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsBuilder
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
-import com.pauwma.glyphbeat.ui.settings.getDropdownValue
 import kotlin.math.sqrt
 import com.pauwma.glyphbeat.R
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getDropdownValue
 
 class GlyphyTheme(private val ctx: Context)  : ThemeTemplate(), ThemeSettingsProvider {
 

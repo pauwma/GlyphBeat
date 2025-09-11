@@ -17,13 +17,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.pauwma.glyphbeat.themes.animation.CoverArtTheme
 import com.pauwma.glyphbeat.themes.animation.preview.CoverArtPreviewManager
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueFloat
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueLong
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getToggleValue
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
-import com.pauwma.glyphbeat.ui.settings.getToggleValue
-import com.pauwma.glyphbeat.ui.settings.getSliderValueLong
-import com.pauwma.glyphbeat.ui.settings.getSliderValueFloat
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-
 /**
  * EnhancedCoverArtPreview - Specialized preview component for CoverArtTheme.
  * 

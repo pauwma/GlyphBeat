@@ -3,8 +3,9 @@ package com.pauwma.glyphbeat.themes.animation.preview
 import android.graphics.*
 import android.util.Log
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
-import com.pauwma.glyphbeat.ui.settings.getToggleValue
-import com.pauwma.glyphbeat.ui.settings.getSliderValueFloat
+import com.pauwma.glyphbeat.ui.settings.*
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueFloat
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getToggleValue
 import kotlin.math.pow
 
 /**

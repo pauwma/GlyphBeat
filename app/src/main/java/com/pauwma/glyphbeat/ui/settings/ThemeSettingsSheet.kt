@@ -49,12 +49,12 @@ fun ThemeSettingsSheet(
     val themeRepository = remember { ThemeRepository.getInstance(context) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
     val scope = rememberCoroutineScope()
-    
+
     // Get current theme settings
     var themeSettings by remember(theme) { mutableStateOf<ThemeSettings?>(null) }
     var isLoading by remember(theme) { mutableStateOf(true) }
     var error by remember(theme) { mutableStateOf<String?>(null) }
-    
+
     // Load settings when theme changes - moved to background thread
     LaunchedEffect(theme) {
         isLoading = true
@@ -78,7 +78,7 @@ fun ThemeSettingsSheet(
             isLoading = false
         }
     }
-    
+
     if (isVisible) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
@@ -109,7 +109,7 @@ fun ThemeSettingsSheet(
                             ),
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        
+
                         Text(
                             text = theme.getDescription(),
                             style = MaterialTheme.typography.bodyMedium.copy(
@@ -119,7 +119,7 @@ fun ThemeSettingsSheet(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
-                    
+
                     Row {
                         // Reset button
                         IconButton(
@@ -149,7 +149,7 @@ fun ThemeSettingsSheet(
                                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                             )
                         }
-                        
+
                         // Close button
                         IconButton(onClick = onDismiss) {
                             Icon(
@@ -160,9 +160,9 @@ fun ThemeSettingsSheet(
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Content
                 when {
                     isLoading -> {
@@ -177,7 +177,7 @@ fun ThemeSettingsSheet(
                             )
                         }
                     }
-                    
+
                     error != null -> {
                         ErrorMessage(
                             message = error!!,
@@ -197,7 +197,7 @@ fun ThemeSettingsSheet(
                             }
                         )
                     }
-                    
+
                     themeSettings != null -> {
                         ThemeSettingsContent(
                             themeSettings = themeSettings!!,
@@ -216,7 +216,7 @@ fun ThemeSettingsSheet(
                             }
                         )
                     }
-                    
+
                     else -> {
                         Box(
                             modifier = Modifier
@@ -256,12 +256,12 @@ fun ThemeSettingsSheet(
     val themeManager = remember { TrackControlThemeManager.getInstance(context) }
     val customFont = FontFamily(Font(R.font.ntype82regular))
     val scope = rememberCoroutineScope()
-    
+
     // Get current theme settings
     var themeSettings by remember(theme) { mutableStateOf<ThemeSettings?>(null) }
     var isLoading by remember(theme) { mutableStateOf(true) }
     var error by remember(theme) { mutableStateOf<String?>(null) }
-    
+
     // Load settings when theme changes - moved to background thread
     LaunchedEffect(theme) {
         isLoading = true
@@ -285,7 +285,7 @@ fun ThemeSettingsSheet(
             isLoading = false
         }
     }
-    
+
     if (isVisible) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
@@ -316,7 +316,7 @@ fun ThemeSettingsSheet(
                             ),
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        
+
                         Text(
                             text = theme.getDescription(),
                             style = MaterialTheme.typography.bodyMedium.copy(
@@ -326,7 +326,7 @@ fun ThemeSettingsSheet(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
-                    
+
                     Row {
                         // Reset button
                         IconButton(
@@ -355,7 +355,7 @@ fun ThemeSettingsSheet(
                                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                             )
                         }
-                        
+
                         // Close button
                         IconButton(onClick = onDismiss) {
                             Icon(
@@ -366,9 +366,9 @@ fun ThemeSettingsSheet(
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Content
                 when {
                     isLoading -> {
@@ -383,7 +383,7 @@ fun ThemeSettingsSheet(
                             )
                         }
                     }
-                    
+
                     error != null -> {
                         ErrorMessage(
                             message = error!!,
@@ -402,7 +402,7 @@ fun ThemeSettingsSheet(
                             }
                         )
                     }
-                    
+
                     themeSettings != null -> {
                         ThemeSettingsContent(
                             themeSettings = themeSettings!!,
@@ -420,7 +420,7 @@ fun ThemeSettingsSheet(
                             }
                         )
                     }
-                    
+
                     else -> {
                         Box(
                             modifier = Modifier
@@ -452,11 +452,12 @@ private fun ThemeSettingsContent(
     onSettingChanged: (String, Any) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
-    
+
     // Group settings by category
     val settingsByCategory = themeSettings.settings.values.groupBy { it.category }
-    
+
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
@@ -467,7 +468,7 @@ private fun ThemeSettingsContent(
             // Category header
             item {
                 Text(
-                    text = category,
+                    text = SettingCategories.getLocalizedCategory(context, category),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont,
                         fontWeight = FontWeight.SemiBold,
@@ -477,7 +478,7 @@ private fun ThemeSettingsContent(
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                 )
             }
-            
+
             // Settings in this category
             items(settings) { setting ->
                 val isFirstInCategory = settings.indexOf(setting) == 0
@@ -491,7 +492,7 @@ private fun ThemeSettingsContent(
                     isFirstInCategory = isFirstInCategory
                 )
             }
-            
+
             // Spacer between categories
             item {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -540,7 +541,7 @@ private fun SettingItem(
                         onValueChange = onValueChanged
                     )
                 }
-                
+
                 is ToggleSetting -> {
                     SettingsToggle(
                         setting = setting,
@@ -548,7 +549,7 @@ private fun SettingItem(
                         onValueChange = onValueChanged
                     )
                 }
-                
+
                 is DropdownSetting -> {
                     SettingsDropdown(
                         setting = setting,
@@ -571,7 +572,7 @@ private fun ErrorMessage(
     modifier: Modifier = Modifier
 ) {
     val customFont = FontFamily(Font(R.font.ntype82regular))
-    
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -594,9 +595,9 @@ private fun ErrorMessage(
                 ),
                 color = MaterialTheme.colorScheme.error
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium.copy(
@@ -605,9 +606,9 @@ private fun ErrorMessage(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             TextButton(onClick = onRetry) {
                 Text(
                     text = "Retry",

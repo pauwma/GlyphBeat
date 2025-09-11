@@ -527,7 +527,7 @@ fun SettingsScreen(
         }
 
         // Update currentLanguage if app locale changed but state didn't
-        if (currentAppLanguage != currentLanguage && currentAppLanguage in listOf("en", "es")) {
+        if (currentAppLanguage != currentLanguage && AppConfig.SupportedLanguages.isSupported(currentAppLanguage)) {
             currentLanguage = currentAppLanguage
         }
     }
@@ -619,7 +619,7 @@ fun SettingsScreen(
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = "Settings",
+                    text = localeContext.getString(R.string.screen_settings),
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontFamily = customFont
@@ -654,7 +654,7 @@ fun SettingsScreen(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Notification Access",
+                    text = context.getString(R.string.notification_access_title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont
                     ),
@@ -663,7 +663,7 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "Required to detect and control music playback from apps like Spotify, YouTube Music, etc",
+                    text = context.getString(R.string.notification_access_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp)
@@ -703,9 +703,9 @@ fun SettingsScreen(
                     ) {
                         Text(
                             when {
-                                !notificationAccessGranted -> "Grant Notification Access"
-                                !mediaServiceWorking -> "Fix Service Connection"
-                                else -> "Service Working"
+                                !notificationAccessGranted -> context.getString(R.string.notification_access_grant)
+                                !mediaServiceWorking -> context.getString(R.string.notification_access_fix)
+                                else -> context.getString(R.string.notification_access_working)
                             }
                         )
                     }
@@ -729,10 +729,10 @@ fun SettingsScreen(
                                         if (controller != null) {
                                             testTrackInfo = trackInfo
                                             if (trackInfo == null) {
-                                                testError = "Active session found but no track info available"
+                                                testError = context.getString(R.string.notification_test_error)
                                             }
                                         } else {
-                                            testError = "No active music sessions found"
+                                            testError = context.getString(R.string.no_active_session)
                                         }
 
                                         // Also refresh the service status when testing
@@ -928,7 +928,7 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "Auto-Start",
+                            text = context.getString(R.string.auto_start_title),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontFamily = customFont
                             ),
@@ -937,7 +937,7 @@ fun SettingsScreen(
                         )
 
                         Text(
-                            text = "Automatically activate when music starts playing",
+                            text = context.getString(R.string.auto_start_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )
@@ -965,7 +965,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Auto-Start Service",
+                        text = context.getString(R.string.auto_start_service),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -1047,7 +1047,7 @@ fun SettingsScreen(
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                             )
                             Text(
-                                text = "Note: Glyph button controls are not available when auto-started. Shake controls still works.",
+                                text = context.getString(R.string.auto_start_note),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                 lineHeight = 16.sp
@@ -1080,7 +1080,7 @@ fun SettingsScreen(
                                 verticalAlignment = Alignment.Top
                             ) {
                                 Text(
-                                    text = "Installed Music Apps",
+                                    text = context.getString(R.string.auto_start_apps_title),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onBackground
                                 )
@@ -1119,7 +1119,7 @@ fun SettingsScreen(
                             }
 
                             Text(
-                                text = "Select which apps should trigger auto-start when music playback is detected.",
+                                text = context.getString(R.string.auto_start_apps_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                 modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
@@ -1300,7 +1300,7 @@ fun SettingsScreen(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Bug Report & Support",
+                    text = context.getString(R.string.bug_report_title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont
                     ),
@@ -1309,7 +1309,7 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "Found a bug or need help? Contact me for support",
+                    text = context.getString(R.string.bug_report_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp)
@@ -1353,7 +1353,7 @@ fun SettingsScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Contact")
+                    Text(context.getString(R.string.contact_button))
                 }
             }
         }
@@ -1375,7 +1375,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Support GlyphBeat",
+                        text = context.getString(R.string.support_title),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontFamily = customFont
                         ),
@@ -1385,7 +1385,7 @@ fun SettingsScreen(
                 }
 
                 Text(
-                    text = "GlyphBeat is ad-free and built with love. Enjoying it? Buy me a coffee to power new features, every bit helps. Thanks! \uD83C\uDFB5 \uD83E\uDD0D",
+                    text = context.getString(R.string.support_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp)
@@ -1532,7 +1532,7 @@ fun SettingsScreen(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Tutorial",
+                    text = context.getString(R.string.tutorial_title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont,
                     ),
@@ -1541,7 +1541,7 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "View the app introduction and setup guide again",
+                    text = context.getString(R.string.tutorial_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp)
@@ -1567,7 +1567,7 @@ fun SettingsScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Replay Tutorial")
+                    Text(context.getString(R.string.tutorial_button))
                 }
             }
         }
@@ -1585,7 +1585,7 @@ fun SettingsScreen(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "App Information",
+                    text = context.getString(R.string.app_info_title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = customFont
                     ),
@@ -1594,7 +1594,7 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "GlyphBeat - Animated Media Player Toy for Glyph Matrix",
+                    text = context.getString(R.string.app_info_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp)

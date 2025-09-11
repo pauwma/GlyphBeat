@@ -4,22 +4,26 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.util.Log
-import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 import com.pauwma.glyphbeat.sound.MediaControlHelper
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.themes.base.FrameTransition
 import com.pauwma.glyphbeat.themes.animation.preview.CoverArtPreviewManager
 import com.pauwma.glyphbeat.themes.animation.preview.CoverArtPreviewRenderer
 import com.pauwma.glyphbeat.ui.settings.*
+import com.pauwma.glyphbeat.R
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueFloat
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueInt
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueLong
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getToggleValue
 
 /**
  * CoverArtTheme - A dynamic theme that displays the album cover of currently playing media.
- * 
+ *
  * This theme shows album artwork from the currently playing track on the Glyph Matrix,
  * converted to a 25x25 grayscale representation. When media is paused, the same image
  * is shown at 50% opacity as requested. Falls back to a music note pattern when no
  * album art is available.
- * 
+ *
  * Features:
  * - Dynamic content based on current track's album art
  * - Real-time updates when track changes
@@ -30,88 +34,88 @@ import com.pauwma.glyphbeat.ui.settings.*
  * - Efficient bitmap processing and caching
  * - Customizable brightness, contrast, and opacity settings
  */
-class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettingsProvider {
-    
+class CoverArtTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvider {
+
     // Settings-driven properties with default values
     private var coverBrightness: Float = 1.0f
     private var enhanceContrast: Boolean = true
     private var pausedOpacity: Float = 0.4f
-    
+
     // Rotation settings
     private var enableRotation: Boolean = false
     private var rotationSpeed: Long = 150L // milliseconds per frame
     private var rotationFrameCount: Int = 30 // Number of frames for 360° rotation (default 24 = 15° per frame)
     private var currentRotationAngle: Float = 0f
-    
+
     // Smooth rotation tracking for pause/resume
     private var rotationStartTime: Long = 0L // When rotation started (for time-based calculation)
     private var savedRotationPosition: Float = 0f // Saved angle when paused
     private var isRotationPaused: Boolean = false // Track pause state
-    
+
     // =================================================================================
     // THEME METADATA
     // =================================================================================
-    
-    override val titleTheme: String = "Cover Art"
-    
-    override val descriptionTheme: String = "Try to guess what cover thats suppose to be!"
-    
+
+    override val titleTheme: String = ctx.getString(R.string.theme_cover_art_title)
+
+    override val descriptionTheme: String = ctx.getString(R.string.theme_cover_art_desc)
+
     override val authorName: String = "pauwma"
-    
+
     override val version: String = "1.0.0"
-    
+
     override val category: String = "Media"
-    
+
     override val tags: Array<String> = arrayOf("album", "cover", "art", "media", "dynamic", "music")
-    
+
     override val createdDate: Long = System.currentTimeMillis()
-    
+
     // =================================================================================
     // ANIMATION PROPERTIES
     // =================================================================================
-    
+
     // Dynamic animation speed based on rotation settings
     override val animationSpeedValue: Long
         get() = if (enableRotation) rotationSpeed else 1000L
-    
+
     // Frame durations for rotation animation - each frame shows for rotation speed duration
     override val frameDurations: LongArray?
         get() = if (enableRotation) {
             // Dynamic frame count for configurable rotation smoothness
             LongArray(rotationFrameCount) { rotationSpeed }
         } else null
-    
+
     // No frame transitions needed
     override val frameTransitions: List<FrameTransition>? = null
-    
+
     // Dynamic brightness based on coverBrightness setting
     override val brightnessValue: Int
         get() = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.multiplierToBrightness(coverBrightness)
-    
+
     override val loopMode: String = "normal"
-    
+
     override val complexity: String = "Simple"
-    
+
     // =================================================================================
     // BEHAVIOR SETTINGS
     // =================================================================================
-    
+
     override val isReactive: Boolean = true // Reacts to media changes
-    
+
     override val supportsFadeTransitions: Boolean = true
-    
+
     // =================================================================================
     // TECHNICAL METADATA
     // =================================================================================
-    
+
     override val compatibilityVersion: String = "1.0.0"
-    
+
     override val frameDataFormat: String = "flat"
-    
+
     // =================================================================================
     // PREVIEW FRAME - Static circle pattern for theme selection
     // =================================================================================
-    
+
     /**
      * Preview frame shown in theme selection, using the offline frame pattern
      * for consistency with the actual theme behavior when no media is available.
@@ -124,29 +128,29 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     // =================================================================================
     // MEDIA HELPER AND CACHING
     // =================================================================================
-    
-    private val mediaHelper: MediaControlHelper by lazy { 
-        MediaControlHelper(context).also { helper ->
+
+    private val mediaHelper: MediaControlHelper by lazy {
+        MediaControlHelper(ctx).also { helper ->
             // Load saved rotation state first
             loadRotationState()
-            
+
             // Register for state changes to handle pause/resume
             helper.registerStateChangeCallback(object : MediaControlHelper.StateChangeCallback {
                 override fun onPlaybackStateChanged(isPlaying: Boolean, hasActiveMedia: Boolean) {
                     handlePlaybackStateChange(isPlaying, hasActiveMedia)
                 }
-                
+
                 override fun onActiveAppChanged(packageName: String?, appName: String?) {
                     // Track info will update through onPlaybackStateChanged when media changes
                     Log.v(LOG_TAG, "Active app changed to: $appName ($packageName)")
                 }
             })
-            
+
             // Check initial media state and adjust rotation state if needed
             val trackInfo = helper.getTrackInfo()
             val initialIsPlaying = helper.isPlaying()
             val initialHasMedia = trackInfo != null
-            
+
             // If media is currently paused and we have saved paused state, ensure we're in the right state
             if (!initialIsPlaying && initialHasMedia && enableRotation) {
                 if (!isRotationPaused) {
@@ -160,26 +164,26 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             }
         }
     }
-    
+
     // Cache for album art to avoid repeated processing
     private var cachedTrackTitle: String? = null
     private var cachedAlbumArt: Bitmap? = null
     private var cachedFrameData: IntArray? = null
     private var cachedPausedFrameData: IntArray? = null
-    
+
     // Cache for rotation frames
     private var cachedRotationFrames: Array<IntArray>? = null
     private var cachedRotationTrackTitle: String? = null
-    
+
     // SharedPreferences for rotation state persistence
-    private val rotationPrefs: SharedPreferences by lazy { 
-        context.getSharedPreferences("cover_art_rotation_state", Context.MODE_PRIVATE)
+    private val rotationPrefs: SharedPreferences by lazy {
+        ctx.getSharedPreferences("cover_art_rotation_state", Context.MODE_PRIVATE)
     }
-    
+
     // =================================================================================
     // DYNAMIC FRAME GENERATION
     // =================================================================================
-    
+
     /**
      * Generate frames dynamically based on current media.
      * This overrides the static frames approach to provide dynamic content.
@@ -195,16 +199,16 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
         } else {
             arrayOf(getCurrentAlbumArtFrame())
         }
-    
+
     /**
      * Calculate current rotation angle based on elapsed time for smooth rotation.
      * This enables smooth pause/resume functionality.
      */
     private fun calculateCurrentRotationAngle(): Float {
         if (!enableRotation) return 0f
-        
+
         val currentTime = System.currentTimeMillis()
-        
+
         return if (isRotationPaused) {
             // Return saved position when paused
             savedRotationPosition
@@ -218,13 +222,13 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
                 val rotationsPerSecond = 1000f / (rotationSpeed * rotationFrameCount) // Full rotations per second
                 val anglePerMillisecond = 360f * rotationsPerSecond / 1000f
                 val calculatedAngle = (savedRotationPosition + (elapsedTime * anglePerMillisecond)) % 360f
-                
+
                 // Log.v(LOG_TAG, "Rotation angle: ${calculatedAngle}° (elapsed: ${elapsedTime}ms)")
                 calculatedAngle
             }
         }
     }
-    
+
     /**
      * Pause rotation at current position for smooth resume.
      */
@@ -236,7 +240,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             Log.d(LOG_TAG, "Rotation paused at ${savedRotationPosition}°")
         }
     }
-    
+
     /**
      * Resume rotation from saved position.
      */
@@ -247,7 +251,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             Log.d(LOG_TAG, "Rotation resumed from ${savedRotationPosition}°")
         }
     }
-    
+
     /**
      * Start rotation from beginning (called when rotation is first enabled).
      */
@@ -260,13 +264,13 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             Log.d(LOG_TAG, "Rotation started - cleared saved state")
         }
     }
-    
+
     /**
      * Handle playback state changes for smooth pause/resume.
      */
     private fun handlePlaybackStateChange(isPlaying: Boolean, hasActiveMedia: Boolean) {
         if (!enableRotation) return
-        
+
         if (isPlaying && hasActiveMedia) {
             // Media is playing - resume or start rotation
             if (isRotationPaused) {
@@ -279,7 +283,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             pauseRotation()
         }
     }
-    
+
     /**
      * Get current album art as a matrix frame, with caching for performance.
      * @param rotationAngle Optional rotation angle in degrees (default 0f for no rotation)
@@ -327,11 +331,11 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             mediaHelper.bitmapToMatrixArray(null, 1f, false)
         }
     }
-    
+
     // =================================================================================
     // STATE-SPECIFIC FRAMES
     // =================================================================================
-    
+
     /**
      * Paused frame shows the same album art but at current rotation position with reduced opacity.
      * The opacity reduction is handled by returning a dimmer frame that will be further
@@ -347,19 +351,19 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             } else {
                 getCurrentAlbumArtFrame()
             }
-            
+
             // Apply paused opacity to the raw pixel values
             // The unified brightness model will then apply theme brightness on top
             return currentFrame.map { (it * pausedOpacity).toInt().coerceIn(0, 255) }.toIntArray()
         }
-    
+
     /**
      * Offline frame shows clean minimal pattern like MinimalTheme with circular masking.
      */
     override val offlineFrame: IntArray by lazy {
         // Start with the exact MinimalTheme offline frame pattern (shaped format)
         val minimalOfflineFrameShaped = intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-        
+
         // Convert shaped data to flat 25x25 array with circular masking (same as MinimalTheme.generateFrame)
         val flatArray = IntArray(625) { 0 }
         val centerX = 12.0
@@ -461,7 +465,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
     // =================================================================================
     // OVERRIDDEN METHODS
     // =================================================================================
-    
+
     override fun generateFrame(frameIndex: Int): IntArray {
         validateFrameIndex(frameIndex)
 
@@ -488,13 +492,13 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             offlineFrame
         }
     }
-    
+
     override fun getFrameCount(): Int = if (enableRotation) rotationFrameCount else 1
     override fun getThemeName(): String = titleTheme
     override fun getAnimationSpeed(): Long = animationSpeedValue
     override fun getBrightness(): Int = brightnessValue
     override fun getDescription(): String = descriptionTheme
-    
+
     /**
      * Clear cache when track changes to ensure fresh content.
      * This method can be called externally to force refresh.
@@ -508,27 +512,27 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
         cachedRotationTrackTitle = null
         Log.v(LOG_TAG, "Album art cache cleared")
     }
-    
+
     /**
      * Save current rotation state to SharedPreferences for persistence across service restarts.
      */
     private fun saveRotationState() {
         try {
             val currentAngle = if (isRotationPaused) savedRotationPosition else calculateCurrentRotationAngle()
-            
+
             rotationPrefs.edit().apply {
                 putFloat(KEY_SAVED_ROTATION_POSITION, currentAngle)
                 putBoolean(KEY_IS_ROTATION_PAUSED, isRotationPaused)
                 putLong(KEY_ROTATION_START_TIME, if (isRotationPaused) 0L else rotationStartTime)
                 apply()
             }
-            
+
             Log.v(LOG_TAG, "Rotation state saved: angle=${currentAngle}°, paused=$isRotationPaused")
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Failed to save rotation state: ${e.message}")
         }
     }
-    
+
     /**
      * Load saved rotation state from SharedPreferences to restore state across service restarts.
      */
@@ -538,12 +542,12 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
                 savedRotationPosition = rotationPrefs.getFloat(KEY_SAVED_ROTATION_POSITION, 0f)
                 isRotationPaused = rotationPrefs.getBoolean(KEY_IS_ROTATION_PAUSED, false)
                 rotationStartTime = rotationPrefs.getLong(KEY_ROTATION_START_TIME, 0L)
-                
+
                 // If we're resuming from a non-paused state, reset start time to current time
                 if (!isRotationPaused && rotationStartTime > 0L) {
                     rotationStartTime = System.currentTimeMillis()
                 }
-                
+
                 Log.d(LOG_TAG, "Rotation state loaded: angle=${savedRotationPosition}°, paused=$isRotationPaused")
             } else {
                 Log.v(LOG_TAG, "No saved rotation state found, using defaults")
@@ -556,7 +560,7 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             rotationStartTime = 0L
         }
     }
-    
+
     /**
      * Cleanup resources and callbacks.
      */
@@ -571,39 +575,39 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             Log.w(LOG_TAG, "Error during cleanup: ${e.message}")
         }
     }
-    
+
     // =================================================================================
     // PREVIEW-SPECIFIC METHODS
     // =================================================================================
-    
+
     // Lazy initialization of preview components
     private var previewManager: CoverArtPreviewManager? = null
     private val previewRenderer: CoverArtPreviewRenderer by lazy {
         CoverArtPreviewRenderer()
     }
-    
+
     /**
      * Get a preview frame with current settings applied.
      * This method is optimized for preview display and returns a frame
      * suitable for the preview UI with all settings properly applied.
-     * 
+     *
      * @param settings Optional theme settings to apply
      * @return Preview frame data as IntArray
      */
     fun getPreviewFrame(settings: ThemeSettings? = null): IntArray {
         // Initialize preview manager if needed
         if (previewManager == null) {
-            previewManager = CoverArtPreviewManager(context)
+            previewManager = CoverArtPreviewManager(ctx)
         }
-        
-        return previewManager?.generatePreviewFrame(settings ?: getSettingsSchema()) 
+
+        return previewManager?.generatePreviewFrame(settings ?: getSettingsSchema())
             ?: previewFrame
     }
-    
+
     /**
      * Get a preview frame for specific media with settings.
      * Useful for showing preview of how specific album art would look.
-     * 
+     *
      * @param trackInfo Track information with album art
      * @param settings Theme settings to apply
      * @return Preview frame data as IntArray
@@ -615,20 +619,20 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
         if (trackInfo?.albumArt == null) {
             return previewRenderer.generateFallbackPreview(settings)
         }
-        
+
         return try {
             val processedBitmap = previewRenderer.processAlbumArtForPreview(
                 albumArt = trackInfo.albumArt,
                 targetSize = 25,
                 settings = settings
             )
-            
+
             val rotation = if (settings?.getToggleValue("enable_rotation", false) == true) {
                 currentRotationAngle
             } else {
                 0f
             }
-            
+
             previewRenderer.bitmapToPreviewFrame(
                 bitmap = processedBitmap,
                 rotation = rotation,
@@ -639,49 +643,49 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             previewRenderer.generateFallbackPreview(settings)
         }
     }
-    
+
     /**
      * Check if the preview needs to be updated.
      * Returns true if the preview should be refreshed due to media changes
      * or settings updates.
-     * 
+     *
      * @return True if preview needs update, false otherwise
      */
     fun shouldUpdatePreview(): Boolean {
         return previewManager?.shouldUpdatePreview() ?: false
     }
-    
+
     /**
      * Get the preview manager instance for advanced preview control.
      * Creates the manager if it doesn't exist.
-     * 
+     *
      * @return CoverArtPreviewManager instance
      */
     fun getPreviewManager(): CoverArtPreviewManager {
         if (previewManager == null) {
-            previewManager = CoverArtPreviewManager(context)
+            previewManager = CoverArtPreviewManager(ctx)
         }
         return previewManager!!
     }
-    
+
     /**
      * Check if this theme should use enhanced preview.
      * CoverArtTheme always uses enhanced preview for better accuracy.
-     * 
+     *
      * @return True to use enhanced preview
      */
     fun useEnhancedPreview(): Boolean = true
-    
+
     // =================================================================================
     // THEME SETTINGS PROVIDER IMPLEMENTATION
     // =================================================================================
-    
+
     override fun getSettingsSchema(): ThemeSettings {
         return ThemeSettingsBuilder(getSettingsId())
             .addSliderSetting(
                 id = "cover_brightness",
-                displayName = "Cover Brightness",
-                description = "Brightness multiplier for album art",
+                displayName = ctx.getString(R.string.set_cover_brightness_title),
+                description = ctx.getString(R.string.set_cover_brightness_desc),
                 defaultValue = 1.0f,
                 minValue = 0.1f,
                 maxValue = 1.0f,
@@ -691,22 +695,22 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             )
             .addToggleSetting(
                 id = "enhance_contrast",
-                displayName = "Enhance Contrast",
-                description = "Apply contrast enhancement to improve visibility",
+                displayName = ctx.getString(R.string.set_cover_contrast_title),
+                description = ctx.getString(R.string.set_cover_contrast_desc),
                 defaultValue = true,
                 category = SettingCategories.EFFECTS
             )
             .addToggleSetting(
                 id = "enable_rotation",
-                displayName = "Enable Rotation",
-                description = "Rotate the album art continuously",
+                displayName = ctx.getString(R.string.set_cover_rotation_title),
+                description = ctx.getString(R.string.set_cover_rotation_desc),
                 defaultValue = false,
                 category = SettingCategories.ANIMATION
             )
             .addSliderSetting(
                 id = "rotation_speed",
-                displayName = "Rotation Speed",
-                description = "How fast the cover art rotates",
+                displayName = ctx.getString(R.string.set_rotation_speed_title),
+                description = ctx.getString(R.string.set_cover_rotation_speed_desc),
                 defaultValue = 150L,
                 minValue = 50L,
                 maxValue = 1000L,
@@ -716,8 +720,8 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             )
             .addSliderSetting(
                 id = "rotation_smoothness",
-                displayName = "Rotation Smoothness",
-                description = "Number of steps per rotation (more = smoother)",
+                displayName = ctx.getString(R.string.set_cover_rotation_smooth_title),
+                description = ctx.getString(R.string.set_cover_rotation_smooth_desc),
                 defaultValue = 30,
                 minValue = 12,
                 maxValue = 36,
@@ -727,8 +731,8 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             )
             .addSliderSetting(
                 id = "paused_opacity",
-                displayName = "Paused Opacity",
-                description = "Opacity when media is paused",
+                displayName = ctx.getString(R.string.set_paused_opacity_title),
+                description = ctx.getString(R.string.set_paused_opacity_desc),
                 defaultValue = 0.4f,
                 minValue = 0.1f,
                 maxValue = 0.8f,
@@ -738,29 +742,29 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
             )
             .build()
     }
-    
+
     override fun applySettings(settings: ThemeSettings) {
         // Apply brightness
         coverBrightness = settings.getSliderValueFloat("cover_brightness", 1.0f)
             .coerceIn(0.2f, 1.0f)
-        
+
         // Apply contrast enhancement
         enhanceContrast = settings.getToggleValue("enhance_contrast", true)
-        
+
         // Apply paused opacity
         pausedOpacity = settings.getSliderValueFloat("paused_opacity", 0.4f)
             .coerceIn(0.2f, 0.8f)
-        
+
         // Store previous rotation setting to detect changes
         val wasRotationEnabled = enableRotation
-        
+
         // Apply rotation settings
         enableRotation = settings.getToggleValue("enable_rotation", false)
         rotationSpeed = settings.getSliderValueLong("rotation_speed", 150L)
             .coerceIn(50L, 1000L)
         rotationFrameCount = settings.getSliderValueInt("rotation_smoothness", 30)
             .coerceIn(12, 36)
-        
+
         // Only reset rotation state if rotation was just enabled/disabled, not for other setting changes
         if (wasRotationEnabled != enableRotation) {
             if (enableRotation) {
@@ -777,14 +781,14 @@ class CoverArtTheme(private val context: Context) : ThemeTemplate(), ThemeSettin
                 Log.d(LOG_TAG, "Rotation disabled - saved state and reset")
             }
         }
-        
+
         // Clear cache to force refresh with new settings
         clearCache()
     }
-    
+
     private companion object {
         private val LOG_TAG = CoverArtTheme::class.java.simpleName
-        
+
         // SharedPreferences keys for rotation state persistence
         private const val KEY_SAVED_ROTATION_POSITION = "saved_rotation_position"
         private const val KEY_IS_ROTATION_PAUSED = "is_rotation_paused"

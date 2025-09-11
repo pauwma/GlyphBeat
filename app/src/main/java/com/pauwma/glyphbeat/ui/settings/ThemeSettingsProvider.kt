@@ -1,5 +1,8 @@
 package com.pauwma.glyphbeat.ui.settings
 
+import android.content.Context
+import com.pauwma.glyphbeat.R
+
 /**
  * Interface for animation themes that support customizable settings.
  * Themes can implement this interface to provide user-configurable options.
@@ -190,6 +193,23 @@ object SettingCategories {
     const val BEHAVIOR = "Behavior"
     const val EFFECTS = "Effects"
     const val AUDIO = "Audio"
+
+    /**
+     * Get localized category names using string resources.
+     */
+    fun getLocalizedCategory(context: Context, category: String): String {
+        return when (category) {
+            ANIMATION -> context.getString(R.string.section_animation)
+            DESIGN -> context.getString(R.string.section_design)
+            LAYOUT -> context.getString(R.string.section_layout)
+            VISUAL -> context.getString(R.string.section_visual)
+            TIMING -> context.getString(R.string.section_timing)
+            BEHAVIOR -> context.getString(R.string.section_behavior)
+            EFFECTS -> context.getString(R.string.section_effects)
+            AUDIO -> context.getString(R.string.section_audio)
+            else -> category // Fallback to original category name
+        }
+    }
 }
 
 /**
@@ -224,36 +244,19 @@ object CommonSettingValues {
         const val REVERSE = "reverse"
         const val PING_PONG = "ping_pong"
         const val RANDOM = "random"
-        
+
         val OPTIONS = mapOf(
             NORMAL to "Normal",
-            REVERSE to "Reverse", 
+            REVERSE to "Reverse",
             PING_PONG to "Ping Pong",
             RANDOM to "Random"
         )
-    }
-    
-    object ColorSchemes {
-        const val CLASSIC = "classic"
-        const val NEON = "neon"
-        const val WARM = "warm"
-        const val COOL = "cool"
-        const val MONOCHROME = "monochrome"
-        
-        val OPTIONS = mapOf(
-            CLASSIC to "Classic",
-            NEON to "Neon",
-            WARM to "Warm",
-            COOL to "Cool",
-            MONOCHROME to "Monochrome"
-        )
-    }
-    
+
     object Complexity {
         const val SIMPLE = "simple"
         const val MEDIUM = "medium"
         const val COMPLEX = "complex"
-        
+
         val OPTIONS = mapOf(
             SIMPLE to "Simple",
             MEDIUM to "Medium",
@@ -299,4 +302,5 @@ fun ThemeSettings.getToggleValue(settingId: String, default: Boolean = false): B
  */
 fun ThemeSettings.getDropdownValue(settingId: String, default: String = ""): String {
     return getTypedValue(settingId, default)
+}
 }

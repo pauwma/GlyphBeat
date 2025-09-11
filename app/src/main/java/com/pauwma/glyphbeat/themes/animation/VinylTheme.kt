@@ -4,6 +4,9 @@ import android.content.Context
 import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.ui.settings.*
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getDropdownValue
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueFloat
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueLong
 
 /**
  * Custom vinyl record theme with predefined 8-frame animation.

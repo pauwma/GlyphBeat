@@ -5,6 +5,8 @@ import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.themes.base.FrameTransition
 import com.pauwma.glyphbeat.ui.settings.*
 import com.pauwma.glyphbeat.R
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getDropdownValue
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueFloat
 
 /**
  * Minimal Theme - A static, single-frame theme with state-specific frames.

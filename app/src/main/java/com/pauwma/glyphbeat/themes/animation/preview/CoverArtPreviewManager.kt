@@ -4,10 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.pauwma.glyphbeat.sound.MediaControlHelper
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueInt
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getSliderValueLong
+import com.pauwma.glyphbeat.ui.settings.CommonSettingValues.getToggleValue
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
-import com.pauwma.glyphbeat.ui.settings.getToggleValue
-import com.pauwma.glyphbeat.ui.settings.getSliderValueLong
-import com.pauwma.glyphbeat.ui.settings.getSliderValueInt
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

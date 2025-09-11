@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -41,7 +42,7 @@ fun SettingsSection(
     content: @Composable () -> Unit
 ) {
     val customFont = FontFamily(Font(R.font.ntype82regular))
-    
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -77,7 +78,7 @@ fun SettingsSection(
                         ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    
+
                     description?.let { desc ->
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -89,14 +90,14 @@ fun SettingsSection(
                         )
                     }
                 }
-                
+
                 // Animated expand/collapse icon
                 val rotationAngle by animateFloatAsState(
                     targetValue = if (expanded) 180f else 0f,
                     animationSpec = tween(durationMillis = 300),
                     label = "expandIcon"
                 )
-                
+
                 Icon(
                     imageVector = Icons.Default.ExpandMore,
                     contentDescription = if (expanded) "Collapse" else "Expand",
@@ -106,7 +107,7 @@ fun SettingsSection(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             // Animated content
             AnimatedVisibility(
                 visible = expanded,
@@ -133,17 +134,21 @@ fun TimeoutSlider(
     currentValue: Long,
     onValueChange: (Long) -> Unit,
     minLabel: String? = null,
-    offLabel: String = "Disabled",
+    offLabel: String? = null,
     useAlternateColors: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
+
+    // Use string resource as default
+    val actualOffLabel = offLabel ?: context.getString(R.string.disabled)
     val timeoutOptions = ShakeControlSettings.TIMEOUT_OPTIONS
     val timeoutOptionsShort = ShakeControlSettings.TIMEOUT_OPTIONS_SHORT
     val currentIndex = timeoutOptions.indexOfFirst { it.first == currentValue }.let {
         if (it == -1) 0 else it
     }
-    
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -163,22 +168,22 @@ fun TimeoutSlider(
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Text(
-                text = if (currentValue == 0L) offLabel else timeoutOptions[currentIndex].second,
+                text = if (currentValue == 0L) actualOffLabel else timeoutOptions[currentIndex].second,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontFamily = customFont,
                     fontSize = 15.sp
                 ),
-                color = if (currentValue == 0L) 
+                color = if (currentValue == 0L)
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                else 
+                else
                     MaterialTheme.colorScheme.primary
             )
         }
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         // Description
         Text(
             text = description,
@@ -187,9 +192,9 @@ fun TimeoutSlider(
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Slider with min/max labels
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -204,7 +209,7 @@ fun TimeoutSlider(
                 modifier = Modifier.width(26.dp),
                 textAlign = TextAlign.Start
             )
-            
+
             Slider(
                 value = currentIndex.toFloat(),
                 onValueChange = { value ->
@@ -215,20 +220,20 @@ fun TimeoutSlider(
                 steps = timeoutOptions.size - 2,
                 modifier = Modifier.weight(1f),
                 colors = SliderDefaults.colors(
-                    thumbColor = if (currentValue == 0L) 
+                    thumbColor = if (currentValue == 0L)
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    else 
+                    else
                         MaterialTheme.colorScheme.primary,
-                    activeTrackColor = if (currentValue == 0L) 
+                    activeTrackColor = if (currentValue == 0L)
                         if (useAlternateColors) Color(0xFF1A1A1A) else MaterialTheme.colorScheme.surfaceVariant
-                    else 
+                    else
                         MaterialTheme.colorScheme.primary,
                     inactiveTrackColor = if (useAlternateColors) Color(0xFF1A1A1A) else MaterialTheme.colorScheme.surfaceVariant,
                     activeTickColor = if (useAlternateColors) Color(0xFF1A1A1A) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
                     inactiveTickColor = MaterialTheme.colorScheme.primary
                 )
             )
-            
+
             Text(
                 text = timeoutOptions.last().second,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -252,16 +257,20 @@ fun ShortTimeoutSlider(
     currentValue: Long,
     onValueChange: (Long) -> Unit,
     minLabel: String? = null,
-    offLabel: String = "Disabled",
+    offLabel: String? = null,
     useAlternateColors: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
+
+    // Use string resource as default
+    val actualOffLabel = offLabel ?: context.getString(R.string.disabled)
     val timeoutOptions = ShakeControlSettings.TIMEOUT_OPTIONS_SHORT
     val currentIndex = timeoutOptions.indexOfFirst { it.first == currentValue }.let {
         if (it == -1) 0 else it
     }
-    
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -281,22 +290,22 @@ fun ShortTimeoutSlider(
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Text(
-                text = if (currentValue == 0L) offLabel else timeoutOptions[currentIndex].second,
+                text = if (currentValue == 0L) actualOffLabel else timeoutOptions[currentIndex].second,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontFamily = customFont,
                     fontSize = 15.sp
                 ),
-                color = if (currentValue == 0L) 
+                color = if (currentValue == 0L)
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                else 
+                else
                     MaterialTheme.colorScheme.primary
             )
         }
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         // Description
         Text(
             text = description,
@@ -305,9 +314,9 @@ fun ShortTimeoutSlider(
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Slider with min/max labels
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -322,7 +331,7 @@ fun ShortTimeoutSlider(
                 modifier = Modifier.width(26.dp),
                 textAlign = TextAlign.Start
             )
-            
+
             Slider(
                 value = currentIndex.toFloat(),
                 onValueChange = { value ->
@@ -333,20 +342,20 @@ fun ShortTimeoutSlider(
                 steps = timeoutOptions.size - 2,
                 modifier = Modifier.weight(1f),
                 colors = SliderDefaults.colors(
-                    thumbColor = if (currentValue == 0L) 
+                    thumbColor = if (currentValue == 0L)
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    else 
+                    else
                         MaterialTheme.colorScheme.primary,
-                    activeTrackColor = if (currentValue == 0L) 
+                    activeTrackColor = if (currentValue == 0L)
                         if (useAlternateColors) Color(0xFF1A1A1A) else MaterialTheme.colorScheme.surfaceVariant
-                    else 
+                    else
                         MaterialTheme.colorScheme.primary,
                     inactiveTrackColor = if (useAlternateColors) Color(0xFF1A1A1A) else MaterialTheme.colorScheme.surfaceVariant,
                     activeTickColor = if (useAlternateColors) Color(0xFF1A1A1A) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
                     inactiveTickColor = MaterialTheme.colorScheme.primary
                 )
             )
-            
+
             Text(
                 text = timeoutOptions.last().second,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -372,8 +381,10 @@ fun BatteryAwarenessSettings(
     useAlternateColors: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+
+    val context = LocalContext.current
     val customFont = FontFamily(Font(R.font.ntype82regular))
-    
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -389,27 +400,27 @@ fun BatteryAwarenessSettings(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "Battery Awareness",
+                    text = context.getString(R.string.auto_start_battery_title),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = customFont,
                         fontSize = 15.sp
                     ),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 Spacer(modifier = Modifier.height(2.dp))
-                
+
                 Text(
-                    text = "Disable auto-start below battery threshold",
+                    text = context.getString(R.string.auto_start_battery_desc),
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 11.sp
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             // Custom toggle switch
             Box(
                 modifier = Modifier
@@ -433,7 +444,7 @@ fun BatteryAwarenessSettings(
                 )
             }
         }
-        
+
         // Threshold slider (only visible when enabled)
         AnimatedVisibility(
             visible = enabled,
@@ -449,14 +460,14 @@ fun BatteryAwarenessSettings(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Battery Threshold",
+                        text = context.getString(R.string.auto_start_battery_threshold),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = customFont,
                             fontSize = 14.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    
+
                     Text(
                         text = "${threshold}%",
                         style = MaterialTheme.typography.bodyMedium.copy(
@@ -466,9 +477,9 @@ fun BatteryAwarenessSettings(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -481,7 +492,7 @@ fun BatteryAwarenessSettings(
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.width(24.dp)
                     )
-                    
+
                     Slider(
                         value = threshold.toFloat(),
                         onValueChange = { value ->
@@ -498,7 +509,7 @@ fun BatteryAwarenessSettings(
                             inactiveTickColor = MaterialTheme.colorScheme.primary
                         )
                     )
-                    
+
                     Text(
                         text = "25%",
                         style = MaterialTheme.typography.bodySmall.copy(
@@ -523,13 +534,11 @@ fun EnhancedToggleSetting(
     description: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    enabledLabel: String = "Enabled",
-    disabledLabel: String = "Disabled",
     useAlternateColors: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val customFont = FontFamily(Font(R.font.ntype82regular))
-    
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -551,9 +560,9 @@ fun EnhancedToggleSetting(
                     ),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 Spacer(modifier = Modifier.height(2.dp))
-                
+
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall.copy(
@@ -562,9 +571,9 @@ fun EnhancedToggleSetting(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             // Custom toggle switch
             Box(
                 modifier = Modifier
@@ -588,21 +597,5 @@ fun EnhancedToggleSetting(
                 )
             }
         }
-        
-        // State label
-        Text(
-            text = if (checked) enabledLabel else disabledLabel,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = customFont,
-                fontSize = 11.sp
-            ),
-            color = if (checked) 
-                MaterialTheme.colorScheme.primary 
-            else 
-                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier
-                .align(Alignment.End)
-                .padding(top = 4.dp)
-        )
     }
 }
