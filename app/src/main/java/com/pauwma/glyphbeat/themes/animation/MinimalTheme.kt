@@ -1,8 +1,10 @@
 package com.pauwma.glyphbeat.themes.animation
 
+import android.content.Context
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.themes.base.FrameTransition
 import com.pauwma.glyphbeat.ui.settings.*
+import com.pauwma.glyphbeat.R
 
 
 /**
@@ -14,15 +16,15 @@ import com.pauwma.glyphbeat.ui.settings.*
  * - Paused frame: Dimmed version of the pattern
  * - Offline frame: Dark with minimal accent pattern
  */
-class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
+class MinimalTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvider {
 
     // =================================================================================
     // THEME METADATA
     // =================================================================================
 
-    override val titleTheme: String = "Minimal"
+    override val titleTheme: String = ctx.getString(R.string.theme_minimal_title)
 
-    override val descriptionTheme: String = "I'm empty inside I just want nothing"
+    override val descriptionTheme: String = ctx.getString(R.string.theme_minimal_desc)
 
     override val authorName: String = "pauwma"
 
@@ -68,7 +70,7 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
     override val compatibilityVersion: String = "1.0.0"
 
     override val frameDataFormat: String = "shaped"
-    
+
     // Mutable properties for settings that can be changed at runtime
     private var showBorder: Boolean = false
     private var currentBrightness: Int = brightnessValue
@@ -82,7 +84,7 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
     private val mainFrameWithBorder = intArrayOf(
         255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,255,255,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,255,255,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,255,255,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,255,255,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,255,255,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,255,255,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,255,255,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,255,255,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255
     )
-    
+
     // Main frame without border (border pixels set to 0)
     private val mainFrameNoBorder = intArrayOf(
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0    )
@@ -103,17 +105,17 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
 
     // Paused frame with border
     private val pausedFrameWithBorder = intArrayOf(125,125,125,125,125,125,125,125,125,0,0,0,0,0,0,0,125,125,125,125,0,0,0,0,0,0,0,0,0,0,0,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,125,125,125,125,125,125,125,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125,125,125,0,0,0,0,0,125,125,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125,125,125,0,0,0,0,0,125,125,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125,125,125,0,0,0,0,0,125,125,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,125,125,125,125,125,125,125,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,0,0,0,0,0,0,0,0,0,0,0,125,125,125,125,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125)
-    
+
     // Paused frame without border
     private val pausedFrameNoBorder = intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,125,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,125,125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-    
+
     // Offline frame with border
     private val offlineFrameWithBorder = intArrayOf(255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,255,255,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255)
-    
+
     // Offline frame without border
     private val offlineFrameNoBorder = intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-    
-    override val pausedFrame: IntArray 
+
+    override val pausedFrame: IntArray
         get() {
             val baseFrame = if (showBorder) pausedFrameWithBorder else pausedFrameNoBorder
             // Apply paused opacity to the base frame data before conversion
@@ -125,8 +127,8 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
             // Convert shaped to flat (brightness is applied in convertShapedToFlat)
             return convertShapedToFlat(dimmedFrame)
         }
-        
-    override val offlineFrame: IntArray 
+
+    override val offlineFrame: IntArray
         get() {
             val baseFrame = if (showBorder) offlineFrameWithBorder else offlineFrameNoBorder
             // Convert shaped to flat - brightness is handled by GlyphMatrixObject
@@ -138,7 +140,7 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
      * Frame displayed when media is loading/buffering.
      * Uses the paused frame as a loading indicator.
      */
-    override val loadingFrame: IntArray 
+    override val loadingFrame: IntArray
         get() = pausedFrame
 
     /**
@@ -158,26 +160,26 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
         val shapedData = frames[frameIndex]
         return convertShapedToFlat(shapedData)
     }
-    
+
     /**
      * Converts shaped frame data (489 elements) to flat array format (625 elements)
      */
     private fun convertShapedToFlat(shapedData: IntArray): IntArray {
         val flatArray = createEmptyFrame()
-        
+
         // The shaped data represents the circular matrix layout
         // We need to map it to the proper positions in a 25x25 grid
         var shapedIndex = 0
-        
+
         for (row in 0 until 25) {
             for (col in 0 until 25) {
                 val flatIndex = row * 25 + col
-                
+
                 // Check if this pixel is within the circular matrix shape
                 val centerX = 12.0
                 val centerY = 12.0
                 val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-                
+
                 if (distance <= 12.5 && shapedIndex < shapedData.size) {
                     // Apply brightness directly to pixel values using the unified model
                     val basePixelValue = shapedData[shapedIndex]
@@ -189,7 +191,7 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
                 }
             }
         }
-        
+
         return flatArray
     }
 
@@ -197,15 +199,15 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
         return ThemeSettingsBuilder(getSettingsId())
             .addToggleSetting(
                 id = "outside_border",
-                displayName = "Border",
-                description = "Enable outside border stroke",
+                displayName = ctx.getString(R.string.set_min_border_title),
+                description = ctx.getString(R.string.set_min_border_desc),
                 defaultValue = false,
                 category = SettingCategories.LAYOUT
             )
             .addSliderSetting(
                 id = "minimal_brightness",
-                displayName = "Brightness",
-                description = "Brightness multiplier for icons",
+                displayName = ctx.getString(R.string.set_brightness_title),
+                description = ctx.getString(R.string.set_brightness_desc),
                 defaultValue = 1.0f,
                 minValue = 0.1f,
                 maxValue = 1.0f,
@@ -215,8 +217,8 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
             )
             .addSliderSetting(
                 id = "paused_opacity",
-                displayName = "Paused Opacity",
-                description = "Opacity when media is paused",
+                displayName = ctx.getString(R.string.set_paused_opacity_title),
+                description = ctx.getString(R.string.set_paused_opacity_desc),
                 defaultValue = 0.4f,
                 minValue = 0.1f,
                 maxValue = 0.8f,
@@ -230,11 +232,11 @@ class MinimalTheme : ThemeTemplate(), ThemeSettingsProvider {
     override fun applySettings(settings: ThemeSettings) {
         // Apply the border toggle setting
         showBorder = settings.getToggleValue("outside_border", false)
-        
+
         // Apply brightness setting (convert multiplier to 0-255 range)
         val brightnessMultiplier = settings.getSliderValueFloat("minimal_brightness", 1.0f)
         currentBrightness = (brightnessMultiplier * 255).toInt().coerceIn(0, 255)
-        
+
         // Apply paused opacity setting
         pausedOpacity = settings.getSliderValueFloat("paused_opacity", 0.4f)
     }

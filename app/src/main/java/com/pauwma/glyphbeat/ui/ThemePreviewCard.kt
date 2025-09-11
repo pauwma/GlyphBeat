@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -37,13 +38,15 @@ fun ThemePreviewCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val themeRepository = remember { ThemeRepository.getInstance(context) }
-    
+    val configuration = LocalConfiguration.current
+    val localeContext = remember(configuration) { context }
+    val themeRepository = remember(configuration) { ThemeRepository.refreshForLocaleChange(localeContext) }
+
     // Check if theme supports settings and has custom settings
-    var hasCustomSettings by remember(theme) { mutableStateOf(false) }
-    var currentSettings by remember(theme) { mutableStateOf<com.pauwma.glyphbeat.ui.settings.ThemeSettings?>(null) }
+    var hasCustomSettings by remember(theme, configuration) { mutableStateOf(false) }
+    var currentSettings by remember(theme, configuration) { mutableStateOf<com.pauwma.glyphbeat.ui.settings.ThemeSettings?>(null) }
     val supportsSettings = theme is ThemeSettingsProvider
-    
+
     // Initial settings load - fully on IO thread to prevent ANR
     LaunchedEffect(theme) {
         if (supportsSettings) {
@@ -51,12 +54,12 @@ fun ThemePreviewCard(
                 try {
                     val themeSettings = themeRepository.getThemeSettings((theme as ThemeSettingsProvider).getSettingsId())
                     val hasSettings = themeSettings?.userValues?.isNotEmpty() == true
-                    
+
                     // Apply settings if available (safe to do on IO thread)
                     if (themeSettings != null) {
                         (theme as ThemeSettingsProvider).applySettings(themeSettings)
                     }
-                    
+
                     // Only update UI state on Main thread
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                         hasCustomSettings = hasSettings
@@ -74,7 +77,7 @@ fun ThemePreviewCard(
             currentSettings = null
         }
     }
-    
+
     // Monitor settings changes for real-time updates
     LaunchedEffect(theme, supportsSettings) {
         if (supportsSettings) {
@@ -94,81 +97,78 @@ fun ThemePreviewCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onSelect() }
-            .padding(4.dp),
+            .padding(4.dp)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp)
+            ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.surfaceVariant
+            else
+                MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isSelected) 4.dp else 0.dp
         )
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = if (isSelected) 
-                        MaterialTheme.colorScheme.surfaceVariant 
-                    else 
-                        MaterialTheme.colorScheme.surface
-                )
-                .border(
-                    width = if (isSelected) 2.dp else 1.dp,
-                    color = if (isSelected) 
-                        MaterialTheme.colorScheme.primary 
-                    else 
-                        MaterialTheme.colorScheme.outline,
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .clip(RoundedCornerShape(12.dp))
-        ) {
+        Box {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-            // Glyph Matrix Preview with settings
-            GlyphMatrixPreview(
-                theme = theme,
-                isSelected = isSelected,
-                previewSize = 120,
-                settings = currentSettings
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Theme Name
-            Text(
-                text = theme.getThemeName(),
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                    fontSize = 18.sp
-                ),
-                color = if (isSelected) 
-                    MaterialTheme.colorScheme.primary 
-                else 
-                    MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-                // Theme Description
-                Text(
-                    text = theme.getDescription(),
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 12.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    maxLines = 3
+                // Glyph Matrix Preview with settings
+                GlyphMatrixPreview(
+                    theme = theme,
+                    isSelected = isSelected,
+                    previewSize = 120,
+                    settings = currentSettings
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Theme Name - use key() to force recomposition on locale changes
+                key(configuration) {
+                    com.pauwma.glyphbeat.ui.components.AutoScalingText(
+                        text = theme.getThemeName(),
+                        maxFontSize = 18.sp,
+                        minFontSize = 14.sp,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
+                        ),
+                        color = if (isSelected)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 1
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Theme Description
+                    com.pauwma.glyphbeat.ui.components.AutoScalingText(
+                        text = theme.getDescription(),
+                        maxFontSize = 12.sp,
+                        minFontSize = 10.sp,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        maxLines = 2
+                    )
+                }
             }
-            
+
             // Settings button and custom indicator - only show for selected themes that support settings
             if (supportsSettings && isSelected) {
                 Box(
@@ -189,7 +189,7 @@ fun ThemePreviewCard(
                             )
                         }
                     }
-                    
+
                     // Custom settings indicator dot
                     if (hasCustomSettings) {
                         Box(
@@ -233,16 +233,16 @@ fun CompactThemePreviewCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = if (isSelected) 
-                        MaterialTheme.colorScheme.surfaceVariant 
-                    else 
+                    color = if (isSelected)
+                        MaterialTheme.colorScheme.surfaceVariant
+                    else
                         MaterialTheme.colorScheme.surface
                 )
                 .border(
                     width = if (isSelected) 2.dp else 1.dp,
-                    color = if (isSelected) 
-                        MaterialTheme.colorScheme.primary 
-                    else 
+                    color = if (isSelected)
+                        MaterialTheme.colorScheme.primary
+                    else
                         MaterialTheme.colorScheme.outline,
                     shape = RoundedCornerShape(8.dp)
                 )
@@ -257,7 +257,7 @@ fun CompactThemePreviewCard(
                 isSelected = isSelected,
                 previewSize = 80
             )
-            
+
             // Theme Name Only
             Text(
                 text = theme.getThemeName(),
@@ -265,9 +265,9 @@ fun CompactThemePreviewCard(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 14.sp
                 ),
-                color = if (isSelected) 
-                    MaterialTheme.colorScheme.primary 
-                else 
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
                     MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()

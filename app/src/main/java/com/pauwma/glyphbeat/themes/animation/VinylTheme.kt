@@ -1,5 +1,6 @@
 package com.pauwma.glyphbeat.themes.animation
 
+import android.content.Context
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.ui.settings.*
 
@@ -8,7 +9,7 @@ import com.pauwma.glyphbeat.ui.settings.*
  * Uses specific pixel data to create a detailed vinyl record spinning animation.
  * Now extends ThemeTemplate for enhanced features and supports customizable settings.
  */
-class VinylTheme() : ThemeTemplate(), ThemeSettingsProvider {
+class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvider {
     
     // Settings-driven properties with default values
     private var currentAnimationSpeed: Long = getAnimationSpeed()

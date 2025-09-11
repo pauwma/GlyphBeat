@@ -58,7 +58,7 @@ fun GlyphBeatBott2omNavigation(
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    
+
     NavigationBar(
         containerColor = NothingBlack,
         contentColor = NothingWhite,

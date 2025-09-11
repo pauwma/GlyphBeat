@@ -224,19 +224,7 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
             null
         }
     }
-    
-    /**
-     * Save a custom app name
-     */
-    fun saveCustomAppName(packageName: String, customName: String) {
-        val customNames = getCustomAppNames().toMutableMap()
-        customNames[packageName] = customName
-        
-        preferences.edit()
-            .putString(PREF_CUSTOM_APP_NAMES, gson.toJson(customNames))
-            .apply()
-    }
-    
+
     /**
      * Check if an app is installed
      */
@@ -281,10 +269,11 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
         val popularApps = listOf(
             "com.spotify.music",
             "com.google.android.apps.youtube.music",
-            "com.google.android.youtube",
             "com.amazon.mp3",
             "com.apple.android.music",
-            "com.soundcloud.android"
+            "com.soundcloud.android",
+            "com.tidal.android",
+            "com.deezer.android.app"
         )
         
         var whitelistedCount = 0
@@ -360,15 +349,6 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
         whitelistedApps.clear()
         saveWhitelistedApps()
         Log.d(LOG_TAG, "Cleared all whitelisted apps")
-    }
-    
-    /**
-     * Reset to default whitelisted apps
-     */
-    fun resetToDefaults() {
-        clearWhitelist()
-        initializeDefaultApps()
-        Log.d(LOG_TAG, "Reset to default whitelisted apps")
     }
     
     /**

@@ -36,10 +36,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.theme.*
+import com.pauwma.glyphbeat.ui.components.AutoScalingText
 
 data class PillNavItem(
     val route: String,
@@ -48,35 +51,36 @@ data class PillNavItem(
     val contentDescription: String
 )
 
-val pillNavItems = listOf(
-    PillNavItem(
-        route = "media_player",
-        icon = Icons.Filled.MusicNote,
-        label = "Player",
-        contentDescription = "Media Player"
-    ),
-    PillNavItem(
-        route = "track_control",
-        icon = Icons.Filled.SkipNext,
-        label = "Controls",
-        contentDescription = "Track Control"
-    ),
-    PillNavItem(
-        route = "settings",
-        icon = Icons.Filled.Settings,
-        label = "Settings",
-        contentDescription = "Settings"
-    )
-)
-
 @Composable
 fun PillNavigationBar(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    
+
+    val pillNavItems = listOf(
+        PillNavItem(
+            route = "media_player",
+            icon = Icons.Filled.MusicNote,
+            label = context.getString(R.string.nav_player),
+            contentDescription = "Media Player"
+        ),
+        PillNavItem(
+            route = "track_control",
+            icon = Icons.Filled.SkipNext,
+            label = context.getString(R.string.nav_controls),
+            contentDescription = "Track Control"
+        ),
+        PillNavItem(
+            route = "settings",
+            icon = Icons.Filled.Settings,
+            label = context.getString(R.string.nav_settigns),
+            contentDescription = "Settings"
+        )
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -106,7 +110,7 @@ fun PillNavigationBar(
                     )
                 )
         )
-        
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -167,19 +171,19 @@ private fun PillNavigationItem(
         animationSpec = tween(300),
         label = "backgroundColor"
     )
-    
+
     val iconColor by animateColorAsState(
         targetValue = if (isSelected) NothingWhite else Color(0xFF808080),
         animationSpec = tween(300),
         label = "iconColor"
     )
-    
+
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 1.1f else 1f,
         animationSpec = tween(200),
         label = "scale"
     )
-    
+
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(24.dp))
@@ -206,10 +210,12 @@ private fun PillNavigationItem(
                 modifier = Modifier.size(22.dp)
             )
             if (isSelected) {
-                Text(
+                AutoScalingText(
                     text = item.label,
                     color = iconColor,
-                    fontSize = 14.sp,
+                    maxFontSize = 14.sp,
+                    minFontSize = 11.sp,
+                    maxLines = 1,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -222,9 +228,31 @@ fun PillNavigationBarAlternative(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    
+
+    val pillNavItems = listOf(
+        PillNavItem(
+            route = "media_player",
+            icon = Icons.Filled.MusicNote,
+            label = context.getString(R.string.nav_player),
+            contentDescription = "Media Player"
+        ),
+        PillNavItem(
+            route = "track_control",
+            icon = Icons.Filled.SkipNext,
+            label = context.getString(R.string.nav_controls),
+            contentDescription = "Track Control"
+        ),
+        PillNavItem(
+            route = "settings",
+            icon = Icons.Filled.Settings,
+            label = context.getString(R.string.nav_settigns),
+            contentDescription = "Settings"
+        )
+    )
+
     // Alternative design with individual pills
     Box(
         modifier = modifier
@@ -243,19 +271,19 @@ fun PillNavigationBarAlternative(
         ) {
             pillNavItems.forEach { item ->
                 val isSelected = currentRoute == item.route
-                
+
                 val backgroundColor by animateColorAsState(
                     targetValue = if (isSelected) NothingRed else Color(0xFF2A2A2A),
                     animationSpec = tween(300),
                     label = "backgroundColor"
                 )
-                
+
                 val iconColor by animateColorAsState(
                     targetValue = if (isSelected) NothingWhite else NothingWhite.copy(alpha = 0.7f),
                     animationSpec = tween(300),
                     label = "iconColor"
                 )
-                
+
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -294,10 +322,12 @@ fun PillNavigationBarAlternative(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    Text(
+                    AutoScalingText(
                         text = item.label,
                         color = if (isSelected) NothingRed else NothingWhite.copy(alpha = 0.5f),
-                        fontSize = 11.sp,
+                        maxFontSize = 11.sp,
+                        minFontSize = 9.sp,
+                        maxLines = 1,
                         fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
                         textAlign = TextAlign.Center
                     )

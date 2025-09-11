@@ -1,5 +1,6 @@
 package com.pauwma.glyphbeat.themes.animation
 
+import android.content.Context
 import com.pauwma.glyphbeat.themes.base.FrameTransition
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
 import com.pauwma.glyphbeat.ui.settings.SettingCategories
@@ -8,16 +9,17 @@ import com.pauwma.glyphbeat.ui.settings.ThemeSettingsBuilder
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
 import com.pauwma.glyphbeat.ui.settings.getDropdownValue
 import kotlin.math.sqrt
+import com.pauwma.glyphbeat.R
 
-class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
-    
+class GlyphyTheme(private val ctx: Context)  : ThemeTemplate(), ThemeSettingsProvider {
+
     // No animation state needed for static pause frame
 
     // =================================================================================
     // THEME METADATA
     // =================================================================================
-    override val titleTheme: String = "Glyphy"
-    override val descriptionTheme: String = "Training to be a good AI, but for now look at him..."
+    override val titleTheme: String = ctx.getString(R.string.theme_glyphy_title)
+    override val descriptionTheme: String = ctx.getString(R.string.theme_glyphy_desc)
     override val authorName: String = "pauwma"
     override val version: String = "1.0.0"
     override val category: String = "Fun"
@@ -32,7 +34,7 @@ class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
     override val brightnessValue: Int = 255
     override val loopMode: String = "normal"
     override val complexity: String = "Medium"
-    
+
     // Set to null since we're using frameTransitions for timing control
     override val frameDurations: LongArray? = null
 
@@ -95,25 +97,25 @@ class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
                 cryPausedFrame,
                 huhPausedFrame
             )
-            
+
             // Select a new random frame when:
             // 1. First time (index is -1)
             // 2. Flag is set (from settings change)
             // 3. This is a fresh pause (hasn't shown paused frame yet in this cycle)
-            if (shouldSelectNewPausedFrame || currentPausedFrameIndex == -1 || 
+            if (shouldSelectNewPausedFrame || currentPausedFrameIndex == -1 ||
                 currentPausedFrameIndex >= pausedFrameOptions.size || !hasShownPausedFrame) {
                 currentPausedFrameIndex = pausedFrameOptions.indices.random()
                 shouldSelectNewPausedFrame = false
                 hasShownPausedFrame = true // Mark that we've shown a paused frame
             }
-            
+
             // Use the stored selection
             val selectedFrame = pausedFrameOptions[currentPausedFrameIndex]
-            
+
             // Convert to flat format and return
             return convertShapedToFlat(selectedFrame)
         }
-    
+
     // Method to trigger selection of a new random paused frame
     fun selectNewPausedFrame() {
         shouldSelectNewPausedFrame = true
@@ -122,11 +124,11 @@ class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
 
     override val offlineFrame: IntArray
         get() = convertShapedToFlat(baseOfflineFrame)
-    
+
     // Use Frame 3 (Eyes Full) as the static preview frame when not selected
     override val previewFrame: IntArray
         get() = frames[3].clone()  // Frame 3 - Eyes Full (open eyes)
-    
+
     // Specify which frame index to use for static preview
     val previewFrameIndex: Int = 3  // Frame 3 - Eyes Full
     override val frames = arrayOf(
@@ -212,7 +214,7 @@ class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
      * Each consecutive pair in the sequence becomes a transition
      */
     private fun generateTransitionsFromSequence(
-        sequence: IntArray, 
+        sequence: IntArray,
         duration: Long,
         repetitions: Int = 1
     ): List<FrameTransition> {
@@ -231,7 +233,7 @@ class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
     }
 
     // Opening eyes animation - plays once at startup
-    override val openingTransitions: List<FrameTransition>? 
+    override val openingTransitions: List<FrameTransition>?
         get() {
             // Reset the pause flag when resuming
             // This ensures next pause will get a new random frame
@@ -243,7 +245,7 @@ class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
                 FrameTransition(3, 3, 2, 200L), // F3→F3: Hold open before dance
             )
         }
-    
+
     // Dancing sequence - loops continuously after opening
     // Uses F3 (eyes open) as the resting position
     private val dancingSequence = intArrayOf(
@@ -269,7 +271,7 @@ class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
     private val jammingSequence = intArrayOf(
         12, 13, 14, 13, 12  // Added 12 at the end to complete the loop
     )
-    
+
     // Blinking sequence - simple eye blinking animation
     private val blinkingSequence = listOf(
         FrameTransition(3, 3, 1, 2000L),  // F3: Eyes open (hold for 2 seconds)
@@ -333,13 +335,13 @@ class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
         return ThemeSettingsBuilder(getSettingsId())
             .addDropdownSetting(
                 id = "animation_pattern",
-                displayName = "Animation Pattern",
-                description = "Style of the animation",
+                displayName = ctx.getString(R.string.set_glyphy_pattern_title),
+                description = ctx.getString(R.string.set_glyphy_pattern_desc),
                 defaultValue = "dance",
                 optionsMap = mapOf(
-                    "dance" to "Dance",
-                    "blink" to "Blink",
-                    "jam" to "Jamming"
+                    "dance" to ctx.getString(R.string.set_glyphy_pattern_dance),
+                    "blink" to ctx.getString(R.string.set_glyphy_pattern_blink),
+                    "jam" to ctx.getString(R.string.set_glyphy_pattern_jam)
                 ),
                 category = SettingCategories.ANIMATION
             )
@@ -352,7 +354,7 @@ class GlyphyTheme  : ThemeTemplate(), ThemeSettingsProvider {
 
         // Apply animation pattern
         currentAnimationPattern = settings.getDropdownValue("animation_pattern", "dance")
-        
+
         // Reset pause state when settings change
         hasShownPausedFrame = false
         shouldSelectNewPausedFrame = true
