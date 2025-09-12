@@ -140,7 +140,6 @@ class MainActivity : AppCompatActivity() {
                         navController = navController,
                         startDestination = "media_player",
                         modifier = Modifier
-                            .padding(innerPadding)
                             .fillMaxSize()
                             .background(Color.Black),
                         enterTransition = { 
