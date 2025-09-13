@@ -290,30 +290,91 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
     }
     
     /**
-     * Load whitelisted apps from preferences
+     * Load whitelisted apps from preferences with enhanced error handling
      */
     private fun loadWhitelistedApps() {
+        Log.d(LOG_TAG, "Loading whitelisted apps from preferences")
         val json = preferences.getString(PREF_WHITELISTED_APPS, null)
         if (json != null) {
             try {
+                Log.d(LOG_TAG, "Found stored whitelist JSON, length: ${json.length} characters")
                 val type = object : TypeToken<MutableSet<String>>() {}.type
-                whitelistedApps = gson.fromJson(json, type)
+                val loadedApps = gson.fromJson<MutableSet<String>>(json, type)
+                whitelistedApps = Collections.synchronizedSet(loadedApps)
+                Log.d(LOG_TAG, "Successfully loaded ${whitelistedApps.size} whitelisted apps: ${whitelistedApps.joinToString()}")
+            } catch (e: com.google.gson.JsonSyntaxException) {
+                Log.e(LOG_TAG, "JSON syntax error loading whitelisted apps - clearing corrupted data", e)
+                Log.e(LOG_TAG, "Corrupted JSON preview: ${json.take(200)}")
+                whitelistedApps = Collections.synchronizedSet(mutableSetOf())
+                clearCorruptedWhitelist()
             } catch (e: Exception) {
-                Log.e(LOG_TAG, "Error loading whitelisted apps", e)
-                whitelistedApps = mutableSetOf()
+                Log.e(LOG_TAG, "Unexpected error loading whitelisted apps - clearing data", e)
+                Log.e(LOG_TAG, "Error type: ${e::class.java.simpleName}")
+                whitelistedApps = Collections.synchronizedSet(mutableSetOf())
+                clearCorruptedWhitelist()
             }
+        } else {
+            Log.d(LOG_TAG, "No stored whitelist found, starting with empty set")
+            whitelistedApps = Collections.synchronizedSet(mutableSetOf())
         }
         lastCacheUpdate = System.currentTimeMillis()
     }
     
     /**
-     * Save whitelisted apps to preferences
+     * Save whitelisted apps to preferences with enhanced persistence verification
      */
     private fun saveWhitelistedApps() {
-        preferences.edit()
-            .putString(PREF_WHITELISTED_APPS, gson.toJson(whitelistedApps))
-            .apply()
-        lastCacheUpdate = System.currentTimeMillis()
+        try {
+            Log.d(LOG_TAG, "Saving ${whitelistedApps.size} whitelisted apps: ${whitelistedApps.joinToString()}")
+            val json = gson.toJson(whitelistedApps)
+            Log.d(LOG_TAG, "Generated whitelist JSON, length: ${json.length} characters")
+            
+            // Use commit() instead of apply() for immediate verification
+            val success = preferences.edit()
+                .putString(PREF_WHITELISTED_APPS, json)
+                .commit()
+            
+            if (success) {
+                // Verify the save by reading it back immediately
+                val verification = preferences.getString(PREF_WHITELISTED_APPS, null)
+                if (verification != null && verification == json) {
+                    Log.d(LOG_TAG, "Successfully saved and verified whitelist persistence")
+                    lastCacheUpdate = System.currentTimeMillis()
+                } else {
+                    Log.e(LOG_TAG, "Whitelist save verification failed - data mismatch!")
+                    Log.e(LOG_TAG, "Expected JSON: $json")
+                    Log.e(LOG_TAG, "Retrieved JSON: $verification")
+                    
+                    // Retry once with apply()
+                    preferences.edit()
+                        .putString(PREF_WHITELISTED_APPS, json)
+                        .apply()
+                    
+                    Log.w(LOG_TAG, "Retried save with apply() method")
+                }
+            } else {
+                Log.e(LOG_TAG, "SharedPreferences commit() returned false - save may have failed")
+                
+                // Fallback to apply() method
+                preferences.edit()
+                    .putString(PREF_WHITELISTED_APPS, json)
+                    .apply()
+                
+                Log.w(LOG_TAG, "Used apply() as fallback after commit() failure")
+            }
+            
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Error saving whitelisted apps", e)
+            
+            // Last resort: Try to save with basic method
+            try {
+                val json = gson.toJson(whitelistedApps)
+                preferences.edit().putString(PREF_WHITELISTED_APPS, json).apply()
+                Log.w(LOG_TAG, "Emergency save attempt completed")
+            } catch (e2: Exception) {
+                Log.e(LOG_TAG, "Emergency save also failed", e2)
+            }
+        }
     }
     
     /**
@@ -350,6 +411,22 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
         whitelistedApps.clear()
         saveWhitelistedApps()
         Log.d(LOG_TAG, "Cleared all whitelisted apps")
+    }
+    
+    /**
+     * Clear corrupted whitelist data
+     */
+    private fun clearCorruptedWhitelist() {
+        Log.w(LOG_TAG, "Clearing corrupted whitelist data")
+        try {
+            preferences.edit()
+                .remove(PREF_WHITELISTED_APPS)
+                .remove(PREF_CUSTOM_APP_NAMES)
+                .apply()
+            Log.d(LOG_TAG, "Successfully cleared corrupted whitelist data")
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Error clearing corrupted whitelist data", e)
+        }
     }
     
     /**
