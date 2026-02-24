@@ -276,7 +276,7 @@ fun GlyphMatrixPreview(
 
                     drawCircle(
                         color = color,
-                        radius = actualDotSize / 2f,
+                        radius = actualDotSize / 1.9f,
                         center = Offset(x, y)
                     )
                 }
