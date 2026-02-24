@@ -328,7 +328,6 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 // Check if theme was changed and update current theme
                 val selectedTheme = themeRepository.selectedTheme
                 val selectedThemeIndex = themeRepository.selectedThemeIndex.value
-                Log.v(LOG_TAG, "Theme check - Current: ${currentTheme?.getThemeName()}, Selected: ${selectedTheme.getThemeName()}, Index: $selectedThemeIndex")
                 if (currentTheme?.getThemeName() != selectedTheme.getThemeName()) {
                     // Deactivate old theme
                     (currentTheme as? ScrollTheme)?.onDeactivate()
@@ -588,8 +587,8 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             }
         }
         
-        // Use audio-reactive frame generation if theme supports it and we have audio data
-        return if (theme is AudioReactiveTheme && currentAudioData.isPlaying) {
+        // Use audio-reactive frame generation if theme supports it (theme handles decay when not playing)
+        return if (theme is AudioReactiveTheme) {
             theme.generateAudioReactiveFrame(currentFrameIndex, currentAudioData)
         } else {
             theme.generateFrame(currentFrameIndex)

@@ -17,8 +17,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.themes.animation.CoverArtTheme
+import com.pauwma.glyphbeat.themes.base.AudioReactiveTheme
 import com.pauwma.glyphbeat.themes.base.FrameTransitionSequence
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
+import com.pauwma.glyphbeat.sound.AudioData
 import com.pauwma.glyphbeat.ui.components.EnhancedCoverArtPreview
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
@@ -60,6 +62,8 @@ fun GlyphMatrixPreview(
     var currentFrame by remember { mutableIntStateOf(0) }
     var transitionSequence by remember { mutableStateOf<FrameTransitionSequence?>(null) }
     var mediaTrigger by remember { mutableIntStateOf(0) }
+
+    val isAudioReactive = theme is AudioReactiveTheme
     
     // Initialize transition sequence if theme uses frame transitions
     // Recreate when theme or settings change to support live updates
@@ -142,34 +146,79 @@ fun GlyphMatrixPreview(
     // Frame generation state - computed asynchronously to prevent blocking
     var frameData by remember { mutableStateOf(IntArray(625) { 0 }) }
     
-    // Generate frame data on background thread
+    // Audio-reactive preview: run generateAudioReactiveFrame with simulated spectrum
+    // Uses the theme's real smoothing/rendering pipeline for authentic look
+    LaunchedEffect(isSelected, isAudioReactive) {
+        if (isSelected && isAudioReactive) {
+            var time = 0.0
+            withContext(Dispatchers.Default) {
+                while (currentCoroutineContext().isActive) {
+                    time += 0.05
+                    // Base heights matching the static preview shape
+                    val baseHeights = floatArrayOf(
+                        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.1f, 0.0f, 0.2f,
+                        0.3f, 0.5f, 0.7f, 0.9f, 0.7f, 0.5f, 0.6f, 0.8f,
+                        0.6f, 0.4f, 0.3f, 0.2f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f
+                    )
+                    val spectrum = FloatArray(25) { band ->
+                        val base = baseHeights[band]
+                        val v1 = kotlin.math.sin(time * 2.3 + band * 0.7).toFloat() * 0.15f
+                        val v2 = kotlin.math.sin(time * 3.7 + band * 0.4).toFloat() * 0.1f
+                        val v3 = kotlin.math.sin(time * 1.1 + band * 1.2).toFloat() * 0.08f
+                        (base + v1 + v2 + v3).coerceIn(0f, 1f)
+                    }
+                    val beat = (kotlin.math.sin(time * 4.0) * 0.5 + 0.5).coerceIn(0.0, 1.0)
+                    val audioData = AudioData(
+                        beatIntensity = beat,
+                        bassLevel = spectrum.take(8).average(),
+                        midLevel = spectrum.slice(8..17).average(),
+                        trebleLevel = spectrum.drop(18).average(),
+                        isPlaying = true,
+                        spectrumBands = spectrum
+                    )
+                    val frame = try {
+                        (theme as AudioReactiveTheme).generateAudioReactiveFrame(currentFrame, audioData)
+                    } catch (e: Exception) {
+                        IntArray(625) { 0 }
+                    }
+                    withContext(Dispatchers.Main) { frameData = frame }
+                    delay(theme.getAnimationSpeed().coerceAtLeast(33L))
+                }
+            }
+        }
+    }
+
+    // Generate frame data on background thread (fallback / non-audio-reactive)
     LaunchedEffect(theme, currentFrame, mediaTrigger) {
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+        // Skip if audio-reactive preview is handling it
+        if (isSelected && isAudioReactive) return@LaunchedEffect
+
+        withContext(Dispatchers.Default) {
             val generatedFrame = try {
                 // For VinylTheme, ensure consistent circular shape regardless of size setting
                 if (theme is com.pauwma.glyphbeat.themes.animation.VinylTheme) {
                     val currentVinylSizeField = theme.javaClass.getDeclaredField("currentVinylSize").apply { isAccessible = true }
                     val currentVinylSize = currentVinylSizeField.get(theme) as String
-                    
+
                     if (currentVinylSize == "small") {
                         // Get the small frame data but apply the same circular mapping as large
                         val smallFramesField = theme.javaClass.getDeclaredField("smallFrames").apply { isAccessible = true }
                         val smallFrames = smallFramesField.get(theme) as Array<IntArray>
                         val shapedData = smallFrames[currentFrame]
-                        
+
                         // Apply the same circular mapping logic as used for large size
                         val flatArray = IntArray(625) { 0 }
                         var shapedIndex = 0
-                        
+
                         for (row in 0 until 25) {
                             for (col in 0 until 25) {
                                 val flatIndex = row * 25 + col
-                                
+
                                 // Check if this pixel is within the circular matrix shape
                                 val centerX = 12.0
                                 val centerY = 12.0
                                 val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-                                
+
                                 if (distance <= 12.5 && shapedIndex < shapedData.size) {
                                     flatArray[flatIndex] = shapedData[shapedIndex]
                                     shapedIndex++
@@ -188,9 +237,9 @@ fun GlyphMatrixPreview(
                 // Fallback to empty frame if generation fails
                 IntArray(625) { 0 }
             }
-            
+
             // Update frame data on main thread
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+            withContext(Dispatchers.Main) {
                 frameData = generatedFrame
             }
         }

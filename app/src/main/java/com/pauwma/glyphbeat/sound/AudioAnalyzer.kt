@@ -39,6 +39,9 @@ class AudioAnalyzer(private val context: Context) {
     private val _bassLevel = MutableStateFlow(0.0)
     val bassLevel: StateFlow<Double> = _bassLevel
     
+    private val _midLevel = MutableStateFlow(0.0)
+    val midLevel: StateFlow<Double> = _midLevel
+
     private val _trebleLevel = MutableStateFlow(0.0)
     val trebleLevel: StateFlow<Double> = _trebleLevel
     
@@ -56,6 +59,12 @@ class AudioAnalyzer(private val context: Context) {
     private var beatHistory = mutableListOf<Double>()
     private var lastBeatTime: Long = 0
     private val beatThreshold = 0.3
+
+    // Visualizer retry state (retries after permission is granted)
+    private var lastVisualizerRetryTime: Long = 0
+
+    // 25-band spectrum from FFT (one per grid column), smoothed
+    private val spectrumBands = FloatArray(25) { 0f }
     
     init {
         initializeVisualizer()
@@ -66,37 +75,47 @@ class AudioAnalyzer(private val context: Context) {
      */
     private fun initializeVisualizer() {
         try {
+            // Release any previous instance first
+            visualizer?.apply {
+                try { enabled = false } catch (_: Exception) {}
+                try { release() } catch (_: Exception) {}
+            }
+            visualizer = null
+            isVisualizerEnabled = false
+
             if (Visualizer.getMaxCaptureRate() > 0) {
-                visualizer = Visualizer(0).apply {
-                    captureSize = Visualizer.getCaptureSizeRange()[1]
-                    
-                    setDataCaptureListener(object : Visualizer.OnDataCaptureListener {
-                        override fun onWaveFormDataCapture(
-                            visualizer: Visualizer?,
-                            waveform: ByteArray?,
-                            samplingRate: Int
-                        ) {
-                            waveform?.let {
-                                lastWaveform = it.clone()
-                                processWaveformData(it)
-                            }
+                val vis = Visualizer(0)
+                // Must disable before configuring capture size
+                vis.enabled = false
+                vis.captureSize = Visualizer.getCaptureSizeRange()[1]
+
+                vis.setDataCaptureListener(object : Visualizer.OnDataCaptureListener {
+                    override fun onWaveFormDataCapture(
+                        visualizer: Visualizer?,
+                        waveform: ByteArray?,
+                        samplingRate: Int
+                    ) {
+                        waveform?.let {
+                            lastWaveform = it.clone()
+                            processWaveformData(it)
                         }
-                        
-                        override fun onFftDataCapture(
-                            visualizer: Visualizer?,
-                            fft: ByteArray?,
-                            samplingRate: Int
-                        ) {
-                            fft?.let {
-                                lastFft = it.clone()
-                                processFftData(it)
-                            }
+                    }
+
+                    override fun onFftDataCapture(
+                        visualizer: Visualizer?,
+                        fft: ByteArray?,
+                        samplingRate: Int
+                    ) {
+                        fft?.let {
+                            lastFft = it.clone()
+                            processFftData(it)
                         }
-                    }, Visualizer.getMaxCaptureRate() / 4, true, true)
-                    
-                    enabled = true
-                    isVisualizerEnabled = true
-                }
+                    }
+                }, Visualizer.getMaxCaptureRate() / 2, true, true)
+
+                vis.enabled = true
+                visualizer = vis
+                isVisualizerEnabled = true
                 Log.i(LOG_TAG, "Visualizer initialized successfully")
             }
         } catch (e: Exception) {
@@ -112,7 +131,7 @@ class AudioAnalyzer(private val context: Context) {
         // Calculate RMS (Root Mean Square) for overall intensity
         var sum = 0.0
         for (byte in waveform) {
-            val sample = byte.toDouble()
+            val sample = (byte.toInt() and 0xFF).toDouble() - 128.0
             sum += sample * sample
         }
         val rms = sqrt(sum / waveform.size)
@@ -130,47 +149,61 @@ class AudioAnalyzer(private val context: Context) {
     }
     
     /**
-     * Process FFT data for frequency band analysis
+     * Process FFT data for frequency band analysis and 25-band spectrum.
      */
     private fun processFftData(fft: ByteArray) {
-        val fftSize = fft.size / 2
-        
-        // Calculate bass level (low frequencies: 0-8% of spectrum)
-        var bassSum = 0.0
-        val bassEnd = (fftSize * 0.08).toInt()
-        for (i in 0 until bassEnd step 2) {
-            val real = fft[i].toDouble()
-            val imaginary = fft[i + 1].toDouble()
-            bassSum += sqrt(real * real + imaginary * imaginary)
+        val numBins = fft.size / 2  // Number of frequency bins (real/imaginary pairs)
+        if (numBins < 4) return
+
+        // Compute magnitude for each FFT bin
+        val magnitudes = FloatArray(numBins)
+        var maxMag = 1f
+        for (i in 0 until numBins) {
+            val real = fft[i * 2].toFloat()
+            val imaginary = fft[i * 2 + 1].toFloat()
+            magnitudes[i] = sqrt(real * real + imaginary * imaginary)
+            if (magnitudes[i] > maxMag) maxMag = magnitudes[i]
         }
-        _bassLevel.value = (bassSum / bassEnd * 2 / 128.0).coerceIn(0.0, 1.0)
-        
-        // Calculate mid level (mid frequencies: 8-40% of spectrum)
-        var midSum = 0.0
-        val midStart = bassEnd
-        val midEnd = (fftSize * 0.4).toInt()
-        for (i in midStart until midEnd step 2) {
-            val real = fft[i].toDouble()
-            val imaginary = fft[i + 1].toDouble()
-            midSum += sqrt(real * real + imaginary * imaginary)
+
+        // --- 25-band spectrum with logarithmic frequency mapping ---
+        val bandCount = 25
+        val minBin = 1  // Skip DC component
+        val maxBin = numBins - 1
+        val logMin = kotlin.math.ln(minBin.toFloat())
+        val logMax = kotlin.math.ln(maxBin.toFloat())
+
+        for (band in 0 until bandCount) {
+            val logStart = logMin + (logMax - logMin) * band / bandCount
+            val logEnd = logMin + (logMax - logMin) * (band + 1) / bandCount
+            val binStart = kotlin.math.exp(logStart).toInt().coerceIn(minBin, maxBin)
+            val binEnd = kotlin.math.exp(logEnd).toInt().coerceIn(binStart + 1, maxBin + 1)
+
+            var sum = 0f
+            var count = 0
+            for (bin in binStart until binEnd) {
+                sum += magnitudes[bin]
+                count++
+            }
+
+            val avg = if (count > 0) sum / count else 0f
+            val normalized = (avg / maxMag).coerceIn(0f, 1f)
+
+            // Smooth with previous value for fluid animation
+            spectrumBands[band] = spectrumBands[band] * 0.7f + normalized * 0.3f
         }
-        val midRange = midEnd - midStart
-        _trebleLevel.value = if (midRange > 0) {
-            (midSum / midRange * 2 / 128.0).coerceIn(0.0, 1.0)
-        } else 0.0
-        
-        // Calculate treble level (high frequencies: 40-100% of spectrum)
-        var trebleSum = 0.0
-        val trebleStart = midEnd
-        for (i in trebleStart until fftSize step 2) {
-            val real = fft[i].toDouble()
-            val imaginary = fft[i + 1].toDouble()
-            trebleSum += sqrt(real * real + imaginary * imaginary)
-        }
-        val trebleRange = fftSize - trebleStart
-        _trebleLevel.value = if (trebleRange > 0) {
-            (trebleSum / trebleRange * 2 / 128.0).coerceIn(0.0, 1.0)
-        } else 0.0
+
+        // --- Bass / Mid / Treble summary levels (from the 25 bands) ---
+        var bassSum = 0f
+        for (i in 0 until 8) bassSum += spectrumBands[i]
+        _bassLevel.value = (bassSum / 8.0).coerceIn(0.0, 1.0)
+
+        var midSum = 0f
+        for (i in 8 until 18) midSum += spectrumBands[i]
+        _midLevel.value = (midSum / 10.0).coerceIn(0.0, 1.0)
+
+        var trebleSum = 0f
+        for (i in 18 until 25) trebleSum += spectrumBands[i]
+        _trebleLevel.value = (trebleSum / 7.0).coerceIn(0.0, 1.0)
     }
     
     /**
@@ -180,7 +213,13 @@ class AudioAnalyzer(private val context: Context) {
         val currentTime = System.currentTimeMillis()
         val deltaTime = (currentTime - lastUpdateTime) / 1000.0
         lastUpdateTime = currentTime
-        
+
+        // Retry Visualizer initialization if not yet enabled (e.g., permission granted after startup)
+        if (!isVisualizerEnabled && currentTime - lastVisualizerRetryTime > 5000) {
+            lastVisualizerRetryTime = currentTime
+            initializeVisualizer()
+        }
+
         try {
             val controller = mediaHelper.getActiveMediaController()
             val playbackState = controller?.playbackState
@@ -193,14 +232,15 @@ class AudioAnalyzer(private val context: Context) {
                     AudioData(
                         beatIntensity = _beatIntensity.value,
                         bassLevel = _bassLevel.value,
-                        midLevel = (_bassLevel.value + _trebleLevel.value) / 2.0, // Estimate mid from bass/treble
+                        midLevel = _midLevel.value,
                         trebleLevel = _trebleLevel.value,
-                        isPlaying = true
+                        isPlaying = true,
+                        spectrumBands = spectrumBands.clone()
                     )
                 }
-                isCurrentlyPlaying && controller != null -> {
+                isCurrentlyPlaying -> {
                     // Fallback to MediaController analysis
-                    analyzeRealAudio(controller, deltaTime)
+                    analyzeRealAudio(controller!!, deltaTime)
                 }
                 else -> {
                     // Return silent state or simulated demo
@@ -250,17 +290,11 @@ class AudioAnalyzer(private val context: Context) {
         val position = playbackState?.position ?: 0L
         val duration = metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L
         
-        // Detect position changes for tempo estimation
-        val positionDelta = position - lastPosition
+        // Track position changes
         lastPosition = position
-        
-        // Estimate BPM from position changes (rough approximation)
-        val estimatedBPM = if (positionDelta > 0 && deltaTime > 0) {
-            // This is a very rough estimation
-            120.0 // Default BPM, could be enhanced with metadata
-        } else {
-            120.0
-        }
+
+        // Fallback BPM when Visualizer is unavailable
+        val estimatedBPM = 120.0
         
         // Skip volume checking to avoid AudioManager log spam
         // Volume changes are not critical for beat detection
@@ -277,6 +311,7 @@ class AudioAnalyzer(private val context: Context) {
         
         _beatIntensity.value = beatIntensity
         _bassLevel.value = bassLevel
+        _midLevel.value = midLevel
         _trebleLevel.value = trebleLevel
         
         return AudioData(
@@ -337,12 +372,37 @@ class AudioAnalyzer(private val context: Context) {
 }
 
 /**
- * Data class containing current audio analysis results
+ * Data class containing current audio analysis results.
+ *
+ * @param spectrumBands 25-element array of frequency band magnitudes (0.0-1.0),
+ *   mapped logarithmically from the FFT. Null when Visualizer is unavailable.
  */
 data class AudioData(
     val beatIntensity: Double,
     val bassLevel: Double,
     val midLevel: Double,
     val trebleLevel: Double,
-    val isPlaying: Boolean
-)
+    val isPlaying: Boolean,
+    val spectrumBands: FloatArray? = null
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AudioData) return false
+        return beatIntensity == other.beatIntensity &&
+                bassLevel == other.bassLevel &&
+                midLevel == other.midLevel &&
+                trebleLevel == other.trebleLevel &&
+                isPlaying == other.isPlaying &&
+                spectrumBands.contentEquals(other.spectrumBands)
+    }
+
+    override fun hashCode(): Int {
+        var result = beatIntensity.hashCode()
+        result = 31 * result + bassLevel.hashCode()
+        result = 31 * result + midLevel.hashCode()
+        result = 31 * result + trebleLevel.hashCode()
+        result = 31 * result + isPlaying.hashCode()
+        result = 31 * result + (spectrumBands?.contentHashCode() ?: 0)
+        return result
+    }
+}

@@ -28,6 +28,10 @@
     <!-- Permission for notifications (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Permission for audio visualization (Visualizer API requires RECORD_AUDIO) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
     <!-- Package queries for music app detection (Android 11+ requirement) -->
     <queries>
         <!-- Popular music streaming apps -->

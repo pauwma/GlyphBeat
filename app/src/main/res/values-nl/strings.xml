@@ -320,8 +320,10 @@
     <string name="tutorial_permissions_glyph_desc_granted">Automatisch toegekend voor Glyph Matrix-apparaten</string>
     <string name="tutorial_permissions_glyph_desc_unsupported">Niet beschikbaar op %s (Glyph Matrix niet ondersteund)</string>
     <string name="tutorial_permissions_glyph_desc_unavailable">Niet beschikbaar op dit apparaat (Nothing Phone met Glyph Matrix vereist)</string>
+    <string name="tutorial_permissions_microphone_title">Audiotoegang</string>
+    <string name="tutorial_permissions_microphone_desc">Synchroniseert visualisaties in realtime met je muziek</string>
     <string name="tutorial_permissions_why_title">Waarom deze toestemmingen?</string>
-    <string name="tutorial_permissions_why_desc">Glyph Beat heeft deze rechten alleen nodig om de glyph-animaties met je muziek te synchroniseren. We lezen alleen media-afspeelgegevens en je kunt de toegang beperken tot alleen muziek-apps.</string>
+    <string name="tutorial_permissions_why_desc">Glyph Beat heeft deze rechten alleen nodig om animaties met je muziek te synchroniseren. Er wordt geen audio opgenomen of verzonden.</string>
     <string name="tutorial_permissions_back">Terug</string>
     <string name="tutorial_permissions_continue">Doorgaan</string>
     <string name="tutorial_permissions_skip">Nu overslaan</string>

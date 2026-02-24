@@ -301,8 +301,10 @@
     <string name="tutorial_permissions_glyph_desc_granted">Glyph Matrix対応デバイスでは自動で許可されます</string>
     <string name="tutorial_permissions_glyph_desc_unsupported">%sでは利用できません（Glyph Matrix非対応）</string>
     <string name="tutorial_permissions_glyph_desc_unavailable">このデバイスでは利用できません（Glyph Matrix対応Nothing Phoneが必要）</string>
+    <string name="tutorial_permissions_microphone_title">オーディオアクセス</string>
+    <string name="tutorial_permissions_microphone_desc">実際の音楽とリアルタイムでビジュアライゼーションを同期</string>
     <string name="tutorial_permissions_why_title">なぜこれらの権限が必要？</string>
-    <string name="tutorial_permissions_why_desc">Glyph Beat が音楽とアニメーションを同期させるために必要な権限です。メディア再生データのみを読み取り、音楽アプリに限定できます。</string>
+    <string name="tutorial_permissions_why_desc">Glyph Beatが音楽とアニメーションを同期させるためだけに必要です。音声の録音や送信は行いません。</string>
     <string name="tutorial_permissions_back">戻る</string>
     <string name="tutorial_permissions_continue">続行</string>
     <string name="tutorial_permissions_skip">今はスキップ</string>

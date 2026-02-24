@@ -1,9 +1,12 @@
 package com.pauwma.glyphbeat.tutorial
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pauwma.glyphbeat.isNotificationAccessGranted
@@ -55,9 +58,14 @@ class TutorialViewModel : ViewModel() {
             
             // Check notification access
             permissions[PERMISSION_NOTIFICATION] = isNotificationAccessGranted(context)
-            
+
             // Check Glyph Matrix permission (only granted for Nothing phones with Glyph Matrix)
             permissions[PERMISSION_GLYPH] = hasGlyph
+
+            // Check microphone permission (for audio visualization via Visualizer API)
+            permissions[PERMISSION_MICROPHONE] = ContextCompat.checkSelfPermission(
+                context, Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
             
             _tutorialState.value = _tutorialState.value.copy(
                 permissionsGranted = permissions,
@@ -123,6 +131,7 @@ class TutorialViewModel : ViewModel() {
     companion object {
         const val PERMISSION_NOTIFICATION = "notification_access"
         const val PERMISSION_GLYPH = "glyph_matrix"
+        const val PERMISSION_MICROPHONE = "microphone_access"
     }
 }
 

@@ -302,8 +302,10 @@
     <string name="tutorial_permissions_glyph_desc_granted">Concedido automáticamente para dispositivos Glyph Matrix</string>
     <string name="tutorial_permissions_glyph_desc_unsupported">No disponible en %s (Glyph Matrix no compatible)</string>
     <string name="tutorial_permissions_glyph_desc_unavailable">No disponible en este dispositivo (se requiere Nothing Phone con Glyph Matrix)</string>
+    <string name="tutorial_permissions_microphone_title">Acceso de Audio</string>
+    <string name="tutorial_permissions_microphone_desc">Sincroniza las visualizaciones con tu música real en tiempo real</string>
     <string name="tutorial_permissions_why_title">¿Por qué estos permisos?</string>
-    <string name="tutorial_permissions_why_desc">Glyph Beat necesita estos permisos solo para sincronizar sus animaciones glyph con tu música. Solo leemos datos de reproducción multimedia, y puedes restringir el acceso solo a aplicaciones de música.</string>
+    <string name="tutorial_permissions_why_desc">Glyph Beat necesita estos permisos solo para sincronizar animaciones con tu música. No se graba ni transmite audio.</string>
     <string name="tutorial_permissions_back">Atrás</string>
     <string name="tutorial_permissions_continue">Continuar</string>
     <string name="tutorial_permissions_skip">Omitir por Ahora</string>

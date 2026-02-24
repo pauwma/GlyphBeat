@@ -323,8 +323,10 @@
     <string name="tutorial_permissions_glyph_desc_granted">Automatically granted for Glyph Matrix devices</string>
     <string name="tutorial_permissions_glyph_desc_unsupported">Not available on %s (Glyph Matrix not supported)</string>
     <string name="tutorial_permissions_glyph_desc_unavailable">Not available on this device (Nothing Phone with Glyph Matrix required)</string>
+    <string name="tutorial_permissions_microphone_title">Audio Access</string>
+    <string name="tutorial_permissions_microphone_desc">Syncs visualizations with your actual music in real time</string>
     <string name="tutorial_permissions_why_title">Why these permissions?</string>
-    <string name="tutorial_permissions_why_desc">Glyph Beat needs these permissions only to sync its glyph animations with your music. We read media-playback data only, and you can restrict access only to music apps.</string>
+    <string name="tutorial_permissions_why_desc">Glyph Beat needs these permissions only to sync animations with your music. No audio is recorded or transmitted.</string>
     <string name="tutorial_permissions_back">Back</string>
     <string name="tutorial_permissions_continue">Continue</string>
     <string name="tutorial_permissions_skip">Skip for Now</string>

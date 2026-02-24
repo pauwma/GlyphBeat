@@ -3,465 +3,234 @@ package com.pauwma.glyphbeat.themes.animation
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.sound.AudioData
 import com.pauwma.glyphbeat.themes.base.AudioReactiveTheme
-import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsBuilder
 import com.pauwma.glyphbeat.ui.settings.SettingCategories
-import com.pauwma.glyphbeat.ui.settings.DropdownOption
-import kotlin.math.sin
-import kotlin.math.cos
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.pow
 
 /**
- * Horizontal waveform visualizer theme.
- * 
- * Displays a single horizontal line that accurately represents the audio waveform in real-time.
- * Similar to professional audio software, with smooth scrolling and accurate amplitude mapping.
- * 
- * Core Features:
- * - Real-time waveform display across canvas width
- * - Centered vertically with positive/negative wave representation
- * - Continuous left-to-right scrolling (oscilloscope style)
- * - Direct audio amplitude to line height correlation
- * 
- * Visual Style:
- * - Clean, thin line (configurable 1-3px thickness)
- * - Solid color with optional subtle glow effect
- * - Smooth anti-aliasing for professional appearance
- * - Optional gradient from center outward
- * 
- * Advanced Features:
- * - Frequency-colored segments option
- * - Configurable time window (2-5 seconds of history)
- * - Multiple display modes (waveform, spectrum, combined)
- * - Smooth pause transitions
- * - Custom offline visualization
- * 
- * @param frameCount Number of frames in the animation loop (default: 32)
- * @param animationSpeed Speed in milliseconds between frames (default: 50ms)
- * @param brightness Maximum brightness (default: 255)
- * @param lineThickness Waveform line thickness (default: 2)
- * @param displayMode Display mode: "waveform", "spectrum", "combined" (default: "waveform")
- * @param enableGlow Enable subtle glow effect (default: true)
- * @param timeWindow Seconds of audio history to display (default: 3.0f)
- * @param sensitivity Audio sensitivity multiplier (default: 1.0f)
+ * Mirrored waveform visualizer theme.
+ *
+ * Displays 25 vertical frequency bars centered on the middle row, extending both
+ * upward and downward symmetrically. Left-to-right maps low-to-high frequencies.
+ * A 1px center spine at full brightness is always visible as the base.
  */
 class WaveformTheme(
     private val frameCount: Int = 32,
     private val animationSpeed: Long = 50L,
     private val brightness: Int = 255,
-    private var lineThickness: Int = 2,
-    private var displayMode: String = "waveform",
-    private var enableGlow: Boolean = true,
-    private var timeWindow: Float = 3.0f,
-    private var sensitivity: Float = 1.0f
+    private var sensitivity: Float = 1.0f,
+    private var smoothing: Float = 0.5f,
+    private var spectrumShift: Int = 6,
+    private var mirrorMode: Boolean = false
 ) : AnimationTheme(), AudioReactiveTheme, ThemeSettingsProvider {
-    
+
     companion object {
-        private const val WAVEFORM_BUFFER_SIZE = 75 // 3x display width for smooth scrolling
-        private const val SPECTRUM_BANDS = 25
+        private const val COLUMNS = 25
         private const val CENTER_Y = 12
-        private const val MAX_AMPLITUDE = 10
-        private const val SCROLL_SPEED = 1
+        private const val MAX_HALF_HEIGHT = 11 // Max extension from center (rows 1-23)
+        private const val MIN_BAR_LEVEL = 0.05f // Minimal base so bars are never fully gone
     }
-    
+
     init {
-        require(frameCount in 16..48) { 
-            "Frame count must be between 16 and 48, got $frameCount" 
+        require(frameCount in 16..48) {
+            "Frame count must be between 16 and 48, got $frameCount"
         }
-        require(animationSpeed in 30L..100L) { 
-            "Animation speed must be between 30ms and 100ms, got ${animationSpeed}ms" 
-        }
-        require(lineThickness in 1..3) {
-            "Line thickness must be between 1 and 3, got $lineThickness"
-        }
-        require(timeWindow in 1.0f..5.0f) {
-            "Time window must be between 1.0 and 5.0 seconds, got $timeWindow"
+        require(animationSpeed in 30L..100L) {
+            "Animation speed must be between 30ms and 100ms, got ${animationSpeed}ms"
         }
         require(sensitivity in 0.5f..2.0f) {
             "Sensitivity must be between 0.5 and 2.0, got $sensitivity"
         }
+        require(smoothing in 0.1f..0.9f) {
+            "Smoothing must be between 0.1 and 0.9, got $smoothing"
+        }
     }
 
-    override fun getThemeName(): String = "Waveform (WIP)"
-
+    override fun getThemeName(): String = "Waveform"
     override fun getAnimationSpeed(): Long = animationSpeed
-
     override fun getBrightness(): Int = brightness
-
-    override fun getDescription(): String = "Reactive audio waveform visualizer"
-
-    // Theme Settings Implementation
+    override fun getDescription(): String = "Mirrored audio waveform visualizer"
     override fun getSettingsId(): String = "waveform_theme"
 
-    // Waveform data buffer for scrolling display
-    private val waveformBuffer = FloatArray(WAVEFORM_BUFFER_SIZE) { 0f }
-    private var bufferPosition = 0
-    private var scrollOffset = 0f
-    
-    // Spectrum analyzer data
-    private val spectrumData = FloatArray(SPECTRUM_BANDS) { 0f }
-    private val spectrumHistory = Array(SPECTRUM_BANDS) { FloatArray(25) { 0f } }
-    
-    // Peak detection for visual emphasis
-    private var recentPeak = 0f
-    private var peakDecay = 0f
-    
-    // Custom offline frame - static waveform pattern
+    // Current smoothed bar levels (0.0 - 1.0)
+    private val barHeights = FloatArray(COLUMNS) { 0f }
+
+    // Per-column target levels from audio data
+    private val targetLevels = FloatArray(COLUMNS) { 0f }
+
+    // Timing
+    private var lastUpdateTime = System.currentTimeMillis()
+
+    // Offline frame — single bright center line
     private val offlineFrame: IntArray by lazy {
         val frame = createEmptyFrame()
-        
-        // Draw a simple sine wave pattern
-        for (x in 0 until 25) {
-            val phase = x.toFloat() / 25f * 4 * Math.PI
-            val y = CENTER_Y + (sin(phase) * 3).toInt()
-            
-            // Draw line with thickness
-            for (t in 0 until lineThickness.coerceAtMost(2)) {
-                val yPos = (y + t).coerceIn(0, 24)
-                val pixelIndex = yPos * 25 + x
-                frame[pixelIndex] = (brightness * 0.3).toInt()
-            }
+        for (col in 0 until COLUMNS) {
+            frame[CENTER_Y * 25 + col] = brightness
         }
-        
-        // Add center line
-        for (x in 0 until 25) {
-            val pixelIndex = CENTER_Y * 25 + x
-            frame[pixelIndex] = (brightness * 0.15).toInt()
-        }
-        
         frame
     }
-    
-    // Paused state frames - frozen waveform with subtle fade
-    private val pausedFrames: Array<IntArray> by lazy {
-        Array(8) { i ->
-            val frame = createEmptyFrame()
-            val fadeAmount = 0.5f + (i.toFloat() / 8f) * 0.3f
-            
-            // Draw last known waveform state with fade
-            for (x in 0 until 25) {
-                val bufferIndex = ((bufferPosition - 25 + x + WAVEFORM_BUFFER_SIZE) % WAVEFORM_BUFFER_SIZE)
-                val amplitude = waveformBuffer[bufferIndex] * fadeAmount
-                val y = CENTER_Y + (amplitude * MAX_AMPLITUDE / 2).toInt()
-                
-                for (t in 0 until lineThickness) {
-                    val yPos = (y + t - lineThickness / 2).coerceIn(0, 24)
-                    val pixelIndex = yPos * 25 + x
-                    frame[pixelIndex] = (brightness * fadeAmount * 0.6).toInt()
+
+    // Static preview frame (shaped 489-pixel format, converted to flat 625)
+    private val staticPreviewFrame: IntArray by lazy {
+        val shaped = intArrayOf(
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,255,255,255,255,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,255,255,255,0,255,255,255,255,0,255,0,0,0,0,0,0,0,0,0,0,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,255,0,255,255,255,0,255,255,255,255,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,255,255,255,255,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        )
+        val glyphShape = intArrayOf(
+            7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
+            25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
+            19, 17, 15, 11, 7
+        )
+        val flat = IntArray(625) { 0 }
+        var si = 0
+        for (row in 0 until 25) {
+            val cols = glyphShape[row]
+            val startCol = (25 - cols) / 2
+            for (c in 0 until cols) {
+                if (si < shaped.size) {
+                    flat[row * 25 + startCol + c] = shaped[si++]
                 }
             }
-            
-            frame
         }
+        flat
     }
-    
-    // Fallback animation - scrolling sine wave
-    private val fallbackFrames: Array<IntArray> by lazy {
-        Array(frameCount) { frameIndex ->
-            val frame = createEmptyFrame()
-            val scrollPhase = frameIndex.toFloat() / frameCount * 2 * Math.PI
-            
-            // Draw scrolling waveform
-            for (x in 0 until 25) {
-                val phase = (x.toFloat() / 25f * 4 * Math.PI) + scrollPhase
-                val amplitude = sin(phase) * 0.7f + sin(phase * 2) * 0.3f
-                val y = CENTER_Y + (amplitude * 5).toInt()
-                
-                // Draw with configured thickness
-                for (t in 0 until lineThickness) {
-                    val yPos = (y + t - lineThickness / 2).coerceIn(0, 24)
-                    val pixelIndex = yPos * 25 + x
-                    frame[pixelIndex] = (brightness * 0.7).toInt()
-                }
-            }
-            
-            // Add subtle center line
-            if (enableGlow) {
-                for (x in 0 until 25) {
-                    val pixelIndex = CENTER_Y * 25 + x
-                    frame[pixelIndex] = max(frame[pixelIndex], (brightness * 0.2).toInt())
-                }
-            }
-            
-            frame
-        }
-    }
-    
+
     override fun getFrameCount(): Int = frameCount
-    
+
     override fun generateFrame(frameIndex: Int): IntArray {
         validateFrameIndex(frameIndex)
-        return fallbackFrames[frameIndex].clone()
+        return staticPreviewFrame.clone()
     }
-    
+
     override fun generateAudioReactiveFrame(frameIndex: Int, audioData: AudioData): IntArray {
         val frame = createEmptyFrame()
-        
-        // Return offline frame if not playing
+
+        val currentTime = System.currentTimeMillis()
+        val deltaTime = ((currentTime - lastUpdateTime) / 1000.0f).coerceIn(0.001f, 0.1f)
+        val deltaFactor = deltaTime * 60f
+        lastUpdateTime = currentTime
+
         if (!audioData.isPlaying) {
-            return offlineFrame.clone()
+            // Set targets to zero so bars decay smoothly
+            for (col in 0 until COLUMNS) targetLevels[col] = 0f
+        } else {
+            updateTargetLevels(audioData)
         }
-        
-        // Update audio data buffers
-        updateAudioBuffers(audioData)
-        
-        // Draw based on display mode
-        when (displayMode) {
-            "waveform" -> drawWaveform(frame, audioData)
-            "spectrum" -> drawSpectrum(frame, audioData)
-            "combined" -> {
-                drawWaveform(frame, audioData, 0.6f)
-                drawSpectrum(frame, audioData, 0.4f)
-            }
-        }
-        
-        // Add peak indicators
-        if (recentPeak > 0.8f) {
-            drawPeakIndicators(frame)
-        }
-        
-        // Add glow effect if enabled
-        if (enableGlow) {
-            applyGlowEffect(frame)
-        }
-        
+
+        updateBarHeights(deltaFactor)
+        drawBars(frame)
+
         return frame
     }
-    
+
     /**
-     * Update audio data buffers with new samples
+     * Map audio frequency bands to 25 columns (1:1, equal width).
+     *
+     * A smooth fade curve dims the left side so the visual center of activity
+     * shifts right by [spectrumShift] columns without stretching any bands.
+     *
+     * Mirror mode: bass in center columns, treble on both edges (symmetric).
      */
-    private fun updateAudioBuffers(audioData: AudioData) {
-        // Calculate combined waveform amplitude
-        val amplitude = (audioData.beatIntensity * 0.3 + 
-                        audioData.bassLevel * 0.4 + 
-                        audioData.midLevel * 0.2 + 
-                        audioData.trebleLevel * 0.1) * sensitivity
-        
-        // Add to waveform buffer with smooth interpolation
-        val smoothedAmplitude = if (bufferPosition > 0) {
-            val prevAmplitude = waveformBuffer[(bufferPosition - 1 + WAVEFORM_BUFFER_SIZE) % WAVEFORM_BUFFER_SIZE]
-            prevAmplitude * 0.7f + amplitude.toFloat() * 0.3f
-        } else {
-            amplitude.toFloat()
-        }
-        
-        waveformBuffer[bufferPosition] = smoothedAmplitude
-        bufferPosition = (bufferPosition + 1) % WAVEFORM_BUFFER_SIZE
-        
-        // Update spectrum data
-        updateSpectrumData(audioData)
-        
-        // Update peak detection
-        if (amplitude > recentPeak) {
-            recentPeak = amplitude.toFloat()
-            peakDecay = 1.0f
-        } else {
-            recentPeak *= 0.95f
-            peakDecay *= 0.9f
-        }
-        
-        // Update scroll position
-        scrollOffset += SCROLL_SPEED * (animationSpeed / 50f)
-    }
-    
-    /**
-     * Update spectrum analyzer data
-     */
-    private fun updateSpectrumData(audioData: AudioData) {
-        // Simulate frequency bands from audio data
-        for (i in 0 until SPECTRUM_BANDS) {
-            val bandPosition = i.toFloat() / SPECTRUM_BANDS
-            
-            val bandLevel = when {
-                bandPosition < 0.3f -> audioData.bassLevel * (1 - bandPosition * 3)
-                bandPosition < 0.7f -> audioData.midLevel
-                else -> audioData.trebleLevel * ((bandPosition - 0.7f) * 3)
-            }
-            
-            // Smooth spectrum data
-            spectrumData[i] = spectrumData[i] * 0.7f + bandLevel.toFloat() * 0.3f
-            
-            // Update spectrum history for waterfall effect
-            System.arraycopy(spectrumHistory[i], 1, spectrumHistory[i], 0, 24)
-            spectrumHistory[i][24] = spectrumData[i]
-        }
-    }
-    
-    /**
-     * Draw waveform visualization
-     */
-    private fun drawWaveform(frame: IntArray, audioData: AudioData, opacity: Float = 1.0f) {
-        val baseBrightness = (brightness * opacity).toInt()
-        
-        // Draw the waveform from buffer
-        for (x in 0 until 25) {
-            // Get amplitude from circular buffer with proper scrolling
-            val bufferIndex = ((bufferPosition - 25 + x + WAVEFORM_BUFFER_SIZE) % WAVEFORM_BUFFER_SIZE)
-            val amplitude = waveformBuffer[bufferIndex]
-            
-            // Create oscillating waveform (positive and negative)
-            val wavePhase = (x + scrollOffset).toFloat() / 5f
-            val oscillation = sin(wavePhase) * amplitude
-            
-            // Calculate Y position
-            val yOffset = (oscillation * MAX_AMPLITUDE).toInt()
-            val y = CENTER_Y + yOffset
-            
-            // Draw waveform line with thickness
-            for (t in 0 until lineThickness) {
-                val yPos = (y + t - lineThickness / 2).coerceIn(0, 24)
-                val pixelIndex = yPos * 25 + x
-                
-                // Calculate brightness with distance from center
-                val distanceFromCenter = abs(yPos - CENTER_Y)
-                val fadeFactor = 1.0f - (distanceFromCenter / 12f) * 0.3f
-                val pixelBrightness = (baseBrightness * fadeFactor).toInt()
-                
-                frame[pixelIndex] = max(frame[pixelIndex], pixelBrightness)
-            }
-            
-            // Add subtle dots at peaks for emphasis
-            if (abs(yOffset) > MAX_AMPLITUDE * 0.7) {
-                val peakY = y.coerceIn(0, 24)
-                val peakIndex = peakY * 25 + x
-                frame[peakIndex] = min(255, frame[peakIndex] + (baseBrightness * 0.3).toInt())
-            }
-        }
-        
-        // Draw center reference line
-        if (displayMode == "waveform") {
-            for (x in 0 until 25 step 3) {
-                val pixelIndex = CENTER_Y * 25 + x
-                frame[pixelIndex] = max(frame[pixelIndex], (baseBrightness * 0.2).toInt())
-            }
-        }
-    }
-    
-    /**
-     * Draw spectrum analyzer visualization
-     */
-    private fun drawSpectrum(frame: IntArray, audioData: AudioData, opacity: Float = 1.0f) {
-        val baseBrightness = (brightness * opacity).toInt()
-        
-        // Draw spectrum bars or waterfall
-        for (band in 0 until SPECTRUM_BANDS) {
-            val x = band
-            val level = spectrumData[band] * sensitivity
-            
-            if (displayMode == "spectrum") {
-                // Vertical bars from bottom
-                val barHeight = (level * 20).toInt().coerceIn(0, 20)
-                for (y in (24 - barHeight)..24) {
-                    val pixelIndex = y * 25 + x
-                    val barBrightness = (baseBrightness * (1 - (24 - y).toFloat() / 20f)).toInt()
-                    frame[pixelIndex] = max(frame[pixelIndex], barBrightness)
+    private fun updateTargetLevels(audioData: AudioData) {
+        val spectrum = audioData.spectrumBands
+        val beat = (audioData.beatIntensity * sensitivity).toFloat().coerceIn(0f, 1f)
+        val beatBoost = if (beat > 0.6f) beat * 0.15f else 0f
+
+        if (spectrum != null && spectrum.size == COLUMNS) {
+            if (mirrorMode) {
+                for (col in 0 until COLUMNS) {
+                    val distFromCenter = abs(col - 12)
+                    val specIdx = (distFromCenter * 24 / 12).coerceIn(0, 24)
+                    targetLevels[col] = (spectrum[specIdx] * sensitivity + beatBoost).coerceIn(0f, 1f)
                 }
             } else {
-                // Horizontal lines for combined mode
-                val y = (CENTER_Y + (band - SPECTRUM_BANDS / 2) * 0.8).toInt().coerceIn(0, 24)
-                val lineBrightness = (baseBrightness * level * 0.7).toInt()
-                
-                for (x2 in 0 until 25) {
-                    if ((x2 + band) % 3 == 0) { // Dashed lines
-                        val pixelIndex = y * 25 + x2
-                        frame[pixelIndex] = max(frame[pixelIndex], lineBrightness)
-                    }
+                // 1:1 mapping with smooth fade on left side
+                for (col in 0 until COLUMNS) {
+                    val raw = (spectrum[col] * sensitivity + beatBoost).coerceIn(0f, 1f)
+                    // Smooth fade: 0 at col 0, ramps to 1 at spectrumShift
+                    val fade = if (spectrumShift > 0) (col.toFloat() / spectrumShift).coerceIn(0f, 1f) else 1f
+                    targetLevels[col] = raw * fade * fade // Quadratic for smoother curve
                 }
             }
-        }
-    }
-    
-    /**
-     * Draw peak detection indicators
-     */
-    private fun drawPeakIndicators(frame: IntArray) {
-        val peakBrightness = (brightness * peakDecay * 0.8).toInt()
-        
-        // Top and bottom peak indicators
-        for (x in 0 until 25 step 2) {
-            if (peakDecay > 0.5f) {
-                // Top indicator
-                var pixelIndex = 2 * 25 + x
-                frame[pixelIndex] = max(frame[pixelIndex], peakBrightness)
-                
-                // Bottom indicator
-                pixelIndex = 22 * 25 + x
-                frame[pixelIndex] = max(frame[pixelIndex], peakBrightness)
-            }
-        }
-    }
-    
-    /**
-     * Apply subtle glow effect to the waveform
-     */
-    private fun applyGlowEffect(frame: IntArray) {
-        val tempFrame = frame.clone()
-        
-        // Simple box blur for glow
-        for (y in 1 until 24) {
-            for (x in 1 until 24) {
-                val index = y * 25 + x
-                if (tempFrame[index] > 0) {
-                    // Add glow to neighboring pixels
-                    val glowAmount = (tempFrame[index] * 0.3).toInt()
-                    
-                    // Adjacent pixels
-                    frame[(y - 1) * 25 + x] = max(frame[(y - 1) * 25 + x], glowAmount)
-                    frame[(y + 1) * 25 + x] = max(frame[(y + 1) * 25 + x], glowAmount)
-                    frame[y * 25 + (x - 1)] = max(frame[y * 25 + (x - 1)], glowAmount)
-                    frame[y * 25 + (x + 1)] = max(frame[y * 25 + (x + 1)], glowAmount)
+        } else {
+            val bass = (audioData.bassLevel * sensitivity).toFloat().coerceIn(0f, 1f)
+            val mid = (audioData.midLevel * sensitivity).toFloat().coerceIn(0f, 1f)
+            val treble = (audioData.trebleLevel * sensitivity).toFloat().coerceIn(0f, 1f)
+
+            for (col in 0 until COLUMNS) {
+                val t = col.toFloat() / 24f
+                val baseLevel = when {
+                    t < 0.33f -> bass * (1f - t * 3f) + mid * (t * 3f)
+                    t < 0.66f -> mid * (1f - (t - 0.33f) * 3f) + treble * ((t - 0.33f) * 3f)
+                    else -> treble
                 }
+                val fade = if (spectrumShift > 0) (col.toFloat() / spectrumShift).coerceIn(0f, 1f) else 1f
+                targetLevels[col] = (baseLevel + beatBoost).coerceIn(0f, 1f) * fade * fade
             }
         }
     }
-    
+
+    /**
+     * Smooth bar heights with exponential interpolation.
+     */
+    private fun updateBarHeights(deltaFactor: Float) {
+        for (col in 0 until COLUMNS) {
+            val minLevel = if (targetLevels[col] > 0f) MIN_BAR_LEVEL else 0f
+            val target = targetLevels[col].coerceAtLeast(minLevel)
+            val current = barHeights[col]
+
+            barHeights[col] = if (target > current) {
+                // Smooth rise
+                val riseLerp = (0.25f + (1f - smoothing) * 0.25f) * deltaFactor
+                current + (target - current) * riseLerp.coerceAtMost(0.8f)
+            } else {
+                // Smooth fall — exponential decay
+                val fallRate = 0.92f + smoothing * 0.06f
+                val decayed = current * fallRate.pow(deltaFactor)
+                if (decayed < 0.01f) 0f else decayed.coerceAtLeast(minLevel)
+            }
+        }
+    }
+
+    /**
+     * Draw mirrored bars centered on CENTER_Y.
+     * Center pixel is always full brightness (1px base line).
+     * Bars extend symmetrically up and down with gradient.
+     */
+    private fun drawBars(frame: IntArray) {
+        for (col in 0 until COLUMNS) {
+            // Always draw center pixel at full brightness
+            frame[CENTER_Y * 25 + col] = max(frame[CENTER_Y * 25 + col], brightness)
+
+            val halfHeight = (barHeights[col] * MAX_HALF_HEIGHT).toInt()
+            if (halfHeight < 1) continue
+
+            for (offset in -halfHeight..halfHeight) {
+                if (offset == 0) continue // Already drew center
+                val y = CENTER_Y + offset
+                if (y !in 0..24) continue
+
+                val dist = abs(offset).toFloat() / max(1, halfHeight)
+
+                // Brightest at tips, solid through the bar
+                val gradientFactor = 0.5f + 0.5f * dist.pow(0.5f)
+
+                // Boost for high-energy bars
+                val intensityBoost = if (barHeights[col] > 0.7f) 1.15f else 1f
+
+                val pixelBrightness = (brightness * gradientFactor * intensityBoost)
+                    .toInt().coerceIn(0, 255)
+
+                frame[y * 25 + col] = max(frame[y * 25 + col], pixelBrightness)
+            }
+        }
+    }
+
     override fun getSettingsSchema(): ThemeSettings {
         return ThemeSettingsBuilder(getSettingsId())
-            .addSliderSetting(
-                id = "line_thickness",
-                displayName = "Line Thickness",
-                description = "Waveform line thickness",
-                defaultValue = lineThickness,
-                minValue = 1,
-                maxValue = 3,
-                stepSize = 1,
-                category = SettingCategories.VISUAL
-            )
-            .addDropdownSetting(
-                id = "display_mode",
-                displayName = "Display Mode",
-                description = "Visualization style",
-                defaultValue = displayMode,
-                options = listOf(
-                    DropdownOption("waveform", "Waveform", "Horizontal scrolling waveform"),
-                    DropdownOption("spectrum", "Spectrum", "Frequency spectrum analyzer"),
-                    DropdownOption("combined", "Combined", "Both waveform and spectrum")
-                ),
-                category = SettingCategories.VISUAL
-            )
-            .addToggleSetting(
-                id = "enable_glow",
-                displayName = "Glow Effect",
-                description = "Add subtle glow to waveform",
-                defaultValue = enableGlow,
-                category = SettingCategories.EFFECTS
-            )
-            .addSliderSetting(
-                id = "time_window",
-                displayName = "Time Window",
-                description = "Seconds of audio history",
-                defaultValue = timeWindow,
-                minValue = 1.0f,
-                maxValue = 5.0f,
-                stepSize = 0.5f,
-                unit = "s",
-                category = SettingCategories.TIMING
-            )
             .addSliderSetting(
                 id = "sensitivity",
                 displayName = "Sensitivity",
@@ -472,14 +241,29 @@ class WaveformTheme(
                 stepSize = 0.1f,
                 category = SettingCategories.AUDIO
             )
+            .addSliderSetting(
+                id = "smoothing",
+                displayName = "Smoothing",
+                description = "Bar fall speed (higher = smoother)",
+                defaultValue = smoothing,
+                minValue = 0.1f,
+                maxValue = 0.9f,
+                stepSize = 0.1f,
+                category = SettingCategories.ANIMATION
+            )
+            .addToggleSetting(
+                id = "mirror_mode",
+                displayName = "Mirror Mode",
+                description = "Mirror bass to center, treble to edges",
+                defaultValue = mirrorMode,
+                category = SettingCategories.EFFECTS
+            )
             .build()
     }
-    
+
     override fun applySettings(settings: ThemeSettings) {
-        lineThickness = settings.getTypedValue("line_thickness", 2)
-        displayMode = settings.getTypedValue("display_mode", "waveform")
-        enableGlow = settings.getTypedValue("enable_glow", true)
-        timeWindow = settings.getTypedValue("time_window", 3.0f)
         sensitivity = settings.getTypedValue("sensitivity", 1.0f)
+        smoothing = settings.getTypedValue("smoothing", 0.5f)
+        mirrorMode = settings.getTypedValue("mirror_mode", false)
     }
 }

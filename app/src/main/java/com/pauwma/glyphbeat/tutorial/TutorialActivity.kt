@@ -1,10 +1,12 @@
 package com.pauwma.glyphbeat.tutorial
 
+import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -20,7 +22,13 @@ import com.pauwma.glyphbeat.tutorial.utils.TutorialPreferences
 class TutorialActivity : ComponentActivity() {
     
     private val viewModel: TutorialViewModel by viewModels()
-    
+
+    private val requestMicrophonePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.updatePermissionStatus(TutorialViewModel.PERMISSION_MICROPHONE, isGranted)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -35,9 +43,15 @@ class TutorialActivity : ComponentActivity() {
                     onPreviousPage = viewModel::previousPage,
                     onSkipTutorial = { finishTutorial(skipped = true) },
                     onCompleteTutorial = { finishTutorial(skipped = false) },
-                    onRequestPermission = viewModel::requestPermission,
+                    onRequestPermission = { context, permission ->
+                        if (permission == TutorialViewModel.PERMISSION_MICROPHONE) {
+                            requestMicrophonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        } else {
+                            viewModel.requestPermission(context, permission)
+                        }
+                    },
                     onUpdatePermissionStatus = viewModel::updatePermissionStatus,
-                    onSkipPermissions = { 
+                    onSkipPermissions = {
                         TutorialPreferences.setSkippedPermissions(this, true)
                     }
                 )

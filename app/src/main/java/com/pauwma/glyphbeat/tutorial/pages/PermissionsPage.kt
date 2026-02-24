@@ -45,6 +45,7 @@ fun PermissionsPage(
 
     val notificationGranted = permissionsGranted[TutorialViewModel.PERMISSION_NOTIFICATION] ?: false
     val glyphGranted = permissionsGranted[TutorialViewModel.PERMISSION_GLYPH] ?: false
+    val microphoneGranted = permissionsGranted[TutorialViewModel.PERMISSION_MICROPHONE] ?: false
     val allGranted = notificationGranted && (glyphGranted || !isNothingDevice)
 
     // Trigger animation when page becomes visible
@@ -103,7 +104,7 @@ fun PermissionsPage(
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Status Summary
         if (allGranted) {
@@ -119,7 +120,7 @@ fun PermissionsPage(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -128,7 +129,7 @@ fun PermissionsPage(
                             tint = Color(0xFF2E7D32),
                             modifier = Modifier.size(24.dp)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = context.getString(R.string.tutorial_permissions_all_granted),
                             style = MaterialTheme.typography.bodyLarge.copy(
@@ -149,7 +150,7 @@ fun PermissionsPage(
             enter = fadeIn(animationSpec = tween(800, delayMillis = 600))
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Notification Access Permission
                 PermissionCard(
@@ -179,10 +180,22 @@ fun PermissionsPage(
                     customFont = customFont,
                     isAvailable = isNothingDevice
                 )
+
+                // Microphone Permission (optional, for audio-reactive visualization)
+                PermissionCard(
+                    title = context.getString(R.string.tutorial_permissions_microphone_title),
+                    description = context.getString(R.string.tutorial_permissions_microphone_desc),
+                    icon = Icons.Default.Mic,
+                    isGranted = microphoneGranted,
+                    onRequestPermission = {
+                        onRequestPermission(TutorialViewModel.PERMISSION_MICROPHONE)
+                    },
+                    customFont = customFont
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Info Section
         AnimatedVisibility(

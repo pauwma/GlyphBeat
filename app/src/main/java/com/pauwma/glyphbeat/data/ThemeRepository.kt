@@ -12,7 +12,6 @@ import com.pauwma.glyphbeat.themes.animation.ShapeTheme
 import com.pauwma.glyphbeat.themes.animation.CoverArtTheme
 import com.pauwma.glyphbeat.themes.animation.GlyphyTheme
 import com.pauwma.glyphbeat.themes.animation.MinimalTheme
-import com.pauwma.glyphbeat.themes.animation.PulseVisualizerTheme
 import com.pauwma.glyphbeat.themes.animation.WaveformTheme
 import com.pauwma.glyphbeat.themes.animation.ScrollTheme
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
@@ -69,13 +68,12 @@ class ThemeRepository private constructor(private val context: Context) {
     val availableThemes: List<AnimationTheme> = listOf<AnimationTheme>(
         VinylTheme(context),
         DancingDuckTheme(context),
+        WaveformTheme(),
         CoverArtTheme(context),
         ScrollTheme(context),
         MinimalTheme(context),
         GlyphyTheme(context),
-        ShapeTheme(context),
-        PulseVisualizerTheme(),
-        WaveformTheme()
+        ShapeTheme(context)
     )
 
     // Current selected theme index state
