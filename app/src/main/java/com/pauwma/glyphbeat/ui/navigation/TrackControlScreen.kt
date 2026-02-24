@@ -159,37 +159,31 @@ private fun TrackControlThemeCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onSelect() }
-            .padding(4.dp),
+            .padding(4.dp)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(12.dp)
+            ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
+        shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 4.dp else 0.dp
+            defaultElevation = 0.dp
         )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    color = if (isSelected) 
-                        MaterialTheme.colorScheme.surfaceVariant 
-                    else 
-                        MaterialTheme.colorScheme.surface
-                )
-                .border(
-                    width = if (isSelected) 2.dp else 1.dp,
-                    color = if (isSelected) 
-                        NothingRed 
-                    else 
-                        MaterialTheme.colorScheme.outline,
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .clip(RoundedCornerShape(12.dp))
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
+                    .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Combined preview showing both directions
@@ -200,7 +194,7 @@ private fun TrackControlThemeCard(
                         .background(MaterialTheme.colorScheme.surface)
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) NothingRed else MaterialTheme.colorScheme.outline,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
                             shape = CircleShape
                         )
                 ) {
@@ -220,22 +214,36 @@ private fun TrackControlThemeCard(
                                 TrackControlTheme.Direction.NEXT
                             )
                         }
-                        // Simple preview rendering
-                        val cellSize = size.width / 25f
+                        // Glyph Matrix shape: pixels per row (circular pattern)
+                        val glyphShape = intArrayOf(
+                            7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
+                            25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
+                            19, 17, 15, 11, 7
+                        )
+                        val containerSize = kotlin.math.min(size.width, size.height)
+                        val dotSize = containerSize / 25f
+                        val actualDotSize = dotSize * 0.8f
+                        val startX = (size.width - containerSize) / 2f
+                        val startY = (size.height - containerSize) / 2f
+
                         for (row in 0 until 25) {
-                            for (col in 0 until 25) {
+                            val pixelsInRow = glyphShape[row]
+                            val startColForRow = (25 - pixelsInRow) / 2
+
+                            for (colInRow in 0 until pixelsInRow) {
+                                val col = startColForRow + colInRow
                                 val index = row * 25 + col
-                                if (index < pixels.size && pixels[index] > 0) {
-                                    val alpha = pixels[index] / 255f
-                                    drawCircle(
-                                        color = Color.White.copy(alpha = alpha),
-                                        radius = cellSize * 0.3f,
-                                        center = androidx.compose.ui.geometry.Offset(
-                                            x = col * cellSize + cellSize / 2,
-                                            y = row * cellSize + cellSize / 2
-                                        )
+                                val value = if (index < pixels.size) pixels[index].coerceIn(0, 255) else 0
+                                val brightness = value / 255f
+
+                                drawCircle(
+                                    color = Color(brightness, brightness, brightness, 1f),
+                                    radius = actualDotSize / 2f,
+                                    center = androidx.compose.ui.geometry.Offset(
+                                        x = startX + col * dotSize + dotSize / 2f,
+                                        y = startY + row * dotSize + dotSize / 2f
                                     )
-                                }
+                                )
                             }
                         }
                     }
@@ -246,16 +254,16 @@ private fun TrackControlThemeCard(
                 // Theme Name
                 Text(
                     text = theme.getThemeName(),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                        fontSize = 18.sp
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
                     ),
-                    color = if (isSelected) 
-                        NothingRed 
-                    else 
-                        MaterialTheme.colorScheme.onSurface,
+                    fontFamily = FontFamily(Font(R.font.ntype82regular, FontWeight.Normal)),
+                    color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    maxLines = 1,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 2.dp)
                 )
                 
                 Spacer(modifier = Modifier.height(4.dp))

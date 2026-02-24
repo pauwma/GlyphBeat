@@ -266,32 +266,16 @@ fun GlyphMatrixPreview(
                         themeBrightness
                     )
                     
-                    // Convert brightness to color using the unified model's preview alpha calculation
-                    val color = if (finalBrightness == 0) {
-                        Color.Transparent
-                    } else {
-                        // Use the unified model's preview alpha calculation for consistent appearance
-                        val alpha = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculatePreviewAlpha(
-                            pixelValue,
-                            themeBrightness
-                        )
-                        Color.White.copy(alpha = alpha.coerceIn(0f, 1f))
-                    }
-                    
-                    // Always draw the dot to show the matrix shape, but use different opacity for inactive pixels
-                    val finalColor = if (pixelValue > 0) {
-                        color
-                    } else {
-                        // Show inactive matrix positions with very low opacity
-                        Color.Gray.copy(alpha = 0.05f)
-                    }
-                    
-                    // Simple consistent positioning
+                    // Match GlyphMuseum style: brightness 0..255 maps to black..white
+                    // 0-brightness pixels are solid black, visible against the surface background
+                    val brightness = (finalBrightness / 255f).coerceIn(0f, 1f)
+                    val color = Color(brightness, brightness, brightness, 1f)
+
                     val x = startX + col * dotSize + dotSize / 2f
                     val y = startY + row * dotSize + dotSize / 2f
-                    
+
                     drawCircle(
-                        color = finalColor,
+                        color = color,
                         radius = actualDotSize / 2f,
                         center = Offset(x, y)
                     )

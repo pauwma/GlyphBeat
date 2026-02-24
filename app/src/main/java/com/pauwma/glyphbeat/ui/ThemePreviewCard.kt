@@ -13,17 +13,25 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.data.ThemeRepository
+import com.pauwma.glyphbeat.theme.NothingAndroidSDKDemoTheme
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
+
+private val NothingTypeFont = FontFamily(
+    Font(R.font.ntype82regular, FontWeight.Normal)
+)
 
 /**
  * Theme preview card component with Nothing brand styling.
@@ -103,24 +111,22 @@ fun ThemePreviewCard(
                 color = if (isSelected)
                     MaterialTheme.colorScheme.primary
                 else
-                    MaterialTheme.colorScheme.outline,
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
                 shape = RoundedCornerShape(12.dp)
             ),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected)
-                MaterialTheme.colorScheme.surfaceVariant
-            else
-                MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surface
         ),
+        shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 4.dp else 0.dp
+            defaultElevation = 0.dp
         )
     ) {
         Box {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
+                    .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Glyph Matrix Preview with settings
@@ -135,23 +141,19 @@ fun ThemePreviewCard(
 
                 // Theme Name - use key() to force recomposition on locale changes
                 key(configuration) {
-                    com.pauwma.glyphbeat.ui.components.AutoScalingText(
+                    Text(
                         text = theme.getThemeName(),
-                        maxFontSize = 18.sp,
-                        minFontSize = 14.sp,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold
                         ),
-                        color = if (isSelected)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurface,
+                        fontFamily = NothingTypeFont,
+                        color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 1
+                        maxLines = 1,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 2.dp)
                     )
-
-                    Spacer(modifier = Modifier.height(4.dp))
 
                     // Theme Description
                     com.pauwma.glyphbeat.ui.components.AutoScalingText(
@@ -221,32 +223,26 @@ fun CompactThemePreviewCard(
     Card(
         modifier = modifier
             .clickable { onSelect() }
-            .padding(2.dp),
+            .padding(2.dp)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(8.dp)
+            ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
+        shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 2.dp else 0.dp
+            defaultElevation = 0.dp
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    color = if (isSelected)
-                        MaterialTheme.colorScheme.surfaceVariant
-                    else
-                        MaterialTheme.colorScheme.surface
-                )
-                .border(
-                    width = if (isSelected) 2.dp else 1.dp,
-                    color = if (isSelected)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.outline,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .clip(RoundedCornerShape(8.dp))
                 .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -261,17 +257,80 @@ fun CompactThemePreviewCard(
             // Theme Name Only
             Text(
                 text = theme.getThemeName(),
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    fontSize = 14.sp
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
                 ),
-                color = if (isSelected)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.onSurface,
+                fontFamily = NothingTypeFont,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
+                maxLines = 1,
                 modifier = Modifier.fillMaxWidth()
             )
         }
+    }
+}
+
+// --- Previews ---
+
+private class PreviewTheme(
+    private val name: String = "Vinyl Record",
+    private val description: String = "Spinning vinyl animation"
+) : AnimationTheme() {
+    override fun getFrameCount(): Int = 8
+    override fun generateFrame(frameIndex: Int): IntArray = IntArray(625) { if (it % 3 == frameIndex % 3) 200 else 0 }
+    override fun getThemeName(): String = name
+    override fun getDescription(): String = description
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF000000, name = "Selected")
+@Composable
+private fun ThemePreviewCardSelectedPreview() {
+    NothingAndroidSDKDemoTheme {
+        ThemePreviewCard(
+            theme = PreviewTheme(),
+            isSelected = true,
+            onSelect = {},
+            onOpenSettings = {},
+            modifier = Modifier.width(180.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF000000, name = "Unselected")
+@Composable
+private fun ThemePreviewCardUnselectedPreview() {
+    NothingAndroidSDKDemoTheme {
+        ThemePreviewCard(
+            theme = PreviewTheme("Dancing Duck", "Fun duck animation"),
+            isSelected = false,
+            onSelect = {},
+            modifier = Modifier.width(180.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF000000, name = "Compact - Selected")
+@Composable
+private fun CompactThemePreviewCardSelectedPreview() {
+    NothingAndroidSDKDemoTheme {
+        CompactThemePreviewCard(
+            theme = PreviewTheme(),
+            isSelected = true,
+            onSelect = {},
+            modifier = Modifier.width(140.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF000000, name = "Compact - Unselected")
+@Composable
+private fun CompactThemePreviewCardUnselectedPreview() {
+    NothingAndroidSDKDemoTheme {
+        CompactThemePreviewCard(
+            theme = PreviewTheme("Waveform", "Audio waveform display"),
+            isSelected = false,
+            onSelect = {},
+            modifier = Modifier.width(140.dp)
+        )
     }
 }

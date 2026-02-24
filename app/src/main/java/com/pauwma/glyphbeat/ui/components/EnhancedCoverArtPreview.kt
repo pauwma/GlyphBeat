@@ -208,26 +208,24 @@ private fun DrawScope.drawCoverArtPreview(
             val index = row * 25 + col
             
             if (index < frameData.size) {
-                val brightness = frameData[index]
-                
-                // Calculate alpha based on brightness
-                val alpha = when {
-                    brightness == 0 -> 0.05f // Show matrix shape
-                    !isSelected -> brightness / 255f * 0.7f // Dimmer when not selected
-                    !isPlaying && hasMedia -> brightness / 255f * 0.5f // Paused state
-                    else -> brightness / 255f // Normal state
+                val value = frameData[index]
+
+                // Apply state-based dimming then map to grayscale like GlyphMuseum
+                val adjustedBrightness = when {
+                    value == 0 -> 0f
+                    !isSelected -> value / 255f * 0.7f // Dimmer when not selected
+                    !isPlaying && hasMedia -> value / 255f * 0.5f // Paused state
+                    else -> value / 255f // Normal state
                 }
-                
+
+                val color = Color(adjustedBrightness, adjustedBrightness, adjustedBrightness, 1f)
+
                 // Draw the pixel dot with centering offset
                 val x = offsetX + col * cellSize + cellSize / 2f
                 val y = offsetY + row * cellSize + cellSize / 2f
-                
+
                 drawCircle(
-                    color = if (brightness > 0) {
-                        Color.White.copy(alpha = alpha)
-                    } else {
-                        Color.Gray.copy(alpha = 0.05f)
-                    },
+                    color = color,
                     radius = dotSize / 2f,
                     center = Offset(x, y)
                 )

@@ -246,10 +246,10 @@ class MinimalArrowTheme : TrackControlTheme(), TrackControlThemeSettingsProvider
     // Override base class getBrightnessForState to prevent interference
     override fun getBrightnessForState(state: InteractionState): Int = 255 // Always full brightness
     
-    // Override preview to return flat array for UI display
+    // Override preview to return flat array at full brightness for clear UI display
     override fun getPreviewFrame(direction: Direction): IntArray {
-        // getStateFrame already returns flat array data
-        return getStateFrame(InteractionState.IDLE, direction, 0)
+        val baseFrame = generateStateFrame(direction)
+        return baseFrame // Full 255 values, no idle brightness multiplier applied
     }
     
     // AnimationTheme required methods
