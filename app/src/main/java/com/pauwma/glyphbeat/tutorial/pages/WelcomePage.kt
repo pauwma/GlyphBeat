@@ -70,12 +70,12 @@ fun WelcomePage(
         ) {
             Box(
                 modifier = Modifier
-                    .size(180.dp)
+                    .size(140.dp)
                     .clip(CircleShape)
                     .background(Color.Black)
             ) {
                 Image(
-                    imageVector = ImageVector.vectorResource(id = R.drawable.media_player_track_toy_icon),
+                    imageVector = ImageVector.vectorResource(id = R.drawable.glyphbeat_icon),
                     contentDescription = "Glyph Beat Logo",
                     modifier = Modifier
                         .fillMaxSize()
