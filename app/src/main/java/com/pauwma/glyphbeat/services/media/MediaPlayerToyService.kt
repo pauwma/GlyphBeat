@@ -13,6 +13,7 @@ import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import com.pauwma.glyphbeat.sound.AudioAnalyzer
 import com.pauwma.glyphbeat.sound.AudioData
 import com.pauwma.glyphbeat.sound.MediaControlHelper
+import com.pauwma.glyphbeat.utils.DebugLogger
 import com.pauwma.glyphbeat.themes.animation.ScrollTheme
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.themes.base.AudioReactiveTheme
@@ -147,7 +148,8 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         glyphMatrixManager: GlyphMatrixManager
     ) {
         Log.d(LOG_TAG, "MediaPlayerToyService connected - starting enhanced animation loop")
-        
+        DebugLogger.log("MediaPlayerToyService: connected")
+
         // Store reference to matrix manager for immediate updates
         this.matrixManager = glyphMatrixManager
         
@@ -378,6 +380,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
 
     override fun performOnServiceDisconnected(context: Context) {
         Log.d(LOG_TAG, "MediaPlayerToyService disconnected")
+        DebugLogger.log("MediaPlayerToyService: disconnected")
         
         // Cleanup resources
         mediaHelper.cleanup()

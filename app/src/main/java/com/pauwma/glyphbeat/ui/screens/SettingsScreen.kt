@@ -1,6 +1,7 @@
 package com.pauwma.glyphbeat.ui.screens
 
 import android.content.Intent
+import com.pauwma.glyphbeat.utils.DebugLogger
 import android.content.SharedPreferences
 import android.net.Uri
 import android.util.Log
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.Warning
@@ -1315,45 +1317,62 @@ fun SettingsScreen(
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
-                Button(
-                    onClick = {
-                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                            data = Uri.parse("mailto:")
-                            putExtra(Intent.EXTRA_EMAIL, arrayOf("contact+glyphbeat@pauwma.com"))
-                            putExtra(Intent.EXTRA_SUBJECT, "GlyphBeat Bug Report")
-                            putExtra(
-                                Intent.EXTRA_TEXT,
-                                "Hi,\n\nI found an issue with GlyphBeat:\n\n" +
-                                "Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}\n" +
-                                "Android Version: ${android.os.Build.VERSION.RELEASE}\n" +
-                                "App Version: ${AppConfig.APP_VERSION}\n\n" +
-                                "Description of the issue:\n\n\n" +
-                                "Steps to reproduce:\n1. \n2. \n3. \n\n" +
-                                "Expected behavior:\n\n\n" +
-                                "Actual behavior:\n\n"
-                            )
-                        }
-                        try {
-                            context.startActivity(emailIntent)
-                        } catch (e: Exception) {
-                            // Fallback if no email app is available
-                            val fallbackIntent = Intent(Intent.ACTION_VIEW).apply {
-                                data = Uri.parse("https://github.com/pauwma/GlyphBeat/issues")
-                            }
-                            context.startActivity(fallbackIntent)
-                        }
-                    },
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp)
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Mail,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(context.getString(R.string.contact_button))
+                    Button(
+                        onClick = {
+                            val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:")
+                                putExtra(Intent.EXTRA_EMAIL, arrayOf("contact+glyphbeat@pauwma.com"))
+                                putExtra(Intent.EXTRA_SUBJECT, "GlyphBeat Bug Report")
+                                putExtra(
+                                    Intent.EXTRA_TEXT,
+                                    "— App Info (don't edit) —\n" +
+                                    "Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}\n" +
+                                    "OS: ${android.os.Build.DISPLAY}\n" +
+                                    "App: ${AppConfig.APP_VERSION}\n" +
+                                    "————————————\n\n" +
+                                    "Describe what happened:\n\n"
+                                )
+                            }
+                            try {
+                                context.startActivity(emailIntent)
+                            } catch (e: Exception) {
+                                val fallbackIntent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse("https://github.com/pauwma/GlyphBeat/issues")
+                                }
+                                context.startActivity(fallbackIntent)
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Mail,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(context.getString(R.string.contact_button))
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            DebugLogger.shareLog(context)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.BugReport,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(context.getString(R.string.send_log_button))
+                    }
                 }
             }
         }
@@ -1604,7 +1623,7 @@ fun SettingsScreen(
                     modifier = Modifier.padding(top = 8.dp),
                     text = buildAnnotatedString {
                         append("Version: ${AppConfig.APP_VERSION} - ")
-                        pushStringAnnotation(tag = "URL", annotation = "https://privacidad.me/@pauwma")
+                        pushStringAnnotation(tag = "URL", annotation = "https://pauwma.com")
                         withStyle(
                             style = SpanStyle(
                                 color = MaterialTheme.colorScheme.primary,
@@ -1621,7 +1640,7 @@ fun SettingsScreen(
                     onClick = { offset ->
                         val annotations = buildAnnotatedString {
                             append("Version: ${AppConfig.APP_VERSION} - ")
-                            pushStringAnnotation(tag = "URL", annotation = "https://privacidad.me/@pauwma")
+                            pushStringAnnotation(tag = "URL", annotation = "https://pauwma.com    ")
                             append("pauwma")
                             pop()
                         }.getStringAnnotations(tag = "URL", start = offset, end = offset)

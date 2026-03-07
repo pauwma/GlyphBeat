@@ -13,6 +13,7 @@ import android.util.Log
 import com.nothing.ketchum.Glyph
 import com.nothing.ketchum.GlyphMatrixManager
 import com.nothing.ketchum.GlyphToy
+import com.pauwma.glyphbeat.utils.DebugLogger
 
 abstract class GlyphMatrixService(private val tag: String) : Service() {
 
@@ -51,12 +52,16 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
         override fun onServiceConnected(p0: ComponentName?) {
             glyphMatrixManager?.let { gmm ->
                 Log.d(LOG_TAG, "$tag: onServiceConnected")
+                DebugLogger.log("$tag: SDK onServiceConnected")
                 gmm.register(Glyph.DEVICE_23112)
                 performOnServiceConnected(applicationContext, gmm)
             }
         }
 
-        override fun onServiceDisconnected(p0: ComponentName?) {}
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            Log.w(LOG_TAG, "$tag: SDK onServiceDisconnected - Glyph Matrix system service disconnected unexpectedly")
+            DebugLogger.log("$tag: SDK onServiceDisconnected (unexpected)")
+        }
     }
 
     final override fun startService(intent: Intent?): ComponentName? {
@@ -66,6 +71,7 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
 
     final override fun onBind(intent: Intent?): IBinder? {
         Log.d(LOG_TAG, "$tag: onBind")
+        DebugLogger.log("$tag: onBind")
         GlyphMatrixManager.getInstance(applicationContext)?.let { gmm ->
             glyphMatrixManager = gmm
             gmm.init(gmmCallback)
@@ -76,6 +82,7 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
 
     final override fun onUnbind(intent: Intent?): Boolean {
         Log.d(LOG_TAG, "$tag: onUnbind")
+        DebugLogger.log("$tag: onUnbind")
         
         // Notify MusicDetectionService that this service is stopping
         val stopIntent = Intent("com.pauwma.glyphbeat.SERVICE_STOPPED")

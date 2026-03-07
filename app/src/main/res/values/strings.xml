@@ -271,6 +271,7 @@
     <string name="bug_report_title">Bug Report &amp; Support</string>
     <string name="bug_report_desc">Found a bug or need help? Contact me for support</string>
     <string name="contact_button">Contact</string>
+    <string name="send_log_button">Send Log</string>
 
 
     <!-- ───── Support GlyphBeat ───── -->

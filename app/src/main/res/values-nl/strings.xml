@@ -269,6 +269,7 @@
     <string name="bug_report_title">Bugrapport &amp; ondersteuning</string>
     <string name="bug_report_desc">Bug gevonden of hulp nodig? Neem contact met mij op.</string>
     <string name="contact_button">Contact</string>
+    <string name="send_log_button">Log versturen</string>
 
 
     <!-- ───── Support GlyphBeat ───── -->
