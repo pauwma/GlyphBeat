@@ -218,6 +218,9 @@
 
     <string name="auto_start_apps_title">Installed Music Apps</string>
     <string name="auto_start_apps_desc">Select which apps should trigger auto-start when music playback is detected</string>
+    <string name="add_app">Add app</string>
+    <string name="add_app_dialog_title">Select an app</string>
+    <string name="add_app_search_hint">Search apps…</string>
 
 
     <!-- ───── Shake Controls ───── -->

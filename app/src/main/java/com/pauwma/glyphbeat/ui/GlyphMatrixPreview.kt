@@ -10,7 +10,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -283,54 +285,50 @@ fun GlyphMatrixPreview(
         Canvas(
             modifier = Modifier.fillMaxSize()
         ) {
-            val containerSize = min(size.width, size.height)
-            
-            // Consistent grid sizing for all themes - always use the full container
-            val gridSize = containerSize
-            
-            // Simple consistent sizing for all preview sizes
-            val dotSize = gridSize / 25f // 25x25 grid
-            val actualDotSize = dotSize * 0.8f // 80% of grid cell for dot, 20% for spacing
-            
-            // Calculate starting position to center the grid
-            val startX = (size.width - gridSize) / 2f
-            val startY = (size.height - gridSize) / 2f
-            
+            val inner = min(size.width, size.height)
+            val gapRatio = 0.18f
+            val cornerRatio = 0.18f
+
+            val startX = (size.width - inner) / 2f
+            val startY = (size.height - inner) / 2f
+
+            val cell = inner / 25f
+            val gap = cell * gapRatio
+            val side = cell - gap
+            val cr = side * cornerRatio
+
             // Glyph Matrix shape definition - number of active pixels per row
             val glyphShape = intArrayOf(
                 7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
                 25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
                 19, 17, 15, 11, 7
             )
-            
-            // Draw each pixel as a small circle/dot, but only for active matrix positions
+
             for (row in 0 until 25) {
                 val pixelsInRow = glyphShape[row]
-                val startColForRow = (25 - pixelsInRow) / 2
-                
-                for (colInRow in 0 until pixelsInRow) {
-                    val col = startColForRow + colInRow
+                val colStart = (25 - pixelsInRow) / 2
+
+                for (c in 0 until pixelsInRow) {
+                    val col = colStart + c
                     val pixelIndex = row * 25 + col
                     val pixelValue = if (pixelIndex < frameData.size) frameData[pixelIndex] else 0
-                    
-                    // Use the unified brightness model for pixel calculations
+
                     val finalBrightness = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
                         pixelValue,
                         themeBrightness
                     )
-                    
-                    // Match GlyphMuseum style: brightness 0..255 maps to black..white
-                    // 0-brightness pixels are solid black, visible against the surface background
+
                     val brightness = (finalBrightness / 255f).coerceIn(0f, 1f)
                     val color = Color(brightness, brightness, brightness, 1f)
 
-                    val x = startX + col * dotSize + dotSize / 2f
-                    val y = startY + row * dotSize + dotSize / 2f
-
-                    drawCircle(
+                    drawRoundRect(
                         color = color,
-                        radius = actualDotSize / 1.9f,
-                        center = Offset(x, y)
+                        topLeft = Offset(
+                            x = startX + col * cell + gap / 2f,
+                            y = startY + row * cell + gap / 2f
+                        ),
+                        size = Size(side, side),
+                        cornerRadius = CornerRadius(cr, cr)
                     )
                 }
             }

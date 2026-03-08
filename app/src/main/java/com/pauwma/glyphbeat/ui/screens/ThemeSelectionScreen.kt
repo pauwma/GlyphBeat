@@ -55,7 +55,7 @@ fun ThemeSelectionScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val localeContext = remember(configuration) { context }
-    val themeRepository = remember(configuration) { ThemeRepository.refreshForLocaleChange(localeContext) }
+    val themeRepository = remember { ThemeRepository.getInstance(context) }
     val selectedThemeIndex by themeRepository.selectedThemeIndex
     val customFont = FontFamily(Font(R.font.ntype82regular))
 
@@ -137,7 +137,10 @@ fun ThemeSelectionScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Built-in themes
-                items(allThemes.filter { it !is CustomTheme }) { theme ->
+                items(
+                    allThemes.filter { it !is CustomTheme },
+                    key = { it.getThemeName() }
+                ) { theme ->
                     val themeIndex = allThemes.indexOf(theme)
                     val isSelected = themeRepository.isThemeSelected(themeIndex)
 
@@ -182,7 +185,10 @@ fun ThemeSelectionScreen(
                 }
 
                 if (importedThemes.isNotEmpty()) {
-                    items(importedThemes) { theme ->
+                    items(
+                        importedThemes,
+                        key = { (it as CustomTheme).postId }
+                    ) { theme ->
                         val themeIndex = allThemes.indexOf(theme)
                         val isSelected = themeRepository.isThemeSelected(themeIndex)
 

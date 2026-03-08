@@ -50,7 +50,7 @@ fun ThemePreviewCard(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val localeContext = remember(configuration) { context }
-    val themeRepository = remember(configuration) { ThemeRepository.refreshForLocaleChange(localeContext) }
+    val themeRepository = remember { ThemeRepository.getInstance(context) }
 
     // Check if theme supports settings and has custom settings
     var hasCustomSettings by remember(theme, configuration) { mutableStateOf(false) }

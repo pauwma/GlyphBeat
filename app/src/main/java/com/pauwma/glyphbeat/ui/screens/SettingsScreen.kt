@@ -38,8 +38,13 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Pix
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.*
 import androidx.compose.ui.draw.rotate
 import androidx.compose.runtime.*
@@ -88,7 +93,6 @@ import com.pauwma.glyphbeat.data.ShakeControlSettingsManager
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.material.icons.filled.Settings
 import androidx.core.os.LocaleListCompat
-import androidx.compose.ui.platform.LocalConfiguration
 import com.pauwma.glyphbeat.core.AppConfig
 
 @Composable
@@ -342,6 +346,153 @@ private fun getAppNameFromPackage(context: android.content.Context, packageName:
     }
 }
 
+/**
+ * Full-screen dialog for picking any installed app to add to the auto-start whitelist.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppPickerDialog(
+    onDismiss: () -> Unit,
+    onAppSelected: (MusicAppWhitelistManager.MusicAppInfo) -> Unit,
+    whitelistManager: MusicAppWhitelistManager
+) {
+    val context = LocalContext.current
+    var searchQuery by remember { mutableStateOf("") }
+    var allApps by remember { mutableStateOf<List<MusicAppWhitelistManager.MusicAppInfo>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            val apps = whitelistManager.getAllInstalledApps()
+            withContext(Dispatchers.Main) {
+                allApps = apps
+                isLoading = false
+            }
+        }
+    }
+
+    val filteredApps = remember(allApps, searchQuery) {
+        if (searchQuery.isBlank()) allApps
+        else allApps.filter {
+            it.appName.contains(searchQuery, ignoreCase = true) ||
+            it.packageName.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .fillMaxHeight(0.7f),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Header
+                Text(
+                    text = context.getString(R.string.add_app_dialog_title),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 8.dp)
+                )
+
+                // Search field
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text(context.getString(R.string.add_app_search_hint)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(filteredApps, key = { it.packageName }) { app ->
+                            var appIcon by remember(app.packageName) { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+                            LaunchedEffect(app.packageName) {
+                                withContext(Dispatchers.IO) {
+                                    appIcon = getAppIcon(context, app.packageName)
+                                }
+                            }
+
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = { onAppSelected(app) },
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.size(40.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        appIcon?.let { icon ->
+                                            Image(
+                                                bitmap = icon.asImageBitmap(),
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .size(36.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                            )
+                                        } ?: Icon(
+                                            imageVector = Icons.Default.MusicNote,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(36.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        )
+                                    }
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = app.appName,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = app.packageName,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -380,6 +531,7 @@ fun SettingsScreen(
     var musicApps by remember { mutableStateOf<List<MusicAppWhitelistManager.MusicAppInfo>>(emptyList()) }
     var isLoadingMusicApps by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
+    var showAppPickerDialog by remember { mutableStateOf(false) }
 
     // Language settings state
     var currentLanguage by remember { mutableStateOf("en") }
@@ -1270,9 +1422,50 @@ fun SettingsScreen(
                                         }
                                     }
                                 }
+
+                                // Add app button
+                                OutlinedButton(
+                                    onClick = { showAppPickerDialog = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = context.getString(R.string.add_app),
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
                             }
                         }
                     } // End of AnimatedVisibility Column
+
+                    // App picker dialog
+                    if (showAppPickerDialog) {
+                        AppPickerDialog(
+                            onDismiss = { showAppPickerDialog = false },
+                            onAppSelected = { selectedApp ->
+                                showAppPickerDialog = false
+                                whitelistManager.addToWhitelist(selectedApp.packageName)
+                                // Reload the list to include the new app
+                                loadMusicApps()
+
+                                // Notify service
+                                if (autoStartEnabled) {
+                                    val updateIntent = Intent("com.pauwma.glyphbeat.WHITELIST_CHANGED")
+                                    updateIntent.putExtra("changed_package", selectedApp.packageName)
+                                    updateIntent.putExtra("is_whitelisted", true)
+                                    context.sendBroadcast(updateIntent)
+                                }
+                            },
+                            whitelistManager = whitelistManager
+                        )
+                    }
                 } // End of AnimatedVisibility
             }
         }

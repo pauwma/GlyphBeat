@@ -298,8 +298,8 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
         if (json != null) {
             try {
                 Log.d(LOG_TAG, "Found stored whitelist JSON, length: ${json.length} characters")
-                val type = object : TypeToken<MutableSet<String>>() {}.type
-                val loadedApps = gson.fromJson<MutableSet<String>>(json, type)
+                val type = object : TypeToken<HashSet<String>>() {}.type
+                val loadedApps: HashSet<String> = gson.fromJson(json, type)
                 whitelistedApps = Collections.synchronizedSet(loadedApps)
                 Log.d(LOG_TAG, "Successfully loaded ${whitelistedApps.size} whitelisted apps: ${whitelistedApps.joinToString()}")
             } catch (e: com.google.gson.JsonSyntaxException) {
@@ -326,49 +326,33 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
     private fun saveWhitelistedApps() {
         try {
             Log.d(LOG_TAG, "Saving ${whitelistedApps.size} whitelisted apps: ${whitelistedApps.joinToString()}")
-            val json = gson.toJson(whitelistedApps)
+            // Convert to plain HashSet to avoid Gson serializing synchronizedSet wrapper internals
+            val plainSet = HashSet(whitelistedApps)
+            val json = gson.toJson(plainSet)
             Log.d(LOG_TAG, "Generated whitelist JSON, length: ${json.length} characters")
-            
+
             // Use commit() instead of apply() for immediate verification
             val success = preferences.edit()
                 .putString(PREF_WHITELISTED_APPS, json)
                 .commit()
-            
+
             if (success) {
-                // Verify the save by reading it back immediately
-                val verification = preferences.getString(PREF_WHITELISTED_APPS, null)
-                if (verification != null && verification == json) {
-                    Log.d(LOG_TAG, "Successfully saved and verified whitelist persistence")
-                    lastCacheUpdate = System.currentTimeMillis()
-                } else {
-                    Log.e(LOG_TAG, "Whitelist save verification failed - data mismatch!")
-                    Log.e(LOG_TAG, "Expected JSON: $json")
-                    Log.e(LOG_TAG, "Retrieved JSON: $verification")
-                    
-                    // Retry once with apply()
-                    preferences.edit()
-                        .putString(PREF_WHITELISTED_APPS, json)
-                        .apply()
-                    
-                    Log.w(LOG_TAG, "Retried save with apply() method")
-                }
+                Log.d(LOG_TAG, "Successfully saved whitelist persistence")
+                lastCacheUpdate = System.currentTimeMillis()
             } else {
-                Log.e(LOG_TAG, "SharedPreferences commit() returned false - save may have failed")
-                
-                // Fallback to apply() method
+                Log.e(LOG_TAG, "SharedPreferences commit() returned false - retrying with apply()")
                 preferences.edit()
                     .putString(PREF_WHITELISTED_APPS, json)
                     .apply()
-                
-                Log.w(LOG_TAG, "Used apply() as fallback after commit() failure")
             }
-            
+
         } catch (e: Exception) {
             Log.e(LOG_TAG, "Error saving whitelisted apps", e)
-            
+
             // Last resort: Try to save with basic method
             try {
-                val json = gson.toJson(whitelistedApps)
+                val plainSet = HashSet(whitelistedApps)
+                val json = gson.toJson(plainSet)
                 preferences.edit().putString(PREF_WHITELISTED_APPS, json).apply()
                 Log.w(LOG_TAG, "Emergency save attempt completed")
             } catch (e2: Exception) {
@@ -404,6 +388,32 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
         }
     }
     
+    /**
+     * Get all installed apps on the device (excluding system-only apps without a launcher icon).
+     * Used for the "Add app" picker so users can whitelist any app.
+     */
+    fun getAllInstalledApps(): List<MusicAppInfo> {
+        val launchIntent = android.content.Intent(android.content.Intent.ACTION_MAIN, null)
+        launchIntent.addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+        val resolveInfos = packageManager.queryIntentActivities(launchIntent, 0)
+
+        val knownPackages = DEFAULT_MUSIC_APPS.keys + whitelistedApps
+
+        return resolveInfos
+            .map { it.activityInfo.packageName }
+            .distinct()
+            .filter { it !in knownPackages }
+            .map { packageName ->
+                MusicAppInfo(
+                    packageName = packageName,
+                    appName = getAppName(packageName) ?: packageName,
+                    isWhitelisted = false,
+                    isInstalled = true
+                )
+            }
+            .sortedBy { it.appName.lowercase() }
+    }
+
     /**
      * Clear all whitelisted apps
      */

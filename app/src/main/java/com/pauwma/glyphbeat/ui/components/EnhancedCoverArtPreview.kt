@@ -10,7 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalContext
@@ -183,30 +185,34 @@ private fun DrawScope.drawCoverArtPreview(
     hasMedia: Boolean,
     isSelected: Boolean
 ) {
-    val gridSize = size.minDimension
-    val cellSize = gridSize / 25f
-    val dotSize = cellSize * 0.85f // 85% of cell for dot
-    
-    // Calculate offset to center the grid
-    val offsetX = (size.width - gridSize) / 2f
-    val offsetY = (size.height - gridSize) / 2f
-    
+    val inner = size.minDimension
+    val gapRatio = 0.18f
+    val cornerRatio = 0.18f
+
+    val startX = (size.width - inner) / 2f
+    val startY = (size.height - inner) / 2f
+
+    val cell = inner / 25f
+    val gap = cell * gapRatio
+    val side = cell - gap
+    val cr = side * cornerRatio
+
     // Glyph Matrix shape definition
     val glyphShape = intArrayOf(
         7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
         25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
         19, 17, 15, 11, 7
     )
-    
+
     // Draw each pixel
     for (row in 0 until 25) {
         val pixelsInRow = glyphShape[row]
         val startCol = (25 - pixelsInRow) / 2
-        
+
         for (colInRow in 0 until pixelsInRow) {
             val col = startCol + colInRow
             val index = row * 25 + col
-            
+
             if (index < frameData.size) {
                 val value = frameData[index]
 
@@ -220,14 +226,14 @@ private fun DrawScope.drawCoverArtPreview(
 
                 val color = Color(adjustedBrightness, adjustedBrightness, adjustedBrightness, 1f)
 
-                // Draw the pixel dot with centering offset
-                val x = offsetX + col * cellSize + cellSize / 2f
-                val y = offsetY + row * cellSize + cellSize / 2f
-
-                drawCircle(
+                drawRoundRect(
                     color = color,
-                    radius = dotSize / 2f,
-                    center = Offset(x, y)
+                    topLeft = Offset(
+                        x = startX + col * cell + gap / 2f,
+                        y = startY + row * cell + gap / 2f
+                    ),
+                    size = Size(side, side),
+                    cornerRadius = CornerRadius(cr, cr)
                 )
             }
         }

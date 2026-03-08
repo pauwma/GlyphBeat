@@ -444,14 +444,12 @@ class ThemeRepository private constructor(private val context: Context) {
             val previousCount = _customThemes.value.size
             val loaded = customThemeStorage.loadAllThemes()
             withContext(Dispatchers.Main) {
+                // Remember currently selected theme before changing the list
+                val previouslySelected = selectedTheme
                 _customThemes.value = loaded
                 _cachedAvailableThemes.value = builtInThemes + loaded
                 Log.d(TAG, "Reloaded custom themes: ${loaded.size} (was $previousCount)")
-
-                // If selected theme index is now out of bounds, reset to default
-                if (_selectedThemeIndex.value >= _cachedAvailableThemes.value.size) {
-                    selectTheme(DEFAULT_THEME_INDEX)
-                }
+                reconcileSelectedIndex(previouslySelected)
             }
         }
     }
@@ -465,15 +463,32 @@ class ThemeRepository private constructor(private val context: Context) {
             if (deleted) {
                 val loaded = customThemeStorage.loadAllThemes()
                 withContext(Dispatchers.Main) {
+                    // Remember currently selected theme before changing the list
+                    val previouslySelected = selectedTheme
                     _customThemes.value = loaded
                     _cachedAvailableThemes.value = builtInThemes + loaded
                     Log.d(TAG, "Deleted and reloaded custom themes: ${loaded.size}")
-
-                    if (_selectedThemeIndex.value >= _cachedAvailableThemes.value.size) {
-                        selectTheme(DEFAULT_THEME_INDEX)
-                    }
+                    reconcileSelectedIndex(previouslySelected)
                 }
             }
+        }
+    }
+
+    /**
+     * After the theme list changes, find the previously selected theme in the
+     * new list and update the stored index so it still points to the same theme.
+     * Falls back to default if the theme was removed.
+     */
+    private fun reconcileSelectedIndex(previouslySelected: AnimationTheme) {
+        val newIndex = _cachedAvailableThemes.value.indexOfFirst {
+            it.getThemeName() == previouslySelected.getThemeName()
+        }
+        if (newIndex >= 0 && newIndex != _selectedThemeIndex.value) {
+            Log.d(TAG, "Reconciled selected index: ${_selectedThemeIndex.value} -> $newIndex")
+            selectTheme(newIndex)
+        } else if (newIndex < 0) {
+            Log.d(TAG, "Previously selected theme no longer exists, resetting to default")
+            selectTheme(DEFAULT_THEME_INDEX)
         }
     }
 
