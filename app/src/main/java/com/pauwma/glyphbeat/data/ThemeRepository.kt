@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.themes.animation.VinylTheme
 import com.pauwma.glyphbeat.themes.animation.DancingDuckTheme
@@ -14,9 +15,14 @@ import com.pauwma.glyphbeat.themes.animation.GlyphyTheme
 import com.pauwma.glyphbeat.themes.animation.MinimalTheme
 import com.pauwma.glyphbeat.themes.animation.WaveformTheme
 import com.pauwma.glyphbeat.themes.animation.ScrollTheme
+import com.pauwma.glyphbeat.themes.animation.CustomTheme
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsPersistence
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -64,8 +70,8 @@ class ThemeRepository private constructor(private val context: Context) {
     )
     val settingsChangedFlow: SharedFlow<Pair<String, ThemeSettings>> = _settingsChangedFlow.asSharedFlow()
 
-    // Available themes list
-    val availableThemes: List<AnimationTheme> = listOf<AnimationTheme>(
+    // Built-in themes (always available)
+    private val builtInThemes: List<AnimationTheme> = listOf(
         VinylTheme(context),
         DancingDuckTheme(context),
         WaveformTheme(),
@@ -75,6 +81,26 @@ class ThemeRepository private constructor(private val context: Context) {
         GlyphyTheme(context),
         ShapeTheme(context)
     )
+
+    // Custom themes imported from Glyph Museum
+    private val customThemeStorage = CustomThemeStorage.getInstance(context)
+    private val _customThemes = mutableStateOf<List<CustomTheme>>(emptyList())
+    val customThemes: List<CustomTheme> get() = _customThemes.value
+
+    // Cached combined list — backed by Compose state so UI observes changes
+    private val _cachedAvailableThemes = mutableStateOf<List<AnimationTheme>>(builtInThemes)
+    val availableThemes: List<AnimationTheme> get() = _cachedAvailableThemes.value
+
+    init {
+        // Load custom themes off the main thread
+        CoroutineScope(Dispatchers.IO).launch {
+            val loaded = customThemeStorage.loadAllThemes()
+            withContext(Dispatchers.Main) {
+                _customThemes.value = loaded
+                _cachedAvailableThemes.value = builtInThemes + loaded
+            }
+        }
+    }
 
     // Current selected theme index state
     private val _selectedThemeIndex = mutableIntStateOf(
@@ -91,7 +117,15 @@ class ThemeRepository private constructor(private val context: Context) {
                 _selectedThemeIndex.value = currentPrefsValue
                 Log.d(TAG, "Theme index refreshed from preferences: $currentPrefsValue")
             }
-            return availableThemes[_selectedThemeIndex.value]
+            val themes = availableThemes
+            val index = _selectedThemeIndex.value
+            return if (index in themes.indices) {
+                themes[index]
+            } else {
+                _selectedThemeIndex.value = DEFAULT_THEME_INDEX
+                saveSelectedThemeIndex(DEFAULT_THEME_INDEX)
+                themes[DEFAULT_THEME_INDEX]
+            }
         }
 
     /**
@@ -395,6 +429,59 @@ class ThemeRepository private constructor(private val context: Context) {
         } catch (e: Exception) {
             listOf("Validation failed: ${e.message}")
         }
+    }
+
+    // =================================================================================
+    // CUSTOM THEME MANAGEMENT
+    // =================================================================================
+
+    /**
+     * Reload custom themes from storage (call after import or delete).
+     * File I/O runs on IO dispatcher; state update on Main.
+     */
+    fun reloadCustomThemes() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val previousCount = _customThemes.value.size
+            val loaded = customThemeStorage.loadAllThemes()
+            withContext(Dispatchers.Main) {
+                _customThemes.value = loaded
+                _cachedAvailableThemes.value = builtInThemes + loaded
+                Log.d(TAG, "Reloaded custom themes: ${loaded.size} (was $previousCount)")
+
+                // If selected theme index is now out of bounds, reset to default
+                if (_selectedThemeIndex.value >= _cachedAvailableThemes.value.size) {
+                    selectTheme(DEFAULT_THEME_INDEX)
+                }
+            }
+        }
+    }
+
+    /**
+     * Delete a custom theme by postId.
+     */
+    fun deleteCustomTheme(postId: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val deleted = customThemeStorage.deleteTheme(postId)
+            if (deleted) {
+                val loaded = customThemeStorage.loadAllThemes()
+                withContext(Dispatchers.Main) {
+                    _customThemes.value = loaded
+                    _cachedAvailableThemes.value = builtInThemes + loaded
+                    Log.d(TAG, "Deleted and reloaded custom themes: ${loaded.size}")
+
+                    if (_selectedThemeIndex.value >= _cachedAvailableThemes.value.size) {
+                        selectTheme(DEFAULT_THEME_INDEX)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Check if a theme is a custom (imported) theme.
+     */
+    fun isCustomTheme(theme: AnimationTheme): Boolean {
+        return theme is CustomTheme
     }
 
     // =================================================================================

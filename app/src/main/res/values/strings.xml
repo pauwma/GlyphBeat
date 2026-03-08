@@ -21,7 +21,7 @@
 
     <!- - ────────── - Main - ────────── - -->
     <string name="app_name">Glyph Beat</string>
-    <string name="toy_name_media_player">Media Player</string>
+    <string name="toy_name_media_player">Glyph Beat</string>
     <string name="toy_summary_media_player">Visual music player interface on the glyph matrix.</string>
     <string name="toy_name_next_track">Next Track</string>
     <string name="toy_summary_next_track">Long press to skip to next track.</string>
@@ -364,5 +364,14 @@
     <string name="tutorial_completion_tip">Tip: You can replay this tutorial from Settings</string>
     <string name="tutorial_completion_start">Start Exploring</string>
 
+    <!-- - ────────── - Custom Themes - ────────── - -->
+    <string name="imported_themes_header">Community</string>
+    <string name="imported_empty_title">Want more?</string>
+    <string name="imported_empty_description">Browse community creations in Glyph Museum and import them as playback themes. Supporter perk.</string>
+    <string name="imported_empty_cta">Download now</string>
+    <string name="delete_theme_title">Delete Theme</string>
+    <string name="delete_theme_message">Delete \"%1$s\"? This cannot be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
 
 </resources>

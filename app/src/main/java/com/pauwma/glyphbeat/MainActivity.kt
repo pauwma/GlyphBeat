@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,7 +38,10 @@ import com.pauwma.glyphbeat.tutorial.TutorialActivity
 import com.pauwma.glyphbeat.tutorial.utils.TutorialPreferences
 import com.pauwma.glyphbeat.core.AppConfig
 import com.pauwma.glyphbeat.utils.UpdatePreferences
+import com.pauwma.glyphbeat.utils.UidObfuscation
 import com.pauwma.glyphbeat.data.UpdateManager
+import com.pauwma.glyphbeat.data.ImportThemeManager
+import com.pauwma.glyphbeat.data.ThemeRepository
 import com.pauwma.glyphbeat.ui.dialogs.UpdateDialog
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -45,6 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -99,6 +106,9 @@ class MainActivity : AppCompatActivity() {
         if (isAutoStartEnabled) {
             com.pauwma.glyphbeat.services.autostart.MusicDetectionService.start(this)
         }
+
+        // Handle deep link if launched via glyphbeat://import
+        handleImportDeepLink(intent)
 
         setContent {
             NothingAndroidSDKDemoTheme {
@@ -220,6 +230,54 @@ class MainActivity : AppCompatActivity() {
                         }
 
                     }
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleImportDeepLink(intent)
+    }
+
+    private fun handleImportDeepLink(intent: Intent?) {
+        val data = intent?.data ?: return
+        if (data.scheme != "glyphbeat" || data.host != "import") return
+
+        val postIdStr = data.getQueryParameter("postId") ?: return
+        val token = data.getQueryParameter("token") ?: return
+
+        val postId = postIdStr.toLongOrNull() ?: return
+        val uid = try {
+            UidObfuscation.decode(token)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to decode import token", e)
+            return
+        }
+
+        Log.d("MainActivity", "Import deep link received: postId=$postId")
+        Toast.makeText(this, "Importing theme...", Toast.LENGTH_SHORT).show()
+
+        val importManager = ImportThemeManager(this)
+        CoroutineScope(Dispatchers.Main).launch {
+            val result = importManager.importTheme(postId, uid)
+            when (result) {
+                is ImportThemeManager.ImportResult.Success -> {
+                    // Reload themes in the repository
+                    ThemeRepository.getInstance(this@MainActivity).reloadCustomThemes()
+                    Toast.makeText(this@MainActivity, "Theme \"${result.themeName}\" imported!", Toast.LENGTH_LONG).show()
+                }
+                is ImportThemeManager.ImportResult.AlreadyImported -> {
+                    Toast.makeText(this@MainActivity, "This theme is already imported", Toast.LENGTH_SHORT).show()
+                }
+                is ImportThemeManager.ImportResult.NotSupporter -> {
+                    Toast.makeText(this@MainActivity, "Supporter status required to import themes", Toast.LENGTH_LONG).show()
+                }
+                is ImportThemeManager.ImportResult.ThemeLimitReached -> {
+                    Toast.makeText(this@MainActivity, "Maximum custom themes reached (20). Delete some to import more.", Toast.LENGTH_LONG).show()
+                }
+                is ImportThemeManager.ImportResult.Error -> {
+                    Toast.makeText(this@MainActivity, "Import failed: ${result.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }

@@ -123,6 +123,14 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Deep link for importing themes from Glyph Museum -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="glyphbeat" android:host="import" />
+            </intent-filter>
         </activity>
         
         <!-- Tutorial Activity -->

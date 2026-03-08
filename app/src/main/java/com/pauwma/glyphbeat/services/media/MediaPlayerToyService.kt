@@ -19,6 +19,7 @@ import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.themes.base.AudioReactiveTheme
 import com.pauwma.glyphbeat.themes.base.FrameTransitionSequence
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
+import com.pauwma.glyphbeat.themes.animation.CustomTheme
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
 import com.pauwma.glyphbeat.data.ShakeControlSettings
@@ -269,14 +270,14 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                         } else if (previousState == PlayerState.PAUSED && newPlayerState == PlayerState.PLAYING) {
                             // Handle ScrollTheme resume
                             (currentTheme as? ScrollTheme)?.resumeScrolling()
-                            // Reset animation to include opening sequence when resuming
+                            // Resume animation from where it was paused
                             if (isUsingTransitions) {
                                 frameTransitionSequence?.reset(includeOpening = true)
                                 currentFrameIndex = frameTransitionSequence?.getCurrentFrameIndex() ?: 0
                                 Log.d(LOG_TAG, "Animation reset to opening sequence")
                             } else if (currentTheme !is ScrollTheme) {
-                                currentFrameIndex = 0 // Start from beginning for non-transition themes (except ScrollTheme)
-                                Log.d(LOG_TAG, "Animation reset to frame 0")
+                                currentFrameIndex = pausedFrameIndex
+                                Log.d(LOG_TAG, "Animation resumed from frame $pausedFrameIndex")
                             }
                         }
                         
@@ -480,6 +481,10 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     theme.getAnimationSpeed()
                 }
             }
+            is CustomTheme -> {
+                // Custom themes always have per-frame durations
+                theme.getFrameDuration(currentFrameIndex)
+            }
             else -> theme.getAnimationSpeed()
         }
     }
@@ -623,14 +628,14 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             pausedFrameIndex = currentFrameIndex
             Log.d(LOG_TAG, "Predicted animation pause at frame $pausedFrameIndex")
         } else if (currentPlayerState == PlayerState.PAUSED && newState == PlayerState.PLAYING) {
-            // Reset animation to include opening sequence when resuming
+            // Resume animation from where it was paused
             if (isUsingTransitions) {
                 frameTransitionSequence?.reset(includeOpening = true)
                 currentFrameIndex = frameTransitionSequence?.getCurrentFrameIndex() ?: 0
                 Log.d(LOG_TAG, "Predicted animation reset to opening sequence")
             } else {
-                currentFrameIndex = 0 // Start from beginning for non-transition themes
-                Log.d(LOG_TAG, "Predicted animation reset to frame 0")
+                currentFrameIndex = pausedFrameIndex
+                Log.d(LOG_TAG, "Predicted animation resumed from frame $pausedFrameIndex")
             }
         }
         

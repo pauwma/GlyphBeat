@@ -100,6 +100,10 @@ fun GlyphMatrixPreview(
                         val transitions = transitionSequence
                         when {
                             transitions != null -> transitions.getCurrentDuration()
+                            theme is ThemeTemplate && theme.hasIndividualFrameDurations() ->
+                                theme.getFrameDuration(currentFrame).coerceAtLeast(50L)
+                            theme is com.pauwma.glyphbeat.themes.animation.CustomTheme ->
+                                theme.getFrameDuration(currentFrame).coerceAtLeast(50L)
                             else -> theme.getAnimationSpeed().coerceAtLeast(50L)
                         }
                     } catch (e: Exception) {

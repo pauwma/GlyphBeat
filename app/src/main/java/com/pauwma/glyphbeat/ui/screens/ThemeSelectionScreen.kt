@@ -1,20 +1,30 @@
 package com.pauwma.glyphbeat.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.rounded.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.fontResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -24,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
+import com.pauwma.glyphbeat.themes.animation.CustomTheme
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsSheet
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
 import com.pauwma.glyphbeat.data.ThemeRepository
@@ -51,6 +62,13 @@ fun ThemeSelectionScreen(
     // Settings sheet state
     var selectedThemeForSettings by remember { mutableStateOf<AnimationTheme?>(null) }
     var showSettingsSheet by remember { mutableStateOf(false) }
+
+    // Custom theme delete confirmation
+    var themeToDelete by remember { mutableStateOf<CustomTheme?>(null) }
+
+    // Read custom themes at composable level so state changes trigger recomposition
+    val importedThemes = themeRepository.customThemes
+    val allThemes = themeRepository.availableThemes
     
     // Apply settings to newly selected theme - fully on IO thread
     LaunchedEffect(selectedThemeIndex) {
@@ -118,10 +136,11 @@ fun ThemeSelectionScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(themeRepository.availableThemes) { theme ->
-                    val themeIndex = themeRepository.availableThemes.indexOf(theme)
+                // Built-in themes
+                items(allThemes.filter { it !is CustomTheme }) { theme ->
+                    val themeIndex = allThemes.indexOf(theme)
                     val isSelected = themeRepository.isThemeSelected(themeIndex)
-                    
+
                     ThemePreviewCard(
                         theme = theme,
                         isSelected = isSelected,
@@ -134,6 +153,143 @@ fun ThemeSelectionScreen(
                         }
                     )
                 }
+
+                // Custom themes section — always visible
+                // Section header
+                item(span = { GridItemSpan(2) }) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.People,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                        )
+                        Text(
+                            text = localeContext.getString(R.string.imported_themes_header),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = customFont
+                            ),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+
+                if (importedThemes.isNotEmpty()) {
+                    items(importedThemes) { theme ->
+                        val themeIndex = allThemes.indexOf(theme)
+                        val isSelected = themeRepository.isThemeSelected(themeIndex)
+
+                        ThemePreviewCard(
+                            theme = theme,
+                            isSelected = isSelected,
+                            onSelect = {
+                                themeRepository.selectTheme(themeIndex)
+                            },
+                            onOpenSettings = null,
+                            onDelete = {
+                                themeToDelete = theme
+                            }
+                        )
+                    }
+                } else {
+                    // Empty state — promote Glyph Museum
+                    item(span = { GridItemSpan(2) }) {
+                        val cardContext = LocalContext.current
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Museum icon
+                                Image(
+                                    painter = painterResource(R.drawable.ic_glyph_museum),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+                                )
+                                Text(
+                                    text = localeContext.getString(R.string.imported_empty_title),
+                                    style = MaterialTheme.typography.headlineSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = customFont
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = localeContext.getString(R.string.imported_empty_description),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                // CTA button
+                                Button(
+                                    onClick = {
+                                        try {
+                                            cardContext.startActivity(
+                                                Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.pauwma.glyphmuseum"))
+                                            )
+                                        } catch (e: Exception) {
+                                            cardContext.startActivity(
+                                                Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.pauwma.glyphmuseum"))
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.padding(top = 4.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                ) {
+                                    Text(
+                                        text = localeContext.getString(R.string.imported_empty_cta),
+                                        style = MaterialTheme.typography.labelLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = customFont
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Delete confirmation dialog
+            themeToDelete?.let { theme ->
+                com.pauwma.glyphbeat.ui.dialogs.CustomConfirmationDialog(
+                    isVisible = true,
+                    onDismiss = { themeToDelete = null },
+                    onConfirm = {
+                        themeRepository.deleteCustomTheme(theme.postId)
+                    },
+                    title = localeContext.getString(R.string.delete_theme_title),
+                    description = localeContext.getString(R.string.delete_theme_message, theme.getThemeName()),
+                    icon = Icons.Outlined.DeleteOutline,
+                    confirmButtonText = localeContext.getString(R.string.delete),
+                    dismissButtonText = localeContext.getString(R.string.cancel)
+                )
             }
         }
 
