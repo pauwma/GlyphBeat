@@ -26,10 +26,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
+import com.pauwma.glyphbeat.themes.animation.CustomTheme
 import com.pauwma.glyphbeat.themes.base.TrackControlTheme
 import com.pauwma.glyphbeat.services.trackcontrol.TrackControlThemeManager
 import com.pauwma.glyphbeat.themes.base.TrackControlThemeSettingsProvider
 import com.pauwma.glyphbeat.data.ThemeRepository
+import com.pauwma.glyphbeat.theme.NothingRed
+import com.pauwma.glyphbeat.theme.GeistMonoFont
+import androidx.compose.material.icons.outlined.DeleteOutline
 import kotlinx.coroutines.launch
 
 /**
@@ -43,6 +47,7 @@ fun ThemeSettingsSheet(
     isVisible: Boolean,
     onDismiss: () -> Unit,
     onSettingsChanged: () -> Unit = {},
+    onDelete: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -84,13 +89,22 @@ fun ThemeSettingsSheet(
             onDismissRequest = onDismiss,
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
+            dragHandle = {
+                Surface(
+                    modifier = Modifier
+                        .padding(vertical = 14.dp)
+                        .size(width = 32.dp, height = 4.dp),
+                    shape = RoundedCornerShape(2.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                ) {}
+            },
             modifier = modifier
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(16.dp)
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
             ) {
                 // Header
                 Row(
@@ -110,10 +124,12 @@ fun ThemeSettingsSheet(
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
+                        Spacer(modifier = Modifier.height(4.dp))
+
                         Text(
                             text = theme.getDescription(),
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = customFont,
+                                fontFamily = GeistMonoFont,
                                 fontSize = 14.sp
                             ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -121,6 +137,17 @@ fun ThemeSettingsSheet(
                     }
 
                     Row {
+                        // Delete button (imported themes only)
+                        if (onDelete != null) {
+                            IconButton(onClick = onDelete) {
+                                Icon(
+                                    imageVector = Icons.Outlined.DeleteOutline,
+                                    contentDescription = "Delete Theme",
+                                    tint = NothingRed
+                                )
+                            }
+                        }
+
                         // Reset button
                         IconButton(
                             onClick = {
@@ -150,18 +177,10 @@ fun ThemeSettingsSheet(
                             )
                         }
 
-                        // Close button
-                        IconButton(onClick = onDismiss) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Content
                 when {
@@ -291,13 +310,22 @@ fun ThemeSettingsSheet(
             onDismissRequest = onDismiss,
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
+            dragHandle = {
+                Surface(
+                    modifier = Modifier
+                        .padding(vertical = 14.dp)
+                        .size(width = 32.dp, height = 4.dp),
+                    shape = RoundedCornerShape(2.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                ) {}
+            },
             modifier = modifier
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(16.dp)
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
             ) {
                 // Header
                 Row(
@@ -317,10 +345,12 @@ fun ThemeSettingsSheet(
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
+                        Spacer(modifier = Modifier.height(4.dp))
+
                         Text(
                             text = theme.getDescription(),
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = customFont,
+                                fontFamily = GeistMonoFont,
                                 fontSize = 14.sp
                             ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -356,18 +386,10 @@ fun ThemeSettingsSheet(
                             )
                         }
 
-                        // Close button
-                        IconButton(onClick = onDismiss) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Content
                 when {
@@ -445,6 +467,7 @@ fun ThemeSettingsSheet(
 
 /**
  * Content section that displays the actual settings grouped by category.
+ * Flat layout with dividers between categories instead of card wrapping.
  */
 @Composable
 private fun ThemeSettingsContent(
@@ -452,50 +475,34 @@ private fun ThemeSettingsContent(
     onSettingChanged: (String, Any) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val customFont = FontFamily(Font(R.font.ntype82regular))
-
     // Group settings by category
     val settingsByCategory = themeSettings.settings.values.groupBy { it.category }
+    val categoryEntries = settingsByCategory.entries.toList()
 
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(max = 600.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        settingsByCategory.forEach { (category, settings) ->
-            // Category header
-            item {
-                Text(
-                    text = SettingCategories.getLocalizedCategory(context, category),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = customFont,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                )
-            }
-
+        categoryEntries.forEachIndexed { categoryIndex, (_, settings) ->
             // Settings in this category
             items(settings) { setting ->
-                val isFirstInCategory = settings.indexOf(setting) == 0
                 SettingItem(
                     setting = setting,
                     currentValue = themeSettings.getValue(setting.id),
                     hasCustomValue = themeSettings.hasCustomValue(setting.id),
                     onValueChanged = { value ->
                         onSettingChanged(setting.id, value)
-                    },
-                    isFirstInCategory = isFirstInCategory
+                    }
                 )
             }
 
-            // Spacer between categories
-            item {
-                Spacer(modifier = Modifier.height(4.dp))
+            // Divider between categories (not after the last one)
+            if (categoryIndex < categoryEntries.size - 1) {
+                item {
+                    HorizontalDivider(thickness = 0.5.dp)
+                }
             }
         }
     }
@@ -503,6 +510,7 @@ private fun ThemeSettingsContent(
 
 /**
  * Individual setting item with appropriate control based on setting type.
+ * Rendered directly without card wrapping.
  */
 @Composable
 private fun SettingItem(
@@ -510,53 +518,42 @@ private fun SettingItem(
     currentValue: Any?,
     hasCustomValue: Boolean,
     onValueChanged: (Any) -> Unit,
-    isFirstInCategory: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp
-        ),
-        border = null
-    ) {
-        Box(
-            modifier = Modifier.padding(
-                start = 12.dp,
-                end = 12.dp,
-                top = if (isFirstInCategory) 6.dp else 12.dp,
-                bottom = 12.dp
+    when (setting) {
+        is SliderSetting -> {
+            SettingsSlider(
+                setting = setting,
+                currentValue = currentValue as? Number ?: setting.defaultValue,
+                onValueChange = onValueChanged,
+                modifier = modifier.fillMaxWidth()
             )
-        ) {
-            when (setting) {
-                is SliderSetting -> {
-                    SettingsSlider(
-                        setting = setting,
-                        currentValue = currentValue as? Number ?: setting.defaultValue,
-                        onValueChange = onValueChanged
-                    )
-                }
+        }
 
-                is ToggleSetting -> {
-                    SettingsToggle(
-                        setting = setting,
-                        currentValue = currentValue as? Boolean ?: setting.defaultValue,
-                        onValueChange = onValueChanged
-                    )
-                }
+        is ToggleSetting -> {
+            SettingsToggle(
+                setting = setting,
+                currentValue = currentValue as? Boolean ?: setting.defaultValue,
+                onValueChange = onValueChanged,
+                modifier = modifier.fillMaxWidth()
+            )
+        }
 
-                is DropdownSetting -> {
-                    SettingsDropdown(
-                        setting = setting,
-                        currentValue = currentValue as? String ?: setting.defaultValue,
-                        onValueChange = onValueChanged
-                    )
-                }
+        is DropdownSetting -> {
+            if (setting.options.size <= 4) {
+                SettingsToggleButtons(
+                    setting = setting,
+                    currentValue = currentValue as? String ?: setting.defaultValue,
+                    onValueChange = onValueChanged,
+                    modifier = modifier.fillMaxWidth()
+                )
+            } else {
+                SettingsDropdown(
+                    setting = setting,
+                    currentValue = currentValue as? String ?: setting.defaultValue,
+                    onValueChange = onValueChanged,
+                    modifier = modifier.fillMaxWidth()
+                )
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.pauwma.glyphbeat.ui.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -7,23 +8,29 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pauwma.glyphbeat.R
+import com.pauwma.glyphbeat.theme.GeistMonoFont
 import kotlin.math.roundToInt
 
 /**
  * Slider control for numeric settings.
- * Displays current value, min/max labels, and provides smooth interaction.
+ * Compact design with value under title and descriptive end labels.
  */
 @Composable
 fun SettingsSlider(
@@ -35,12 +42,35 @@ fun SettingsSlider(
     val customFont = FontFamily(Font(R.font.ntype82regular))
     val floatValue = currentValue.toFloat()
 
+    // Determine icon based on setting ID
+    val icon: ImageVector? = when (setting.id) {
+        CommonSettingIds.ANIMATION_SPEED -> Icons.Default.Speed
+        CommonSettingIds.BRIGHTNESS -> Icons.Rounded.LightMode
+        else -> null
+    }
+
+    // Determine descriptive end labels based on setting ID
+    val (startLabel, endLabel) = when (setting.id) {
+        CommonSettingIds.ANIMATION_SPEED -> "Slow" to "Fast"
+        CommonSettingIds.BRIGHTNESS -> "Dim" to "Bright"
+        else -> {
+            val minLabel = when {
+                setting.unit == "x" -> String.format(java.util.Locale.ROOT, "%.1fx", setting.minValue.toFloat())
+                else -> setting.minValue.toString()
+            }
+            val maxLabel = when {
+                setting.unit == "x" -> String.format(java.util.Locale.ROOT, "%.1fx", setting.maxValue.toFloat())
+                else -> setting.maxValue.toString()
+            }
+            minLabel to maxLabel
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
     ) {
-        // Header with name and current value
+        // Row 1: Title + optional icon
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -48,113 +78,88 @@ fun SettingsSlider(
         ) {
             Text(
                 text = setting.displayName,
-                style = MaterialTheme.typography.bodyMedium.copy(
+                style = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = customFont,
-                    fontSize = 15.sp
+                    fontWeight = FontWeight.Medium
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            if (setting.showValue) {
-                val displayValue = when {
-                    setting.unit == "x" -> {
-                        // Special formatting for brightness multipliers
-                        val multiplier = currentValue.toFloat()
-                        String.format(java.util.Locale.ROOT, "%.1f", multiplier)
-                    }
-                    setting.stepSize.toFloat() % 1 == 0f -> currentValue.toInt().toString()
-                    else -> String.format(java.util.Locale.ROOT, "%.1f", currentValue.toFloat())
-                }
-                val valueText = if (setting.unit != null) "$displayValue${setting.unit}" else displayValue
-
-                Text(
-                    text = valueText,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = customFont,
-                        fontSize = 15.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(2.dp))
+        // Row 2: Current value in GeistMono
+        if (setting.showValue) {
+            val displayValue = when {
+                setting.unit == "x" -> {
+                    String.format(java.util.Locale.ROOT, "%.1f", currentValue.toFloat())
+                }
+                setting.stepSize.toFloat() % 1 == 0f -> currentValue.toInt().toString()
+                else -> String.format(java.util.Locale.ROOT, "%.1f", currentValue.toFloat())
+            }
+            val valueText = if (setting.unit != null) "$displayValue${setting.unit}" else displayValue
 
-        // Description
-        Text(
-            text = setting.description,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 11.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            Text(
+                text = valueText,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontFamily = GeistMonoFont
+                ),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Compact slider
+        Slider(
+            value = floatValue,
+            onValueChange = { newValue ->
+                val steps = ((newValue - setting.minValue.toFloat()) / setting.stepSize.toFloat()).roundToInt()
+                val snappedValue = setting.minValue.toFloat() + (steps * setting.stepSize.toFloat())
+                val finalValue = when {
+                    setting.stepSize.toFloat() % 1 == 0f -> snappedValue.toInt()
+                    else -> snappedValue
+                }
+                onValueChange(finalValue)
+            },
+            valueRange = setting.minValue.toFloat()..setting.maxValue.toFloat(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(26.dp)
+                .graphicsLayer(scaleY = 0.95f),
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                activeTickColor = MaterialTheme.colorScheme.surfaceVariant,
+                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         )
 
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // Slider with min/max labels
+        // Descriptive end labels
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            val minLabel = when {
-                setting.unit == "x" -> {
-                    val multiplier = setting.minValue.toFloat()
-                    String.format(java.util.Locale.ROOT, "%.1fx", multiplier)
-                }
-                else -> setting.minValue.toString()
-            }
-
             Text(
-                text = minLabel,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = customFont,
-                    fontSize = 10.sp
+                text = startLabel,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = GeistMonoFont
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.width(32.dp),
-                textAlign = TextAlign.Start
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
-
-            Slider(
-                value = floatValue,
-                onValueChange = { newValue ->
-                    // Snap to step size
-                    val steps = ((newValue - setting.minValue.toFloat()) / setting.stepSize.toFloat()).roundToInt()
-                    val snappedValue = setting.minValue.toFloat() + (steps * setting.stepSize.toFloat())
-
-                    // Convert back to appropriate number type
-                    val finalValue = when {
-                        setting.stepSize.toFloat() % 1 == 0f -> snappedValue.toInt()
-                        else -> snappedValue
-                    }
-                    onValueChange(finalValue)
-                },
-                valueRange = setting.minValue.toFloat()..setting.maxValue.toFloat(),
-                modifier = Modifier.weight(1f),
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            )
-
-            val maxLabel = when {
-                setting.unit == "x" -> {
-                    val multiplier = setting.maxValue.toFloat()
-                    String.format(java.util.Locale.ROOT, "%.1fx", multiplier)
-                }
-                else -> setting.maxValue.toString()
-            }
-
             Text(
-                text = maxLabel,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = customFont,
-                    fontSize = 10.sp
+                text = endLabel,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = GeistMonoFont
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.width(32.dp),
-                textAlign = TextAlign.End
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
     }
@@ -162,7 +167,6 @@ fun SettingsSlider(
 
 /**
  * Toggle/switch control for boolean settings.
- * Displays clear on/off states with descriptive labels.
  */
 @Composable
 fun SettingsToggle(
@@ -176,35 +180,21 @@ fun SettingsToggle(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
+            Text(
+                text = setting.displayName,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = customFont,
+                    fontWeight = FontWeight.Medium
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = setting.displayName,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = customFont,
-                        fontSize = 15.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = setting.description,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 11.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
+            )
 
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -230,26 +220,133 @@ fun SettingsToggle(
                 )
             }
         }
-
-        // State label
-        Text(
-            text = if (currentValue) setting.enabledLabel else setting.disabledLabel,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = customFont,
-                fontSize = 11.sp
-            ),
-            color = if (currentValue)
-                MaterialTheme.colorScheme.primary
-            else
-                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
-        )
     }
 }
 
 /**
- * Dropdown control for multiple choice settings.
- * Displays expandable menu with current selection.
+ * Toggle buttons for dropdown settings with <=4 options.
+ */
+@Composable
+fun SettingsToggleButtons(
+    setting: DropdownSetting,
+    currentValue: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val customFont = FontFamily(Font(R.font.ntype82regular))
+
+    Column(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = setting.displayName,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontFamily = customFont,
+                fontWeight = FontWeight.Medium
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 2.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            setting.options.forEach { option ->
+                val isSelected = option.value == currentValue
+
+                if (isSelected) {
+                    Button(
+                        onClick = { onValueChange(option.value) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .wrapContentHeight()
+                            .defaultMinSize(minHeight = 16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp)
+                    ) {
+                        AutoScalingText(
+                            text = option.label,
+                            maxFontSize = 12.sp,
+                            minFontSize = 8.sp,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            textAlign = TextAlign.Center,
+                            fontFamily = GeistMonoFont,
+                            maxLines = 1
+                        )
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { onValueChange(option.value) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .wrapContentHeight()
+                            .defaultMinSize(minHeight = 18.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp)
+                    ) {
+                        AutoScalingText(
+                            text = option.label,
+                            maxFontSize = 12.sp,
+                            minFontSize = 8.sp,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            fontFamily = GeistMonoFont,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Auto-scaling text that fits within its container.
+ */
+@Composable
+fun AutoScalingText(
+    text: String,
+    maxFontSize: androidx.compose.ui.unit.TextUnit,
+    minFontSize: androidx.compose.ui.unit.TextUnit,
+    style: androidx.compose.ui.text.TextStyle,
+    color: Color,
+    textAlign: TextAlign,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1,
+    fontWeight: FontWeight? = null,
+    fontFamily: FontFamily? = null,
+) {
+    Text(
+        text = text,
+        style = style.copy(
+            fontSize = maxFontSize,
+            fontWeight = fontWeight ?: style.fontWeight
+        ),
+        fontFamily = fontFamily,
+        color = color,
+        textAlign = textAlign,
+        maxLines = maxLines,
+        modifier = modifier
+    )
+}
+
+/**
+ * Dropdown control for multiple choice settings (5+ options).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -266,30 +363,16 @@ fun SettingsDropdown(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
     ) {
-        // Setting name (only show if not empty)
+        // Setting name
         if (setting.displayName.isNotEmpty()) {
             Text(
                 text = setting.displayName,
-                style = MaterialTheme.typography.bodyMedium.copy(
+                style = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = customFont,
-                    fontSize = 15.sp
+                    fontWeight = FontWeight.Medium
                 ),
                 color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-        }
-
-        // Description (only show if not empty)
-        if (setting.description.isNotEmpty()) {
-            Text(
-                text = setting.description,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = 11.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -327,6 +410,7 @@ fun SettingsDropdown(
                     Text(
                         text = currentOption?.label ?: currentValue,
                         style = MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = GeistMonoFont,
                             fontSize = 14.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurface
@@ -349,28 +433,17 @@ fun SettingsDropdown(
                 setting.options.forEach { option ->
                     DropdownMenuItem(
                         text = {
-                            Column {
-                                Text(
-                                    text = option.label,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontSize = 14.sp
-                                    ),
-                                    color = if (option.value == currentValue)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.onSurface
-                                )
-
-                                option.description?.let { desc ->
-                                    Text(
-                                        text = desc,
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 11.sp
-                                        ),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                    )
-                                }
-                            }
+                            Text(
+                                text = option.label,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = GeistMonoFont,
+                                    fontSize = 14.sp
+                                ),
+                                color = if (option.value == currentValue)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface
+                            )
                         },
                         onClick = {
                             onValueChange(option.value)
