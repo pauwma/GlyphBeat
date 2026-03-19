@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.pauwma.glyphbeat.R
+import com.pauwma.glyphbeat.core.DeviceManager
 import com.pauwma.glyphbeat.theme.*
 import com.pauwma.glyphbeat.ui.components.AutoScalingText
 
@@ -51,26 +52,29 @@ fun PillNavigationBar(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val pillNavItems = listOf(
-        PillNavItem(
+    val pillNavItems = buildList {
+        add(PillNavItem(
             route = "media_player",
             icon = Icons.Filled.MusicNote,
             label = context.getString(R.string.nav_player),
             contentDescription = "Media Player"
-        ),
-        PillNavItem(
-            route = "track_control",
-            icon = Icons.Filled.SkipNext,
-            label = context.getString(R.string.nav_controls),
-            contentDescription = "Track Control"
-        ),
-        PillNavItem(
+        ))
+        // Track control not supported on Phone 4a Pro
+        if (!DeviceManager.isPhone4aPro) {
+            add(PillNavItem(
+                route = "track_control",
+                icon = Icons.Filled.SkipNext,
+                label = context.getString(R.string.nav_controls),
+                contentDescription = "Track Control"
+            ))
+        }
+        add(PillNavItem(
             route = "settings",
             icon = Icons.Filled.Settings,
             label = context.getString(R.string.nav_settigns),
             contentDescription = "Settings"
-        )
-    )
+        ))
+    }
 
     Box(
         modifier = modifier

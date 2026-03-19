@@ -37,6 +37,7 @@ import com.pauwma.glyphbeat.ui.navigation.SettingsNavigationScreen
 import com.pauwma.glyphbeat.tutorial.TutorialActivity
 import com.pauwma.glyphbeat.tutorial.utils.TutorialPreferences
 import com.pauwma.glyphbeat.core.AppConfig
+import com.pauwma.glyphbeat.core.DeviceManager
 import com.pauwma.glyphbeat.utils.UpdatePreferences
 import com.pauwma.glyphbeat.utils.UidObfuscation
 import com.pauwma.glyphbeat.data.UpdateManager
@@ -65,6 +66,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize device detection (Phone 3 vs Phone 4a Pro)
+        com.pauwma.glyphbeat.core.DeviceManager.init(this)
 
         // Splash Screen
         installSplashScreen()
@@ -206,9 +210,11 @@ class MainActivity : AppCompatActivity() {
                             )
                         }
 
-                        // Track Control Tab
-                        composable("track_control") {
-                            TrackControlScreen()
+                        // Track Control Tab (not supported on Phone 4a Pro)
+                        if (!DeviceManager.isPhone4aPro) {
+                            composable("track_control") {
+                                TrackControlScreen()
+                            }
                         }
 
                         // Settings Tab
