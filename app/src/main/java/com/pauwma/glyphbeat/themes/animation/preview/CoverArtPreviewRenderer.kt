@@ -44,7 +44,7 @@ class CoverArtPreviewRenderer {
      */
     fun processAlbumArtForPreview(
         albumArt: Bitmap,
-        targetSize: Int = 25,
+        targetSize: Int = com.pauwma.glyphbeat.core.DeviceManager.resolution.gridSize,
         settings: ThemeSettings? = null
     ): Bitmap {
         try {
@@ -219,28 +219,30 @@ class CoverArtPreviewRenderer {
         } else {
             bitmap
         }
-        
-        val frame = IntArray(625) // 25x25
-        val centerX = 12.0
-        val centerY = 12.0
-        
+
+        val res = com.pauwma.glyphbeat.core.DeviceManager.resolution
+        val gs = res.gridSize
+        val frame = IntArray(res.flatSize)
+        val cx = res.center.toDouble()
+        val maxR = res.maxRadius.toDouble()
+
         // Convert to grayscale with circular masking
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val index = row * 25 + col
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val index = row * gs + col
                 val distance = kotlin.math.sqrt(
-                    (col - centerX) * (col - centerX) + 
-                    (row - centerY) * (row - centerY)
+                    (col - cx) * (col - cx) +
+                    (row - cx) * (row - cx)
                 )
-                
+
                 // Apply circular mask
-                if (distance <= 12.5) {
+                if (distance <= maxR) {
                     val pixel = rotatedBitmap.getPixel(col, row)
                     frame[index] = calculateLuminance(pixel)
-                    
+
                     // Apply edge fade for smoother appearance
-                    if (distance > 11.5) {
-                        val fade = (12.5 - distance) / 1.0
+                    if (distance > maxR - 1.0) {
+                        val fade = (maxR - distance) / 1.0
                         frame[index] = (frame[index] * fade).toInt()
                     }
                 } else {
@@ -313,29 +315,14 @@ class CoverArtPreviewRenderer {
      * Uses the same MinimalTheme-style pattern as the actual offline frame.
      */
     fun generateFallbackPreview(settings: ThemeSettings? = null): IntArray {
-        // Use the exact same pattern as CoverArtTheme.offlineFrame
-        // This is the MinimalTheme offline frame pattern converted to flat array
-        val minimalOfflineFrameShaped = intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-        
-        // Convert shaped data to flat 25x25 array with circular masking (same as CoverArtTheme.offlineFrame)
-        val frame = IntArray(625) { 0 }
-        val centerX = 12.0
-        val centerY = 12.0
-        var shapedIndex = 0
-
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                // Check if this pixel is within the circular matrix shape
-                if (distance <= 12.5 && shapedIndex < minimalOfflineFrameShaped.size) {
-                    frame[flatIndex] = minimalOfflineFrameShaped[shapedIndex]
-                    shapedIndex++
-                }
-            }
+        val res = com.pauwma.glyphbeat.core.DeviceManager.resolution
+        val shaped = if (res == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) {
+            FALLBACK_SHAPED_4A
+        } else {
+            FALLBACK_SHAPED_3
         }
-        
+        val frame = com.pauwma.glyphbeat.core.GlyphMatrixRenderer.shapedToFlat(shaped, res)
+
         // Apply brightness settings if provided
         if (settings != null) {
             val brightness = settings.getSliderValueFloat("cover_brightness", 1.0f)
@@ -344,7 +331,7 @@ class CoverArtPreviewRenderer {
                     frame[i] = (frame[i] * brightness).toInt().coerceIn(0, 255)
                 }
             }
-            
+
             // Apply paused opacity if media is paused
             if (!isMediaPlaying()) {
                 val pausedOpacity = settings.getSliderValueFloat("paused_opacity", 0.4f)
@@ -353,7 +340,7 @@ class CoverArtPreviewRenderer {
                 }
             }
         }
-        
+
         return frame
     }
     
@@ -425,5 +412,11 @@ class CoverArtPreviewRenderer {
     
     companion object {
         private val LOG_TAG = CoverArtPreviewRenderer::class.java.simpleName
+
+        // Music note pixel art for Phone 3 (489 shaped pixels)
+        private val FALLBACK_SHAPED_3 = intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+
+        // Music note pixel art for Phone 4a (137 shaped pixels)
+        private val FALLBACK_SHAPED_4A = intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,0,0,0,0,0,0,0,255,0,0,0,0,255,0,0,0,0,0,0,0,255,0,0,0,0,255,0,0,0,0,0,0,0,255,0,0,0,0,255,0,0,0,0,0,0,255,255,0,0,0,255,255,0,0,0,0,0,255,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
     }
 }

@@ -27,7 +27,7 @@ class SupabaseImportRepository {
      */
     suspend fun isSupporter(uid: String): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val url = "$supabaseUrl/rest/v1/profiles?uid=eq.$uid&select=purchase_token"
+            val url = "$supabaseUrl/rest/v1/profiles?uid=eq.$uid&select=supporter"
             val response = makeGetRequest(url)
 
             if (response == null) {
@@ -40,9 +40,10 @@ class SupabaseImportRepository {
             }
 
             val profile = array[0].asJsonObject
-            val hasPurchaseToken = profile.has("purchase_token") &&
-                    !profile.get("purchase_token").isJsonNull
-            Result.success(hasPurchaseToken)
+            val isSupporter = profile.has("supporter") &&
+                    !profile.get("supporter").isJsonNull &&
+                    profile.get("supporter").asBoolean
+            Result.success(isSupporter)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to verify supporter status", e)
             Result.failure(e)

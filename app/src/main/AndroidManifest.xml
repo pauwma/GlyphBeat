@@ -78,6 +78,9 @@
         <package android:name="com.sec.android.app.music" />
         <package android:name="com.sonyericsson.music" />
         
+        <!-- Glyph Museum (community theme import) -->
+        <package android:name="com.pauwma.glyphmuseum" />
+
         <!-- Podcast apps -->
         <package android:name="com.google.android.apps.podcasts" />
         <package android:name="fm.castbox.audiobook.radio.podcast" />
@@ -204,6 +207,9 @@
             <meta-data
                 android:name="com.nothing.glyph.toy.longpress"
                 android:value="1" />
+            <meta-data
+                android:name="com.nothing.glyph.toy.aod_support"
+                android:value="1"/>
         </service>
 
         <!-- Previous Track Service -->
@@ -227,6 +233,9 @@
             <meta-data
                 android:name="com.nothing.glyph.toy.longpress"
                 android:value="1" />
+            <meta-data
+                android:name="com.nothing.glyph.toy.aod_support"
+                android:value="1"/>
         </service>
 
         <!-- Music Detection Service for Auto-Start -->

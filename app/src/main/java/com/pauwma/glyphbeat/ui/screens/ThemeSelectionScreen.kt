@@ -14,12 +14,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
@@ -158,28 +161,44 @@ fun ThemeSelectionScreen(
                 }
 
                 // Custom themes section — always visible
-                // Section header
+                // Section header with flanking dividers
                 item(span = { GridItemSpan(2) }) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp, bottom = 4.dp),
+                            .padding(top = 24.dp, bottom = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.People,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                        Divider(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
+                            thickness = 1.dp
                         )
-                        Text(
-                            text = localeContext.getString(R.string.imported_themes_header),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = customFont
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.People,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
+                            )
+                            Text(
+                                text = localeContext.getString(R.string.imported_themes_header).uppercase(),
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = customFont,
+                                    letterSpacing = 1.2.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
+                            )
+                        }
+                        Divider(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
+                            thickness = 1.dp
                         )
                     }
                 }
@@ -198,7 +217,10 @@ fun ThemeSelectionScreen(
                             onSelect = {
                                 themeRepository.selectTheme(themeIndex)
                             },
-                            onOpenSettings = null,
+                            onOpenSettings = {
+                                selectedThemeForSettings = theme
+                                showSettingsSheet = true
+                            },
                             onDelete = {
                                 themeToDelete = theme
                             }
@@ -208,73 +230,115 @@ fun ThemeSelectionScreen(
                     // Empty state — promote Glyph Museum
                     item(span = { GridItemSpan(2) }) {
                         val cardContext = LocalContext.current
+                        val isMuseumInstalled = remember {
+                            try {
+                                cardContext.packageManager.getPackageInfo("com.pauwma.glyphmuseum", 0)
+                                true
+                            } catch (e: Exception) {
+                                false
+                            }
+                        }
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                            )
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color.Transparent
                         ) {
-                            Column(
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                // Museum icon
-                                Image(
-                                    painter = painterResource(R.drawable.ic_glyph_museum),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
-                                )
-                                Text(
-                                    text = localeContext.getString(R.string.imported_empty_title),
-                                    style = MaterialTheme.typography.headlineSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = customFont
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    text = localeContext.getString(R.string.imported_empty_description),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center
-                                )
-                                // CTA button
-                                Button(
-                                    onClick = {
-                                        try {
-                                            cardContext.startActivity(
-                                                Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.pauwma.glyphmuseum"))
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
                                             )
-                                        } catch (e: Exception) {
-                                            cardContext.startActivity(
-                                                Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.pauwma.glyphmuseum"))
-                                            )
-                                        }
-                                    },
-                                    modifier = Modifier.padding(top = 4.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                        ),
+                                        shape = RoundedCornerShape(20.dp)
                                     )
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 24.dp, vertical = 32.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Text(
-                                        text = localeContext.getString(R.string.imported_empty_cta),
-                                        style = MaterialTheme.typography.labelLarge.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = customFont
+                                    // Museum icon — subtle, smaller
+                                    Image(
+                                        painter = painterResource(R.drawable.ic_glyph_museum),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(40.dp),
+                                        colorFilter = ColorFilter.tint(
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
                                         )
                                     )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = localeContext.getString(R.string.imported_empty_title),
+                                        style = MaterialTheme.typography.titleLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = customFont
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        text = localeContext.getString(
+                                            if (isMuseumInstalled) R.string.imported_empty_description_installed
+                                            else R.string.imported_empty_description
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            lineHeight = 18.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    // CTA button — changes based on whether Glyph Museum is installed
+                                    Button(
+                                        onClick = {
+                                            if (isMuseumInstalled) {
+                                                val launchIntent = cardContext.packageManager.getLaunchIntentForPackage("com.pauwma.glyphmuseum")
+                                                if (launchIntent != null) {
+                                                    cardContext.startActivity(launchIntent)
+                                                }
+                                            } else {
+                                                try {
+                                                    cardContext.startActivity(
+                                                        Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.pauwma.glyphmuseum"))
+                                                    )
+                                                } catch (e: Exception) {
+                                                    cardContext.startActivity(
+                                                        Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.pauwma.glyphmuseum"))
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.OpenInNew,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = localeContext.getString(
+                                                if (isMuseumInstalled) R.string.imported_empty_cta_installed
+                                                else R.string.imported_empty_cta
+                                            ),
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -310,7 +374,14 @@ fun ThemeSelectionScreen(
                 },
                 onSettingsChanged = {
                     // Settings are applied to themes directly via the flow notifications
-                }
+                },
+                onDelete = if (theme is CustomTheme) {
+                    {
+                        themeToDelete = theme as CustomTheme
+                        showSettingsSheet = false
+                        selectedThemeForSettings = null
+                    }
+                } else null
             )
         }
     }

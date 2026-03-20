@@ -179,7 +179,7 @@ class TrackControlThemeManager private constructor(private val context: Context)
         return if (themeIndex in availableThemes.indices) {
             availableThemes[themeIndex].getPreviewFrame(direction)
         } else {
-            IntArray(625) { 0 }
+            IntArray(com.pauwma.glyphbeat.core.DeviceManager.resolution.flatSize) { 0 }
         }
     }
     

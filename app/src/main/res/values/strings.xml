@@ -372,6 +372,8 @@
     <string name="imported_empty_title">Want more?</string>
     <string name="imported_empty_description">Browse community creations in Glyph Museum and import them as playback themes. Supporter perk.</string>
     <string name="imported_empty_cta">Download now</string>
+    <string name="imported_empty_cta_installed">Explore</string>
+    <string name="imported_empty_description_installed">Browse community creations in Glyph Museum and import them as playback themes. Supporter perk.</string>
     <string name="delete_theme_title">Delete Theme</string>
     <string name="delete_theme_message">Delete \"%1$s\"? This cannot be undone.</string>
     <string name="delete">Delete</string>

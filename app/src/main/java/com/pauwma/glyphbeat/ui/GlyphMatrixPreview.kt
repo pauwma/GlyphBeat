@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import com.pauwma.glyphbeat.themes.animation.CoverArtTheme
+import com.pauwma.glyphbeat.themes.animation.CustomTheme
 import com.pauwma.glyphbeat.themes.base.AudioReactiveTheme
 import com.pauwma.glyphbeat.themes.base.FrameTransitionSequence
 import com.pauwma.glyphbeat.themes.base.ThemeTemplate
@@ -64,6 +65,7 @@ fun GlyphMatrixPreview(
     var currentFrame by remember { mutableIntStateOf(0) }
     var transitionSequence by remember { mutableStateOf<FrameTransitionSequence?>(null) }
     var mediaTrigger by remember { mutableIntStateOf(0) }
+    var previewPingPongDirection by remember { mutableIntStateOf(1) }
 
     val isAudioReactive = theme is AudioReactiveTheme
     
@@ -81,6 +83,7 @@ fun GlyphMatrixPreview(
         }
         // Reset frame to beginning when transitions change
         currentFrame = 0
+        previewPingPongDirection = 1
     }
     
     // Animation logic - OPTIMIZED to prevent ANR
@@ -102,9 +105,11 @@ fun GlyphMatrixPreview(
                         val transitions = transitionSequence
                         when {
                             transitions != null -> transitions.getCurrentDuration()
+                            theme is CustomTheme -> {
+                                val base = theme.getFrameDuration(currentFrame)
+                                (base / theme.speedMultiplier).toLong().coerceAtLeast(50L)
+                            }
                             theme is ThemeTemplate && theme.hasIndividualFrameDurations() ->
-                                theme.getFrameDuration(currentFrame).coerceAtLeast(50L)
-                            theme is com.pauwma.glyphbeat.themes.animation.CustomTheme ->
                                 theme.getFrameDuration(currentFrame).coerceAtLeast(50L)
                             else -> theme.getAnimationSpeed().coerceAtLeast(50L)
                         }
@@ -120,6 +125,20 @@ fun GlyphMatrixPreview(
                         if (transitions != null) {
                             transitions.advance()
                             transitions.getCurrentFrameIndex()
+                        } else if (theme is CustomTheme) {
+                            when (theme.loopMode) {
+                                "reverse" -> {
+                                    if (currentFrame <= 0) frameCount - 1
+                                    else currentFrame - 1
+                                }
+                                "ping_pong" -> {
+                                    val next = currentFrame + previewPingPongDirection
+                                    if (next >= frameCount - 1) previewPingPongDirection = -1
+                                    else if (next <= 0) previewPingPongDirection = 1
+                                    next.coerceIn(0, frameCount - 1)
+                                }
+                                else -> (currentFrame + 1) % frameCount
+                            }
                         } else {
                             (currentFrame + 1) % frameCount
                         }
@@ -150,7 +169,7 @@ fun GlyphMatrixPreview(
     }
     
     // Frame generation state - computed asynchronously to prevent blocking
-    var frameData by remember { mutableStateOf(IntArray(625) { 0 }) }
+    var frameData by remember { mutableStateOf(IntArray(com.pauwma.glyphbeat.core.DeviceManager.resolution.flatSize) { 0 }) }
     
     // Audio-reactive preview: run generateAudioReactiveFrame with simulated spectrum
     // Uses the theme's real smoothing/rendering pipeline for authentic look
@@ -160,13 +179,16 @@ fun GlyphMatrixPreview(
             withContext(Dispatchers.Default) {
                 while (currentCoroutineContext().isActive) {
                     time += 0.05
-                    // Base heights matching the static preview shape
-                    val baseHeights = floatArrayOf(
-                        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.1f, 0.0f, 0.2f,
-                        0.3f, 0.5f, 0.7f, 0.9f, 0.7f, 0.5f, 0.6f, 0.8f,
-                        0.6f, 0.4f, 0.3f, 0.2f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f
-                    )
-                    val spectrum = FloatArray(25) { band ->
+                    // Base heights matching the static preview shape (scaled to device resolution)
+                    val spectrumSize = com.pauwma.glyphbeat.core.DeviceManager.resolution.gridSize
+                    val baseHeights = FloatArray(spectrumSize) { i ->
+                        val t = i.toFloat() / (spectrumSize - 1).coerceAtLeast(1)
+                        // Bell curve peaking around 45% of the way through
+                        val peak = 0.45f
+                        val spread = 0.3f
+                        (0.9f * kotlin.math.exp(-((t - peak) * (t - peak)) / (2 * spread * spread)).toFloat()).coerceIn(0f, 1f)
+                    }
+                    val spectrum = FloatArray(spectrumSize) { band ->
                         val base = baseHeights[band]
                         val v1 = kotlin.math.sin(time * 2.3 + band * 0.7).toFloat() * 0.15f
                         val v2 = kotlin.math.sin(time * 3.7 + band * 0.4).toFloat() * 0.1f
@@ -174,18 +196,19 @@ fun GlyphMatrixPreview(
                         (base + v1 + v2 + v3).coerceIn(0f, 1f)
                     }
                     val beat = (kotlin.math.sin(time * 4.0) * 0.5 + 0.5).coerceIn(0.0, 1.0)
+                    val third = spectrumSize / 3
                     val audioData = AudioData(
                         beatIntensity = beat,
-                        bassLevel = spectrum.take(8).average(),
-                        midLevel = spectrum.slice(8..17).average(),
-                        trebleLevel = spectrum.drop(18).average(),
+                        bassLevel = spectrum.take(third).average(),
+                        midLevel = spectrum.slice(third until third * 2).average(),
+                        trebleLevel = spectrum.drop(third * 2).average(),
                         isPlaying = true,
                         spectrumBands = spectrum
                     )
                     val frame = try {
                         (theme as AudioReactiveTheme).generateAudioReactiveFrame(currentFrame, audioData)
                     } catch (e: Exception) {
-                        IntArray(625) { 0 }
+                        IntArray(com.pauwma.glyphbeat.core.DeviceManager.resolution.flatSize) { 0 }
                     }
                     withContext(Dispatchers.Main) { frameData = frame }
                     delay(theme.getAnimationSpeed().coerceAtLeast(33L))
@@ -212,20 +235,20 @@ fun GlyphMatrixPreview(
                         val smallFrames = smallFramesField.get(theme) as Array<IntArray>
                         val shapedData = smallFrames[currentFrame]
 
-                        // Apply the same circular mapping logic as used for large size
-                        val flatArray = IntArray(625) { 0 }
+                        // Resolution-aware shaped-to-flat conversion
+                        val res = com.pauwma.glyphbeat.core.DeviceManager.resolution
+                        val gs = res.gridSize
+                        val cx = res.center.toDouble()
+                        val maxDist = res.maxRadius.toDouble()
+                        val flatArray = IntArray(res.flatSize) { 0 }
                         var shapedIndex = 0
 
-                        for (row in 0 until 25) {
-                            for (col in 0 until 25) {
-                                val flatIndex = row * 25 + col
+                        for (row in 0 until gs) {
+                            for (col in 0 until gs) {
+                                val flatIndex = row * gs + col
+                                val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
 
-                                // Check if this pixel is within the circular matrix shape
-                                val centerX = 12.0
-                                val centerY = 12.0
-                                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                                if (distance <= 12.5 && shapedIndex < shapedData.size) {
+                                if (distance <= maxDist && shapedIndex < shapedData.size) {
                                     flatArray[flatIndex] = shapedData[shapedIndex]
                                     shapedIndex++
                                 }
@@ -241,7 +264,7 @@ fun GlyphMatrixPreview(
                 }
             } catch (e: Exception) {
                 // Fallback to empty frame if generation fails
-                IntArray(625) { 0 }
+                IntArray(com.pauwma.glyphbeat.core.DeviceManager.resolution.flatSize) { 0 }
             }
 
             // Update frame data on main thread
@@ -292,25 +315,22 @@ fun GlyphMatrixPreview(
             val startX = (size.width - inner) / 2f
             val startY = (size.height - inner) / 2f
 
-            val cell = inner / 25f
+            val res = com.pauwma.glyphbeat.core.DeviceManager.resolution
+            val gs = res.gridSize
+            val glyphShape = res.shape
+
+            val cell = inner / gs.toFloat()
             val gap = cell * gapRatio
             val side = cell - gap
             val cr = side * cornerRatio
 
-            // Glyph Matrix shape definition - number of active pixels per row
-            val glyphShape = intArrayOf(
-                7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
-                25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
-                19, 17, 15, 11, 7
-            )
-
-            for (row in 0 until 25) {
+            for (row in 0 until gs) {
                 val pixelsInRow = glyphShape[row]
-                val colStart = (25 - pixelsInRow) / 2
+                val colStart = (gs - pixelsInRow) / 2
 
                 for (c in 0 until pixelsInRow) {
                     val col = colStart + c
-                    val pixelIndex = row * 25 + col
+                    val pixelIndex = row * gs + col
                     val pixelValue = if (pixelIndex < frameData.size) frameData[pixelIndex] else 0
 
                     val finalBrightness = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(

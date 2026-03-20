@@ -53,7 +53,7 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
             glyphMatrixManager?.let { gmm ->
                 Log.d(LOG_TAG, "$tag: onServiceConnected")
                 DebugLogger.log("$tag: SDK onServiceConnected")
-                gmm.register(Glyph.DEVICE_23112)
+                gmm.register(com.pauwma.glyphbeat.core.DeviceManager.getSdkDeviceTarget())
                 performOnServiceConnected(applicationContext, gmm)
             }
         }

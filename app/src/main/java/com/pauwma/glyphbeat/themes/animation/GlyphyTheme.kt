@@ -303,25 +303,19 @@ class GlyphyTheme(private val ctx: Context)  : ThemeTemplate(), ThemeSettingsPro
 
     private fun convertShapedToFlat(shapedData: IntArray): IntArray {
         val flatArray = createEmptyFrame()
-
-        // The shaped data represents the circular matrix layout
-        // We need to map it to the proper positions in a 25x25 grid
+        val gs = gridSize
+        val cx = centerPixel.toDouble()
+        val maxDist = resolution.maxRadius.toDouble()
         var shapedIndex = 0
 
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val flatIndex = row * gs + col
+                val distance = sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
 
-                // Check if this pixel is within the circular matrix shape
-                val centerX = 12.0
-                val centerY = 12.0
-                val distance = sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                if (distance <= 12.5) { // Within the circular shape
+                if (distance <= maxDist) {
                     if (shapedIndex < shapedData.size) {
-                        // Apply brightness directly to pixel values using the unified model
-                        val basePixelValue = shapedData[shapedIndex]
-                        flatArray[flatIndex] = basePixelValue
+                        flatArray[flatIndex] = shapedData[shapedIndex]
                         shapedIndex++
                     }
                 }

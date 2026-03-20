@@ -173,8 +173,8 @@ fun ThemePreviewCard(
                 }
             }
 
-            // Delete button for custom themes (top-right, same style as settings button)
-            if (onDelete != null && isSelected) {
+            // Delete button for custom themes without settings (top-right fallback)
+            if (onDelete != null && isSelected && !supportsSettings) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -300,7 +300,7 @@ private class PreviewTheme(
     private val description: String = "Spinning vinyl animation"
 ) : AnimationTheme() {
     override fun getFrameCount(): Int = 8
-    override fun generateFrame(frameIndex: Int): IntArray = IntArray(625) { if (it % 3 == frameIndex % 3) 200 else 0 }
+    override fun generateFrame(frameIndex: Int): IntArray = IntArray(com.pauwma.glyphbeat.core.DeviceManager.resolution.flatSize) { if (it % 3 == frameIndex % 3) 200 else 0 }
     override fun getThemeName(): String = name
     override fun getDescription(): String = description
 }

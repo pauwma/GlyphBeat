@@ -118,6 +118,22 @@ class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
         intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,165,0,0,255,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,165,0,255,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,205,0,0,255,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,205,0,255,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,205,0,0,255,0,0,0,0,255,0,0,0,0,0,0,0,0,100,255,100,0,0,0,0,0,0,165,0,255,0,0,0,0,255,0,165,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,165,0,255,0,0,0,0,255,0,165,0,0,0,0,0,0,100,255,100,0,0,0,0,0,0,0,0,255,0,0,0,0,255,0,0,205,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,255,0,205,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,255,0,0,205,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,255,0,165,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,255,0,0,165,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
     )
     
+    // =================================================================================
+    // PHONE 4A FRAMES - 6 frames for Phone 4a Pro (137 shaped pixels)
+    // =================================================================================
+
+    private val phone4aFrames = arrayOf(
+        intArrayOf(255,255,255,255,255,255,255,0,0,0,0,0,255,255,255,0,0,0,255,255,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,0,0,0,0,0,255,255,0,0,0,0,255,0,255,0,0,0,0,255,255,0,0,0,0,0,255,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,255,0,0,0,255,255,255,0,0,0,255,255,255,0,0,0,0,0,255,255,255,255,255,255,255),
+        intArrayOf(255,255,255,255,255,255,255,0,0,0,0,0,255,255,255,0,0,0,0,0,255,255,0,0,255,255,0,0,0,0,0,0,0,255,0,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,0,0,0,0,0,255,255,0,0,0,0,255,0,255,0,0,0,0,255,255,0,0,0,0,0,255,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,255,0,0,0,0,0,0,0,255,255,0,0,255,255,0,0,0,0,0,255,255,255,0,0,0,0,0,255,255,255,255,255,255,255),
+        intArrayOf(255,255,255,255,255,255,255,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,255,0,255,255,0,0,0,0,0,0,0,0,0,255,0,255,255,0,0,0,0,0,255,0,0,0,255,0,255,255,0,0,0,0,255,0,255,0,0,0,0,255,255,0,255,0,0,0,255,0,0,0,0,0,255,255,0,255,0,0,0,0,0,0,0,0,0,255,255,0,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,255,255,255,255,255,255,255),
+        intArrayOf(255,255,255,255,255,255,255,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,255,0,0,0,255,0,0,0,255,0,255,255,0,255,0,0,255,0,255,0,0,255,0,255,255,0,255,0,0,0,255,0,0,0,255,0,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,255,255,255,255,255,255,255),
+        intArrayOf(255,255,255,255,255,255,255,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,255,255,0,255,0,0,0,0,0,0,0,255,255,0,255,0,0,0,0,0,0,0,0,0,255,255,0,255,0,0,0,255,0,0,0,0,0,255,255,0,0,0,0,255,0,255,0,0,0,0,255,255,0,0,0,0,0,255,0,0,0,255,0,255,255,0,0,0,0,0,0,0,0,0,255,0,255,255,0,0,0,0,0,0,0,255,0,255,255,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,255,255,255,255,255,255,255),
+        intArrayOf(255,255,255,255,255,255,255,0,0,0,0,0,255,255,255,0,0,255,255,0,0,0,0,0,255,255,0,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,255,0,0,0,0,0,255,255,0,0,0,0,255,0,255,0,0,0,0,255,255,0,0,0,0,0,255,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,255,0,255,255,0,0,0,0,0,255,255,0,0,255,255,255,0,0,0,0,0,255,255,255,255,255,255,255)
+    )
+
+    // Phone 4a offline frame - use first frame as static display
+    private val phone4aOfflineFrame = phone4aFrames[0]
+
     // framesCount and previewFrame are automatically calculated from frames array via lazy initialization
     
     // =================================================================================
@@ -135,20 +151,25 @@ class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
     
     override val offlineFrame: IntArray
         get() = applyBrightnessToFrame(
-            if (currentVinylSize == "small") smallOfflineFrame else baseOfflineFrame
+            if (resolution == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) phone4aOfflineFrame
+            else if (currentVinylSize == "small") smallOfflineFrame
+            else baseOfflineFrame
         )
     
     override val loadingFrame: IntArray
         get() = generateFrame(0)
     
-    override val errorFrame: IntArray = IntArray(625) { 0 } // Error frame stays black
+    override val errorFrame: IntArray get() = createEmptyFrame() // Error frame stays black
     
     /**
      * Apply current brightness setting to any frame array
      */
     private fun applyBrightnessToFrame(baseFrame: IntArray): IntArray {
-        // Check if this is a shaped array (489 elements) or flat array (625 elements)
-        return if (baseFrame.size == 489) {
+        // Check if this is a shaped array or already flat
+        val isShaped = baseFrame.size == resolution.pixelCount ||
+                       baseFrame.size == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_3.pixelCount ||
+                       baseFrame.size == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A.pixelCount
+        return if (isShaped && baseFrame.size != resolution.flatSize) {
             // Convert shaped to flat and apply brightness
             val flatArray = convertShapedToFlat(baseFrame)
             flatArray.map { pixelValue ->
@@ -169,30 +190,27 @@ class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
     }
     
     /**
-     * Converts shaped frame data (489 elements) to flat array format (625 elements)
+     * Converts shaped frame data to flat array format for the current device resolution.
      */
     private fun convertShapedToFlat(shapedData: IntArray): IntArray {
         val flatArray = createEmptyFrame()
+        val gs = gridSize
+        val cx = centerPixel.toDouble()
+        val maxDist = resolution.maxRadius.toDouble()
         var shapedIndex = 0
-        
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                
-                // Check if this pixel is within the circular matrix shape
-                val centerX = 12.0
-                val centerY = 12.0
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-                
-                if (distance <= 12.5 && shapedIndex < shapedData.size) {
-                    // Just copy the pixel value without applying brightness
-                    // Brightness will be applied consistently in generateFrame
+
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val flatIndex = row * gs + col
+                val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
+
+                if (distance <= maxDist && shapedIndex < shapedData.size) {
                     flatArray[flatIndex] = shapedData[shapedIndex]
                     shapedIndex++
                 }
             }
         }
-        
+
         return flatArray
     }
     
@@ -202,7 +220,9 @@ class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
     // OVERRIDDEN METHODS - Convert shaped data to flat array format
     // =================================================================================
     
-    override fun getFrameCount(): Int = framesCount
+    override fun getFrameCount(): Int =
+        if (resolution == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) phone4aFrames.size
+        else framesCount
     
     override fun getThemeName(): String = titleTheme
     override fun getAnimationSpeed(): Long = currentAnimationSpeed
@@ -214,7 +234,7 @@ class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
     // =================================================================================
     
     override fun getSettingsSchema(): ThemeSettings {
-        return ThemeSettingsBuilder(getSettingsId())
+        val builder = ThemeSettingsBuilder(getSettingsId())
             .addSliderSetting(
                 id = CommonSettingIds.ROTATION_SPEED,
                 displayName = "Rotation Speed",
@@ -226,7 +246,10 @@ class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
                 unit = "ms",
                 category = SettingCategories.ANIMATION
             )
-            .addDropdownSetting(
+
+        // Only show vinyl size option on Phone 3 (Phone 4a has no small variant)
+        if (resolution != com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) {
+            builder.addDropdownSetting(
                 id = "vinyl_size",
                 displayName = "Vinyl Size",
                 description = "Size of the vinyl record display",
@@ -237,7 +260,9 @@ class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
                 ),
                 category = SettingCategories.VISUAL
             )
-            .addSliderSetting(
+        }
+
+        return builder.addSliderSetting(
                 id = CommonSettingIds.BRIGHTNESS,
                 displayName = "Brightness",
                 description = "Overall brightness of the vinyl",
@@ -265,68 +290,45 @@ class VinylTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
     
     override fun generateFrame(frameIndex: Int): IntArray {
         validateFrameIndex(frameIndex)
-        
-        // For Large size, use the original shaped data conversion
-        if (currentVinylSize != "small") {
-            // Convert shaped grid data to flat 25x25 array
-            val shapedData = frames[frameIndex]
-            val flatArray = createEmptyFrame()
-            
-            // The shaped data represents the circular matrix layout
-            // We need to map it to the proper positions in a 25x25 grid
-            var shapedIndex = 0
-            
-            for (row in 0 until 25) {
-                for (col in 0 until 25) {
-                    val flatIndex = row * 25 + col
-                    
-                    // Check if this pixel is within the circular matrix shape
-                    val centerX = 12.0
-                    val centerY = 12.0
-                    val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-                    
-                    if (distance <= 12.5 && shapedIndex < shapedData.size) {
-                        // Apply brightness directly to pixel values using the unified model
-                        val basePixelValue = shapedData[shapedIndex]
-                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                            basePixelValue, 
-                            currentBrightness
-                        )
-                        shapedIndex++
-                    }
-                }
-            }
-            
-            return flatArray
+
+        val shapedData = if (resolution == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) {
+            phone4aFrames[frameIndex % phone4aFrames.size]
+        } else if (currentVinylSize != "small") {
+            frames[frameIndex]
         } else {
-            // For Small size, convert shaped array to flat array with brightness
-            val shapedData = smallFrames[frameIndex]
-            val flatArray = createEmptyFrame()
-            var shapedIndex = 0
-            
-            for (row in 0 until 25) {
-                for (col in 0 until 25) {
-                    val flatIndex = row * 25 + col
-                    
-                    // Check if this pixel is within the circular matrix shape
-                    val centerX = 12.0
-                    val centerY = 12.0
-                    val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-                    
-                    if (distance <= 12.5 && shapedIndex < shapedData.size) {
-                        // Apply brightness directly to pixel values using the unified model
-                        val basePixelValue = shapedData[shapedIndex]
-                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                            basePixelValue,
-                            currentBrightness
-                        )
-                        shapedIndex++
-                    }
+            smallFrames[frameIndex]
+        }
+
+        return convertShapedToFlatWithBrightness(shapedData)
+    }
+
+    /**
+     * Converts shaped frame data to flat array with brightness applied.
+     */
+    private fun convertShapedToFlatWithBrightness(shapedData: IntArray): IntArray {
+        val flatArray = createEmptyFrame()
+        val gs = gridSize
+        val cx = centerPixel.toDouble()
+        val maxDist = resolution.maxRadius.toDouble()
+        var shapedIndex = 0
+
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val flatIndex = row * gs + col
+                val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
+
+                if (distance <= maxDist && shapedIndex < shapedData.size) {
+                    val basePixelValue = shapedData[shapedIndex]
+                    flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
+                        basePixelValue,
+                        currentBrightness
+                    )
+                    shapedIndex++
                 }
             }
-            
-            return flatArray
         }
+
+        return flatArray
     }
     
     // All theme metadata and utility methods are inherited from ThemeTemplate parent class

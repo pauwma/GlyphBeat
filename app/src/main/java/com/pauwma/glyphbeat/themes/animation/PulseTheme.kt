@@ -24,34 +24,35 @@ class PulseTheme(
 ) : AnimationTheme(), AudioReactiveTheme {
     
     init {
-        require(frameCount in 8..24) { 
-            "Frame count must be between 8 and 24, got $frameCount" 
+        require(frameCount in 8..24) {
+            "Frame count must be between 8 and 24, got $frameCount"
         }
-        require(maxRadius in 4..12) { 
-            "Max radius must be between 4 and 12, got $maxRadius" 
-        }
-        require(animationSpeed in 50L..150L) { 
-            "Animation speed must be between 50ms and 150ms for beat matching, got ${animationSpeed}ms" 
+        require(animationSpeed in 50L..150L) {
+            "Animation speed must be between 50ms and 150ms for beat matching, got ${animationSpeed}ms"
         }
     }
+
+    // Resolution-aware center and max radius
+    private val cx: Int get() = centerPixel
+    private val gs: Int get() = gridSize
     
     // Generate dynamic beat-responsive frames
     private val frames: Array<IntArray> by lazy {
         Array(frameCount) { frameIndex ->
             val frame = createEmptyFrame()
             val progress = frameIndex.toFloat() / frameCount.toFloat()
-            
+
             // Multiple pulse layers for complex beat patterns
             val mainBeat = kotlin.math.sin(progress * 2 * kotlin.math.PI)
             val subBeat = kotlin.math.sin(progress * 4 * kotlin.math.PI) * 0.4
             val microBeat = kotlin.math.sin(progress * 8 * kotlin.math.PI) * 0.2
-            
+
             // Combine for dynamic rhythm (normalize to 0-1)
             val beatIntensity = kotlin.math.max(0.0, (mainBeat + subBeat + microBeat + 1.4) / 2.8)
-            
+
             // Dynamic radius based on beat intensity
             val currentRadius = (beatIntensity * maxRadius).toInt()
-            
+
             // Multi-layer pulse effect
             for (layer in 1..3) {
                 val layerRadius = kotlin.math.max(1, (currentRadius * layer * 0.35).toInt())
@@ -63,20 +64,20 @@ class PulseTheme(
                         else -> beatIntensity
                     }
                     val layerBrightness = (brightness * layerIntensity).toInt()
-                    
+
                     GlyphMatrixRenderer.drawCircle(
-                        frame, 12, 12, layerRadius, 
-                        clampBrightness(layerBrightness)
+                        frame, cx, cx, layerRadius,
+                        clampBrightness(layerBrightness), resolution
                     )
                 }
             }
-            
+
             // Strong beat center dot
             if (beatIntensity > 0.8) {
-                val pixelIndex = 12 * 25 + 12
+                val pixelIndex = cx * gs + cx
                 frame[pixelIndex] = clampBrightness(brightness)
             }
-            
+
             frame
         }
     }
@@ -84,23 +85,26 @@ class PulseTheme(
     // Custom offline frame - minimalist circle logo
     private val offlineFrame: IntArray by lazy {
         val frame = createEmptyFrame()
-        
-        // Draw a simple static circle logo
-        GlyphMatrixRenderer.drawCircle(frame, 12, 12, 6, (brightness * 0.4).toInt())
-        GlyphMatrixRenderer.drawCircle(frame, 12, 12, 3, (brightness * 0.6).toInt())
-        GlyphMatrixRenderer.drawDot(frame, 12, 12, 1, brightness)
-        
+
+        // Draw a simple static circle logo (scale radii proportionally)
+        val outerR = (6 * gs + 12) / 25  // 6 for 25x25, 3 for 13x13
+        val midR = (3 * gs + 12) / 25    // 3 for 25x25, 2 for 13x13
+        GlyphMatrixRenderer.drawCircle(frame, cx, cx, outerR, (brightness * 0.4).toInt(), resolution)
+        GlyphMatrixRenderer.drawCircle(frame, cx, cx, midR, (brightness * 0.6).toInt(), resolution)
+        GlyphMatrixRenderer.drawDot(frame, cx, cx, 1, brightness, resolution)
+
         frame
     }
-    
+
     // Paused state frame - dim pulsing circle
     private val pausedFrame: IntArray by lazy {
         val frame = createEmptyFrame()
-        
-        // Draw a gentle pulsing circle for paused state
-        GlyphMatrixRenderer.drawCircle(frame, 12, 12, 5, (brightness * 0.3).toInt())
-        GlyphMatrixRenderer.drawDot(frame, 12, 12, 1, (brightness * 0.5).toInt())
-        
+
+        // Draw a gentle pulsing circle for paused state (scale radius proportionally)
+        val pauseR = (5 * gs + 12) / 25  // 5 for 25x25, 3 for 13x13
+        GlyphMatrixRenderer.drawCircle(frame, cx, cx, pauseR, (brightness * 0.3).toInt(), resolution)
+        GlyphMatrixRenderer.drawDot(frame, cx, cx, 1, (brightness * 0.5).toInt(), resolution)
+
         frame
     }
     
@@ -197,11 +201,11 @@ class PulseTheme(
                     when (layer) {
                         1 -> {
                             // Core: solid circle
-                            GlyphMatrixRenderer.drawDot(frame, 12, 12, layerRadius, layerBrightness)
+                            GlyphMatrixRenderer.drawDot(frame, cx, cx, layerRadius, layerBrightness, resolution)
                         }
                         else -> {
                             // Outer layers: circle outlines for layered effect
-                            GlyphMatrixRenderer.drawCircle(frame, 12, 12, layerRadius, layerBrightness)
+                            GlyphMatrixRenderer.drawCircle(frame, cx, cx, layerRadius, layerBrightness, resolution)
                         }
                     }
                 }
@@ -212,7 +216,7 @@ class PulseTheme(
         if (audioData.beatIntensity > 0.5 || audioData.bassLevel > 0.6) {
             val centerIntensity = kotlin.math.max(audioData.beatIntensity, audioData.bassLevel)
             val centerBrightness = (brightness * centerIntensity).toInt()
-            val pixelIndex = 12 * 25 + 12
+            val pixelIndex = cx * gs + cx
             frame[pixelIndex] = clampBrightness(centerBrightness)
         }
         
@@ -241,29 +245,42 @@ class PulseTheme(
     private enum class SparkleLevel { TREBLE, HIGH, MAXIMUM }
     
     private fun drawSparklePattern(frame: IntArray, audioData: AudioData, level: SparkleLevel) {
+        // Scale sparkle offsets proportionally to grid size
+        val innerOff = kotlin.math.max(1, (2 * gs + 12) / 25)  // ~2 for 25x25, ~1 for 13x13
+        val midOff = kotlin.math.max(2, (4 * gs + 12) / 25)    // ~4 for 25x25, ~2 for 13x13
+        val outerOff = kotlin.math.max(3, (6 * gs + 12) / 25)  // ~6 for 25x25, ~3 for 13x13
+
         val positions = when (level) {
-            SparkleLevel.TREBLE -> listOf(Pair(10, 10), Pair(14, 14))
-            SparkleLevel.HIGH -> listOf(Pair(10, 10), Pair(10, 14), Pair(14, 10), Pair(14, 14))
+            SparkleLevel.TREBLE -> listOf(
+                Pair(cx - innerOff, cx - innerOff), Pair(cx + innerOff, cx + innerOff)
+            )
+            SparkleLevel.HIGH -> listOf(
+                Pair(cx - innerOff, cx - innerOff), Pair(cx - innerOff, cx + innerOff),
+                Pair(cx + innerOff, cx - innerOff), Pair(cx + innerOff, cx + innerOff)
+            )
             SparkleLevel.MAXIMUM -> listOf(
-                Pair(10, 10), Pair(10, 14), Pair(14, 10), Pair(14, 14),
-                Pair(8, 8), Pair(8, 16), Pair(16, 8), Pair(16, 16),
-                Pair(6, 12), Pair(18, 12), Pair(12, 6), Pair(12, 18)
+                Pair(cx - innerOff, cx - innerOff), Pair(cx - innerOff, cx + innerOff),
+                Pair(cx + innerOff, cx - innerOff), Pair(cx + innerOff, cx + innerOff),
+                Pair(cx - midOff, cx - midOff), Pair(cx - midOff, cx + midOff),
+                Pair(cx + midOff, cx - midOff), Pair(cx + midOff, cx + midOff),
+                Pair(cx - outerOff, cx), Pair(cx + outerOff, cx),
+                Pair(cx, cx - outerOff), Pair(cx, cx + outerOff)
             )
         }
-        
+
         val baseIntensity = when (level) {
             SparkleLevel.TREBLE -> audioData.trebleLevel
             SparkleLevel.HIGH -> audioData.beatIntensity
             SparkleLevel.MAXIMUM -> kotlin.math.max(audioData.beatIntensity, audioData.bassLevel)
         }
-        
+
         val sparkleBrightness = (brightness * baseIntensity * 0.7).toInt()
-        
+
         positions.forEach { (row, col) ->
             // Add randomness for flickering effect
             if (kotlin.random.Random.nextFloat() < 0.8f) {
-                val pixelIndex = row * 25 + col
-                if (pixelIndex in 0 until 625) {
+                val pixelIndex = row * gs + col
+                if (pixelIndex in 0 until flatSize) {
                     frame[pixelIndex] = clampBrightness(sparkleBrightness)
                 }
             }

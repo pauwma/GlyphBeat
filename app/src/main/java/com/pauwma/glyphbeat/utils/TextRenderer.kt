@@ -5,59 +5,58 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.util.Log
+import com.pauwma.glyphbeat.core.DeviceManager
 
 /**
  * Text rendering utilities for converting strings to pixel arrays for the Glyph Matrix.
  * Handles text-to-bitmap conversion, scrolling buffers, and brightness adjustments.
  * Respects the circular shape of the Glyph Matrix for proper rendering.
+ * Resolution-aware: adapts to both Phone 3 (25x25) and Phone 4a Pro (13x13).
  */
 class TextRenderer {
-    
+
     companion object {
         private const val LOG_TAG = "TextRenderer"
-        private const val MATRIX_WIDTH = 25
-        private const val MATRIX_HEIGHT = 25
-        
-        // Glyph Matrix shape definition - number of pixels per row
-        private val GLYPH_SHAPE = intArrayOf(
-            7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
-            25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
-            19, 17, 15, 11, 7
-        )
-        
+
+        // Resolution-aware dimensions
+        private val matrixWidth: Int get() = DeviceManager.resolution.gridSize
+        private val matrixHeight: Int get() = DeviceManager.resolution.gridSize
+        private val glyphShape: IntArray get() = DeviceManager.resolution.shape
+
         /**
          * Render text directly to a pixel array that fits the matrix.
          * @param text The text to render
          * @param scrollOffset Horizontal scroll offset
          * @param spacing Character spacing in pixels
          * @param brightness Overall brightness (0.0-1.0)
-         * @param verticalOffset Vertical position offset (for centering)
-         * @return IntArray of 625 pixels for the Glyph Matrix
+         * @param verticalOffset Vertical position offset (for centering). Default scales with grid size.
+         * @return IntArray sized for current device resolution
          */
         fun renderTextToMatrix(
             text: String,
             scrollOffset: Int = 0,
             spacing: Int = 1,
             brightness: Float = 1.0f,
-            verticalOffset: Int = 9
+            verticalOffset: Int = (DeviceManager.resolution.gridSize * 9 + 12) / 25
         ): IntArray {
-            val pixelArray = IntArray(625) { 0 }
-            
+            val width = matrixWidth
+            val pixelArray = IntArray(width * width) { 0 }
+
             if (text.isEmpty()) return pixelArray
-            
+
             // Calculate text dimensions
             val textWidth = PixelFont.calculateTextWidth(text, spacing)
-            
+
             // For seamless scrolling, we need to handle wraparound
             val effectiveOffset = if (textWidth > 0) {
-                scrollOffset % (textWidth + MATRIX_WIDTH)
+                scrollOffset % (textWidth + width)
             } else {
                 0
             }
-            
+
             // Draw each character
             var xPos = -effectiveOffset
-            
+
             // Draw the text twice for seamless scrolling
             for (pass in 0..1) {
                 for (char in text) {
@@ -70,27 +69,28 @@ class TextRenderer {
                     )
                     xPos += PixelFont.CHAR_WIDTH + spacing
                 }
-                
+
                 // Add gap between repeats
-                xPos += MATRIX_WIDTH
+                xPos += width
             }
-            
+
             return pixelArray
         }
 
         /**
          * Check if a pixel position is within the circular shape of the Glyph Matrix.
-         * @param x X coordinate (0-24)
-         * @param y Y coordinate (0-24)
-         * @return True if the pixel is within the valid circular area
+         * Resolution-aware: uses current device's shape definition.
          */
         private fun isPixelInCircle(x: Int, y: Int): Boolean {
-            if (y !in 0 until MATRIX_HEIGHT) return false
-            
-            val pixelsInRow = GLYPH_SHAPE[y]
-            val startCol = (MATRIX_WIDTH - pixelsInRow) / 2
+            val height = matrixHeight
+            val width = matrixWidth
+            val shape = glyphShape
+            if (y !in 0 until height) return false
+
+            val pixelsInRow = shape[y]
+            val startCol = (width - pixelsInRow) / 2
             val endCol = startCol + pixelsInRow
-            
+
             return x in startCol until endCol
         }
 
@@ -106,6 +106,7 @@ class TextRenderer {
             brightness: Float
         ) {
             val charData = PixelFont.getCharacter(char)
+            val width = matrixWidth
             // Apply minimum brightness threshold to match hardware behavior
             val minBrightness = 0.034f  // Minimum visible brightness
             val adjustedBrightness = if (brightness > 0) {
@@ -120,11 +121,13 @@ class TextRenderer {
                     if (charData[row][col]) {
                         val pixelX = x + col
                         val pixelY = y + row
-                        
+
                         // Check if pixel is within the circular shape
                         if (isPixelInCircle(pixelX, pixelY)) {
-                            val index = pixelY * MATRIX_WIDTH + pixelX
-                            pixelArray[index] = pixelValue
+                            val index = pixelY * width + pixelX
+                            if (index in pixelArray.indices) {
+                                pixelArray[index] = pixelValue
+                            }
                         }
                     }
                 }

@@ -29,8 +29,8 @@ android {
         applicationId = "com.pauwma.glyphbeat"
         minSdk = 34
         targetSdk = 35
-        versionCode = 16
-        versionName = "1.2.4"
+        versionCode = 17
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -105,7 +105,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
-    implementation(files("libs/glyph-matrix-sdk-1.0.aar"))
+    implementation(files("libs/glyphsdk_25111p_20260209.aar"))
     
     // Material Icons Extended
     implementation("androidx.compose.material:material-icons-extended:1.5.4")

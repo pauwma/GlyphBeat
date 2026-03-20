@@ -1,6 +1,7 @@
 package com.pauwma.glyphbeat.ui.screens
 
 import android.content.Intent
+import androidx.compose.ui.res.painterResource
 import com.pauwma.glyphbeat.utils.DebugLogger
 import android.content.SharedPreferences
 import android.net.Uri
@@ -1011,7 +1012,7 @@ fun SettingsScreen(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Pix,
+                                    painter = painterResource(id = R.drawable.glyph_matrix_icon),
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )

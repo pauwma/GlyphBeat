@@ -3,6 +3,8 @@ package com.pauwma.glyphbeat.data
 import android.content.Context
 import android.util.Log
 import com.google.gson.JsonParser
+import com.pauwma.glyphbeat.core.DeviceManager
+import com.pauwma.glyphbeat.core.GlyphResolution
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -68,7 +70,7 @@ class ImportThemeManager(context: Context) {
             if (parseResult == null) {
                 return@withContext ImportResult.Error("Invalid post data format")
             }
-            val (shapedFrames, durations) = parseResult
+            val (shapedFrames, durations, sourceResolution) = parseResult
 
             // Get author name
             val author = post.userUid?.let { supabase.getUserDisplayName(it) } ?: "Unknown"
@@ -79,7 +81,8 @@ class ImportThemeManager(context: Context) {
                 title = post.title,
                 author = author,
                 shapedFrames = shapedFrames,
-                durations = durations
+                durations = durations,
+                sourceResolution = sourceResolution
             )
 
             val saved = storage.saveTheme(themeData)
@@ -97,15 +100,33 @@ class ImportThemeManager(context: Context) {
 
     /**
      * Parse the Glyph Museum post data JSON into frames and durations.
-     * Only supports v1 (Phone 3, 489 pixels).
+     * Supports v1 (Phone 3, 489 pixels) and v4 (Phone 4a, 137 pixels).
+     *
+     * Device compatibility:
+     * - Phone 3: can import both v1 and v4 themes
+     * - Phone 4a: can only import v4 themes
+     *
+     * Returns Triple of (frames, durations, sourceResolution).
      */
-    private fun parsePostData(dataJson: String): Pair<List<IntArray>, List<Long>>? {
+    private fun parsePostData(dataJson: String): Triple<List<IntArray>, List<Long>, GlyphResolution>? {
         return try {
             val root = JsonParser.parseString(dataJson).asJsonObject
             val version = root.get("v")?.asInt ?: 1
 
-            if (version != 1) {
-                Log.w(TAG, "Unsupported post version: $version (only v1 supported)")
+            // Determine source resolution from version
+            val sourceResolution = when (version) {
+                1 -> GlyphResolution.PHONE_3
+                4 -> GlyphResolution.PHONE_4A
+                else -> {
+                    Log.w(TAG, "Unsupported post version: $version")
+                    return null
+                }
+            }
+
+            // Validate device compatibility
+            val deviceResolution = DeviceManager.resolution
+            if (deviceResolution == GlyphResolution.PHONE_4A && sourceResolution == GlyphResolution.PHONE_3) {
+                Log.w(TAG, "Cannot import Phone 3 theme (v1) on Phone 4a Pro")
                 return null
             }
 
@@ -134,7 +155,7 @@ class ImportThemeManager(context: Context) {
                 return null
             }
 
-            Pair(frames, durations)
+            Triple(frames, durations, sourceResolution)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse post data", e)
             null

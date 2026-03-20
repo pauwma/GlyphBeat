@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.pauwma.glyphbeat.core.DeviceManager
+import com.pauwma.glyphbeat.core.GlyphResolution
 import com.pauwma.glyphbeat.themes.animation.CustomTheme
 import java.io.File
 
@@ -113,6 +115,7 @@ class CustomThemeStorage private constructor(private val context: Context) {
 /**
  * Serializable data class for storing custom theme data as JSON.
  * Frame data is stored as a flat list of brightness values.
+ * The resolution field records which device resolution the frames target.
  */
 data class CustomThemeData(
     val postId: Long,
@@ -120,7 +123,8 @@ data class CustomThemeData(
     val author: String,
     val frames: List<List<Int>>,
     val durations: List<Long>,
-    val importDate: Long
+    val importDate: Long,
+    val resolution: String? = null // "3" or "4a", null = legacy Phone 3
 ) {
     fun toCustomTheme(): CustomTheme {
         return CustomTheme(
@@ -139,11 +143,12 @@ data class CustomThemeData(
             title: String,
             author: String,
             shapedFrames: List<IntArray>,
-            durations: List<Long>
+            durations: List<Long>,
+            sourceResolution: GlyphResolution = DeviceManager.resolution
         ): CustomThemeData {
-            // Convert 489-pixel shaped frames to 625-pixel flat grid frames
+            // Convert shaped frames to flat grid frames using the source resolution
             val flatFrames = shapedFrames.map { shaped ->
-                shapedToFlat(shaped).toList()
+                shapedToFlat(shaped, sourceResolution).toList()
             }
             return CustomThemeData(
                 postId = postId,
@@ -151,35 +156,32 @@ data class CustomThemeData(
                 author = author,
                 frames = flatFrames,
                 durations = durations,
-                importDate = System.currentTimeMillis()
+                importDate = System.currentTimeMillis(),
+                resolution = sourceResolution.dbValue
             )
         }
 
         /**
-         * Convert 489-element shaped pixel array to 625-element flat grid array.
-         * Uses the Phone 3 glyph shape pattern.
+         * Convert shaped pixel array to flat grid array.
+         * Resolution-aware: uses the shape pattern from the specified resolution.
          */
-        private fun shapedToFlat(src: IntArray): IntArray {
-            val shapePattern = intArrayOf(
-                7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
-                25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
-                19, 17, 15, 11, 7
-            )
-            val gridSize = 25
-            val out = IntArray(gridSize * gridSize)
+        private fun shapedToFlat(src: IntArray, resolution: GlyphResolution): IntArray {
+            val gs = resolution.gridSize
+            val shapePattern = resolution.shape
+            val out = IntArray(resolution.flatSize)
 
-            if (src.size == gridSize * gridSize) {
+            if (src.size == resolution.flatSize) {
                 // Already flat format
                 return src.clone()
             }
 
             var index = 0
-            for (row in 0 until gridSize) {
+            for (row in 0 until gs) {
                 val leds = shapePattern[row]
-                val startCol = (gridSize - leds) / 2
+                val startCol = (gs - leds) / 2
                 for (c in 0 until leds) {
                     if (index < src.size) {
-                        out[row * gridSize + startCol + c] = src[index++]
+                        out[row * gs + startCol + c] = src[index++]
                     }
                 }
             }

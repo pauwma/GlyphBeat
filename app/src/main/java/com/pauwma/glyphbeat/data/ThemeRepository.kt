@@ -16,6 +16,7 @@ import com.pauwma.glyphbeat.themes.animation.MinimalTheme
 import com.pauwma.glyphbeat.themes.animation.WaveformTheme
 import com.pauwma.glyphbeat.themes.animation.ScrollTheme
 import com.pauwma.glyphbeat.themes.animation.CustomTheme
+import com.pauwma.glyphbeat.core.DeviceManager
 import com.pauwma.glyphbeat.ui.settings.ThemeSettings
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsPersistence
 import com.pauwma.glyphbeat.ui.settings.ThemeSettingsProvider
@@ -70,17 +71,20 @@ class ThemeRepository private constructor(private val context: Context) {
     )
     val settingsChangedFlow: SharedFlow<Pair<String, ThemeSettings>> = _settingsChangedFlow.asSharedFlow()
 
-    // Built-in themes (always available)
-    private val builtInThemes: List<AnimationTheme> = listOf(
-        VinylTheme(context),
-        DancingDuckTheme(context),
-        WaveformTheme(),
-        CoverArtTheme(context),
-        ScrollTheme(context),
-        MinimalTheme(context),
-        GlyphyTheme(context),
-        ShapeTheme(context)
-    )
+    // Built-in themes (filtered by device capability)
+    private val builtInThemes: List<AnimationTheme> = buildList {
+        add(VinylTheme(context))
+        add(DancingDuckTheme(context))
+        add(WaveformTheme())
+        add(CoverArtTheme(context))
+        add(ScrollTheme(context))
+        add(MinimalTheme(context))
+        // Glyphy and Shape themes not supported on Phone 4a Pro
+        if (!DeviceManager.isPhone4aPro) {
+            add(GlyphyTheme(context))
+            add(ShapeTheme(context))
+        }
+    }
 
     // Custom themes imported from Glyph Museum
     private val customThemeStorage = CustomThemeStorage.getInstance(context)

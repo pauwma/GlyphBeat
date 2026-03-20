@@ -104,27 +104,27 @@ class ShapeTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
             if (value > 0) (value * 0.7).toInt().coerceIn(0, 255) else 0
         }.toIntArray()
 
-    override val errorFrame: IntArray = IntArray(625) { 0 } // Error frame stays black
+    override val errorFrame: IntArray get() = createEmptyFrame() // Error frame stays black
 
     /**
-     * Generate a simple offline pattern that's visible regardless of style
+     * Generate a simple offline pattern that's visible regardless of style.
+     * Resolution-aware: adapts to current device grid size.
      */
     private fun generateSimpleOfflinePattern(): IntArray {
         val flatArray = createEmptyFrame()
-        val centerX = 12.0
-        val centerY = 12.0
-        // Simple border pattern for offline state
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
+        val gs = gridSize
+        val cx = centerPixel.toDouble()
+        val maxDist = resolution.maxRadius.toDouble()
+        val innerDist = maxDist - 2.0
 
-                // Create simple border for offline
-                if (distance <= 12.5 && distance >= 10.5) {
-                    // Apply brightness using unified model with reduced base value for offline
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val flatIndex = row * gs + col
+                val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
+
+                if (distance <= maxDist && distance >= innerDist) {
                     flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                        77, // Reduced base value (255 * 0.3) for dimmer offline appearance
-                        currentBrightness
+                        77, currentBrightness
                     )
                 }
             }
@@ -145,76 +145,63 @@ class ShapeTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
     }
 
     /**
-     * Generate a pattern based on the selected style
+     * Generate a pattern based on the selected style.
+     * Resolution-aware: all patterns adapt to current device grid size.
      */
     private fun generatePatternByStyle(style: String): IntArray {
         val flatArray = createEmptyFrame()
-        val centerX = 12.0
-        val centerY = 12.0
-        val radius = 12.5
+        val gs = gridSize
+        val cx = centerPixel.toDouble()
+        val maxDist = resolution.maxRadius.toDouble()
 
         when (style) {
-            "cross" -> generateCrossPattern(flatArray, centerX, centerY, radius)
-            "dots" -> generateDotsPattern(flatArray, centerX, centerY, radius)
-            "lines" -> generateLinesPattern(flatArray, centerX, centerY, radius)
-            "border" -> generateBorderPattern(flatArray, centerX, centerY, radius)
-            "diamond" -> generateDiamondPattern(flatArray, centerX, centerY, radius)
-            "grid" -> generateGridPattern(flatArray, centerX, centerY, radius)
-            else -> generateCrossPattern(flatArray, centerX, centerY, radius) // Default fallback
+            "cross" -> generateCrossPattern(flatArray, gs, cx, maxDist)
+            "dots" -> generateDotsPattern(flatArray, gs, cx, maxDist)
+            "lines" -> generateLinesPattern(flatArray, gs, cx, maxDist)
+            "border" -> generateBorderPattern(flatArray, gs, cx, maxDist)
+            "diamond" -> generateDiamondPattern(flatArray, gs, cx, maxDist)
+            "grid" -> generateGridPattern(flatArray, gs, cx, maxDist)
+            else -> generateCrossPattern(flatArray, gs, cx, maxDist)
         }
 
         return flatArray
     }
 
-    /**
-     * Generate cross pattern (original)
-     */
-    private fun generateCrossPattern(flatArray: IntArray, centerX: Double, centerY: Double, radius: Double) {
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
+    private fun setBrightPixel(flatArray: IntArray, index: Int) {
+        flatArray[index] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(255, currentBrightness)
+    }
 
-                if (distance <= radius) {
-                    // Create cross pattern
-                    val isVerticalLine = col >= 11 && col <= 13
-                    val isHorizontalLine = row >= 11 && row <= 13
-
-                    if (isVerticalLine || isHorizontalLine) {
-                        // Apply brightness using unified model with full base value (255)
-                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                            255, // Full brightness base value for the shape
-                            currentBrightness
-                        )
+    private fun generateCrossPattern(flatArray: IntArray, gs: Int, cx: Double, maxDist: Double) {
+        val lineHalf = kotlin.math.max(1, (gs * 3 + 24) / 50)  // ~1 pixel half-width
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
+                if (distance <= maxDist) {
+                    val isVertical = kotlin.math.abs(col - cx.toInt()) <= lineHalf
+                    val isHorizontal = kotlin.math.abs(row - cx.toInt()) <= lineHalf
+                    if (isVertical || isHorizontal) {
+                        setBrightPixel(flatArray, row * gs + col)
                     }
                 }
             }
         }
     }
 
-    /**
-     * Generate dots pattern
-     */
-    private fun generateDotsPattern(flatArray: IntArray, centerX: Double, centerY: Double, radius: Double) {
+    private fun generateDotsPattern(flatArray: IntArray, gs: Int, cx: Double, maxDist: Double) {
+        val c = cx.toInt()
+        val off = (gs * 6 + 12) / 25  // ~6 for 25x25, ~3 for 13x13
         val dotPositions = listOf(
-            Pair(6, 6), Pair(6, 12), Pair(6, 18),
-            Pair(12, 6), Pair(12, 12), Pair(12, 18),
-            Pair(18, 6), Pair(18, 12), Pair(18, 18)
+            Pair(c - off, c - off), Pair(c - off, c), Pair(c - off, c + off),
+            Pair(c, c - off), Pair(c, c), Pair(c, c + off),
+            Pair(c + off, c - off), Pair(c + off, c), Pair(c + off, c + off)
         )
-
         for ((dotRow, dotCol) in dotPositions) {
             for (row in (dotRow - 1)..(dotRow + 1)) {
                 for (col in (dotCol - 1)..(dotCol + 1)) {
-                    if (row in 0 until 25 && col in 0 until 25) {
-                        val flatIndex = row * 25 + col
-                        val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                        if (distance <= radius) {
-                            // Apply brightness using unified model with full base value (255)
-                            flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                                255, // Full brightness base value for the shape
-                                currentBrightness
-                            )
+                    if (row in 0 until gs && col in 0 until gs) {
+                        val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
+                        if (distance <= maxDist) {
+                            setBrightPixel(flatArray, row * gs + col)
                         }
                     }
                 }
@@ -222,93 +209,56 @@ class ShapeTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsProvi
         }
     }
 
-    /**
-     * Generate horizontal lines pattern
-     */
-    private fun generateLinesPattern(flatArray: IntArray, centerX: Double, centerY: Double, radius: Double) {
-        val lineRows = listOf(4, 8, 12, 16, 20)
+    private fun generateLinesPattern(flatArray: IntArray, gs: Int, cx: Double, maxDist: Double) {
+        // Scale line rows proportionally
+        val lineSpacing = kotlin.math.max(2, gs / 6)
+        val lineRows = (0 until gs).filter { (it + lineSpacing / 2) % lineSpacing == 0 }
 
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                if (distance <= radius && row in lineRows) {
-                    // Apply brightness using unified model with full base value (255)
-                    flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                        255, // Full brightness base value for the shape
-                        currentBrightness
-                    )
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
+                if (distance <= maxDist && row in lineRows) {
+                    setBrightPixel(flatArray, row * gs + col)
                 }
             }
         }
     }
 
-    /**
-     * Generate border pattern
-     */
-    private fun generateBorderPattern(flatArray: IntArray, centerX: Double, centerY: Double, radius: Double) {
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                // Create border effect - only pixels near the edge
-                if (distance <= radius && distance >= radius - 2) {
-                    // Apply brightness using unified model with full base value (255)
-                    flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                        255, // Full brightness base value for the shape
-                        currentBrightness
-                    )
+    private fun generateBorderPattern(flatArray: IntArray, gs: Int, cx: Double, maxDist: Double) {
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
+                if (distance <= maxDist && distance >= maxDist - 2) {
+                    setBrightPixel(flatArray, row * gs + col)
                 }
             }
         }
     }
 
-    /**
-     * Generate diamond pattern
-     */
-    private fun generateDiamondPattern(flatArray: IntArray, centerX: Double, centerY: Double, radius: Double) {
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                if (distance <= radius) {
-                    // Create diamond shape using Manhattan distance
-                    val manhattanDistance = kotlin.math.abs(col - centerX) + kotlin.math.abs(row - centerY)
-
-                    if (manhattanDistance >= 6 && manhattanDistance <= 8) {
-                        // Apply brightness using unified model with full base value (255)
-                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                            255, // Full brightness base value for the shape
-                            currentBrightness
-                        )
+    private fun generateDiamondPattern(flatArray: IntArray, gs: Int, cx: Double, maxDist: Double) {
+        val innerDist = (gs * 6.0 / 25.0)
+        val outerDist = (gs * 8.0 / 25.0)
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
+                if (distance <= maxDist) {
+                    val manhattan = kotlin.math.abs(col - cx) + kotlin.math.abs(row - cx)
+                    if (manhattan >= innerDist && manhattan <= outerDist) {
+                        setBrightPixel(flatArray, row * gs + col)
                     }
                 }
             }
         }
     }
 
-    /**
-     * Generate grid pattern
-     */
-    private fun generateGridPattern(flatArray: IntArray, centerX: Double, centerY: Double, radius: Double) {
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                if (distance <= radius) {
-                    // Create grid pattern
-                    val isGridLine = (row % 4 == 0) || (col % 4 == 0)
-
-                    if (isGridLine) {
-                        // Apply brightness using unified model with full base value (255)
-                        flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
-                            255, // Full brightness base value for the shape
-                            currentBrightness
-                        )
+    private fun generateGridPattern(flatArray: IntArray, gs: Int, cx: Double, maxDist: Double) {
+        val gridSpacing = kotlin.math.max(2, gs / 6)
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
+                if (distance <= maxDist) {
+                    if ((row % gridSpacing == 0) || (col % gridSpacing == 0)) {
+                        setBrightPixel(flatArray, row * gs + col)
                     }
                 }
             }

@@ -1,0 +1,7 @@
+Version 1.3:
+📱 Phone 4a Pro support
+📥 Import community animations from Glyph Museum
+🎵 New Waveform theme
+🎨 Redesigned theme selection and settings UI
+🐛 Built-in debug logger
+🔧 Improved service stability and battery usage

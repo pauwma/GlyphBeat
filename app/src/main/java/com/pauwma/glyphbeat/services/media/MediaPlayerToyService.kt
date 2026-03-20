@@ -64,6 +64,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private val backgroundScope = CoroutineScope(Dispatchers.IO)
     private val uiScope = CoroutineScope(Dispatchers.Main)
     private var currentFrameIndex = 0 // Current frame in the animation
+    private var pingPongDirection = 1 // Direction for ping-pong loop mode
     private var pausedFrameIndex = 0 // Frame index when paused (for smooth resume)
     private var isPlaying = false
     private var hasActiveMedia = false
@@ -139,7 +140,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Failed to parse static image pixels: ${e.message}")
             // Fallback to empty array if parsing fails
-            IntArray(625) { 0 }
+            IntArray(com.pauwma.glyphbeat.core.DeviceManager.resolution.flatSize) { 0 }
         }
     }
 
@@ -336,6 +337,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     (currentTheme as? ScrollTheme)?.onDeactivate()
                     
                     currentTheme = selectedTheme
+                    pingPongDirection = 1
                     initializeThemeTransitions(selectedTheme)
                     initializeThemeSettings(selectedTheme) // Apply settings to new theme
                     logThemeInfo(currentTheme)
@@ -482,8 +484,9 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 }
             }
             is CustomTheme -> {
-                // Custom themes always have per-frame durations
-                theme.getFrameDuration(currentFrameIndex)
+                // Custom themes always have per-frame durations, apply speed multiplier
+                val baseDuration = theme.getFrameDuration(currentFrameIndex)
+                (baseDuration / theme.speedMultiplier).toLong().coerceAtLeast(50L)
             }
             else -> theme.getAnimationSpeed()
         }
@@ -511,6 +514,23 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 // Only log beats occasionally to reduce spam
                 if (currentAudioData.beatIntensity > 0.5 && currentFrameIndex % 4 == 0) {
                     Log.v(LOG_TAG, "Beat! Frame: $currentFrameIndex/$frameCount, intensity: ${String.format("%.2f", currentAudioData.beatIntensity)}, bass: ${String.format("%.2f", currentAudioData.bassLevel)}")
+                }
+            } else if (currentTheme is CustomTheme) {
+                // Custom themes support loop modes
+                val ct = currentTheme as CustomTheme
+                when (ct.loopMode) {
+                    "reverse" -> {
+                        currentFrameIndex = if (currentFrameIndex <= 0) frameCount - 1
+                                           else currentFrameIndex - 1
+                    }
+                    "ping_pong" -> {
+                        currentFrameIndex += pingPongDirection
+                        if (currentFrameIndex >= frameCount - 1) pingPongDirection = -1
+                        else if (currentFrameIndex <= 0) pingPongDirection = 1
+                    }
+                    else -> {
+                        currentFrameIndex = (currentFrameIndex + 1) % frameCount
+                    }
                 }
             } else {
                 // For non-audio-reactive themes, use normal progression (no beat skipping)
@@ -546,7 +566,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
      * Enhanced frame generation with state-specific frame support
      */
     private fun generateFrame(shouldAnimate: Boolean = false, playerState: PlayerState = currentPlayerState): IntArray {
-        val theme = currentTheme ?: return IntArray(625) { 0 }
+        val theme = currentTheme ?: return IntArray(com.pauwma.glyphbeat.core.DeviceManager.resolution.flatSize) { 0 }
         
         // Use state-specific frames for ThemeTemplate when not animating
         if (!shouldAnimate && theme is ThemeTemplate) {
@@ -1115,7 +1135,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         
         if (paused) {
             // Stop the Glyph matrix animation by clearing the display
-            matrixManager?.setMatrixFrame(IntArray(625) { 0 }) // All LEDs off
+            matrixManager?.setMatrixFrame(IntArray(com.pauwma.glyphbeat.core.DeviceManager.resolution.flatSize) { 0 }) // All LEDs off
             Log.i(LOG_TAG, "Auto-start service paused - Glyph matrix cleared")
         } else {
             Log.i(LOG_TAG, "Auto-start service resumed")

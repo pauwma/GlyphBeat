@@ -499,40 +499,21 @@ class CoverArtPreviewManager(private val context: Context) {
     // =================================================================================
     
     /**
-     * Create a default preview frame (concentric circles pattern).
+     * Create a default preview frame using music note pixel art.
      */
     private fun createDefaultPreviewFrame(): IntArray {
-        val frame = IntArray(625) { 0 }
-        val centerX = 12.0
-        val centerY = 12.0
-        
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val index = row * 25 + col
-                val distance = kotlin.math.sqrt(
-                    (col - centerX) * (col - centerX) + 
-                    (row - centerY) * (row - centerY)
-                )
-                
-                if (distance <= 12.5) {
-                    when {
-                        distance <= 3.0 -> frame[index] = 255
-                        distance <= 5.0 -> frame[index] = 0
-                        distance <= 7.0 -> frame[index] = 180
-                        distance <= 9.0 -> frame[index] = 0
-                        distance <= 11.0 -> frame[index] = 120
-                        else -> frame[index] = 0
-                    }
-                }
-            }
+        val res = com.pauwma.glyphbeat.core.DeviceManager.resolution
+        val shaped = if (res == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) {
+            intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,0,0,0,0,0,0,0,255,0,0,0,0,255,0,0,0,0,0,0,0,255,0,0,0,0,255,0,0,0,0,0,0,0,255,0,0,0,0,255,0,0,0,0,0,0,255,255,0,0,0,255,255,0,0,0,0,0,255,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+        } else {
+            intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
         }
-        
-        return frame
+        return com.pauwma.glyphbeat.core.GlyphMatrixRenderer.shapedToFlat(shaped, res)
     }
-    
+
     companion object {
         private val LOG_TAG = CoverArtPreviewManager::class.java.simpleName
-        private const val PREVIEW_SIZE = 25
+        private val PREVIEW_SIZE: Int get() = com.pauwma.glyphbeat.core.DeviceManager.resolution.gridSize
         private const val UPDATE_THRESHOLD_MS = 30000 // 30 seconds
     }
 }

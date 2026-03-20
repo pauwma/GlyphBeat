@@ -118,6 +118,7 @@ class TutorialViewModel : ViewModel() {
             model.contains("A063") -> false  // Nothing Phone (1)
             model.contains("A065") -> false  // Nothing Phone (2)
             model.contains("A024") -> true  // Nothing Phone (3)
+            model.contains("A069P") -> true  // Nothing Phone (4a) Pro
             model.contains("A142") -> false // Nothing Phone (2a)
             model.contains("A059") -> false // Nothing Phone (2a) Plus
             else -> false // Unknown model or CMF phones

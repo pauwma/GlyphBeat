@@ -14,9 +14,10 @@ import kotlin.math.pow
 /**
  * Mirrored waveform visualizer theme.
  *
- * Displays 25 vertical frequency bars centered on the middle row, extending both
+ * Displays vertical frequency bars centered on the middle row, extending both
  * upward and downward symmetrically. Left-to-right maps low-to-high frequencies.
  * A 1px center spine at full brightness is always visible as the base.
+ * Resolution-aware: adapts to both 25x25 (Phone 3) and 13x13 (Phone 4a Pro).
  */
 class WaveformTheme(
     private val frameCount: Int = 32,
@@ -29,11 +30,13 @@ class WaveformTheme(
 ) : AnimationTheme(), AudioReactiveTheme, ThemeSettingsProvider {
 
     companion object {
-        private const val COLUMNS = 25
-        private const val CENTER_Y = 12
-        private const val MAX_HALF_HEIGHT = 11 // Max extension from center (rows 1-23)
         private const val MIN_BAR_LEVEL = 0.05f // Minimal base so bars are never fully gone
     }
+
+    // Resolution-aware dimensions
+    private val columns: Int get() = gridSize
+    private val centerY: Int get() = centerPixel
+    private val maxHalfHeight: Int get() = centerPixel - 1 // Max extension from center
 
     init {
         require(frameCount in 16..48) {
@@ -56,11 +59,11 @@ class WaveformTheme(
     override fun getDescription(): String = "Mirrored audio waveform visualizer"
     override fun getSettingsId(): String = "waveform_theme"
 
-    // Current smoothed bar levels (0.0 - 1.0)
-    private val barHeights = FloatArray(COLUMNS) { 0f }
+    // Current smoothed bar levels (0.0 - 1.0) — lazily sized for device resolution
+    private val barHeights: FloatArray by lazy { FloatArray(columns) { 0f } }
 
     // Per-column target levels from audio data
-    private val targetLevels = FloatArray(COLUMNS) { 0f }
+    private val targetLevels: FloatArray by lazy { FloatArray(columns) { 0f } }
 
     // Timing
     private var lastUpdateTime = System.currentTimeMillis()
@@ -68,34 +71,42 @@ class WaveformTheme(
     // Offline frame — single bright center line
     private val offlineFrame: IntArray by lazy {
         val frame = createEmptyFrame()
-        for (col in 0 until COLUMNS) {
-            frame[CENTER_Y * 25 + col] = brightness
+        for (col in 0 until columns) {
+            frame[centerY * columns + col] = brightness
         }
         frame
     }
 
-    // Static preview frame (shaped 489-pixel format, converted to flat 625)
+    // Static preview frame — generate a waveform preview dynamically for current resolution
     private val staticPreviewFrame: IntArray by lazy {
-        val shaped = intArrayOf(
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,255,255,255,255,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,255,255,255,0,255,255,255,255,0,255,0,0,0,0,0,0,0,0,0,0,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,255,0,255,255,255,0,255,255,255,255,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,255,255,255,255,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-        )
-        val glyphShape = intArrayOf(
-            7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
-            25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
-            19, 17, 15, 11, 7
-        )
-        val flat = IntArray(625) { 0 }
-        var si = 0
-        for (row in 0 until 25) {
-            val cols = glyphShape[row]
-            val startCol = (25 - cols) / 2
-            for (c in 0 until cols) {
-                if (si < shaped.size) {
-                    flat[row * 25 + startCol + c] = shaped[si++]
+        val frame = createEmptyFrame()
+        val gs = columns
+        val cy = centerY
+
+        // Draw center line at full brightness
+        for (col in 0 until gs) {
+            frame[cy * gs + col] = brightness
+        }
+
+        // Draw a static waveform-like pattern
+        for (col in 0 until gs) {
+            val t = col.toFloat() / (gs - 1).coerceAtLeast(1)
+            // Create a bell curve pattern peaking in the middle columns
+            val bellHeight = kotlin.math.sin(t * kotlin.math.PI).toFloat()
+            val barHeight = (bellHeight * maxHalfHeight * 0.7f).toInt()
+
+            for (offset in -barHeight..barHeight) {
+                if (offset == 0) continue
+                val y = cy + offset
+                if (y in 0 until gs) {
+                    val dist = abs(offset).toFloat() / max(1, barHeight)
+                    val gradientFactor = 0.5f + 0.5f * dist.pow(0.5f)
+                    val pixelBrightness = (brightness * gradientFactor).toInt().coerceIn(0, 255)
+                    frame[y * gs + col] = max(frame[y * gs + col], pixelBrightness)
                 }
             }
         }
-        flat
+        frame
     }
 
     override fun getFrameCount(): Int = frameCount
@@ -115,7 +126,7 @@ class WaveformTheme(
 
         if (!audioData.isPlaying) {
             // Set targets to zero so bars decay smoothly
-            for (col in 0 until COLUMNS) targetLevels[col] = 0f
+            for (col in 0 until columns) targetLevels[col] = 0f
         } else {
             updateTargetLevels(audioData)
         }
@@ -138,21 +149,23 @@ class WaveformTheme(
         val spectrum = audioData.spectrumBands
         val beat = (audioData.beatIntensity * sensitivity).toFloat().coerceIn(0f, 1f)
         val beatBoost = if (beat > 0.6f) beat * 0.15f else 0f
+        val cols = columns
+        val cy = centerY
+        val maxCol = (cols - 1).coerceAtLeast(1)
 
-        if (spectrum != null && spectrum.size == COLUMNS) {
+        if (spectrum != null && spectrum.size == cols) {
             if (mirrorMode) {
-                for (col in 0 until COLUMNS) {
-                    val distFromCenter = abs(col - 12)
-                    val specIdx = (distFromCenter * 24 / 12).coerceIn(0, 24)
+                for (col in 0 until cols) {
+                    val distFromCenter = abs(col - cy)
+                    val specIdx = (distFromCenter * maxCol / cy).coerceIn(0, maxCol)
                     targetLevels[col] = (spectrum[specIdx] * sensitivity + beatBoost).coerceIn(0f, 1f)
                 }
             } else {
                 // 1:1 mapping with smooth fade on left side
-                for (col in 0 until COLUMNS) {
+                for (col in 0 until cols) {
                     val raw = (spectrum[col] * sensitivity + beatBoost).coerceIn(0f, 1f)
-                    // Smooth fade: 0 at col 0, ramps to 1 at spectrumShift
                     val fade = if (spectrumShift > 0) (col.toFloat() / spectrumShift).coerceIn(0f, 1f) else 1f
-                    targetLevels[col] = raw * fade * fade // Quadratic for smoother curve
+                    targetLevels[col] = raw * fade * fade
                 }
             }
         } else {
@@ -160,8 +173,8 @@ class WaveformTheme(
             val mid = (audioData.midLevel * sensitivity).toFloat().coerceIn(0f, 1f)
             val treble = (audioData.trebleLevel * sensitivity).toFloat().coerceIn(0f, 1f)
 
-            for (col in 0 until COLUMNS) {
-                val t = col.toFloat() / 24f
+            for (col in 0 until cols) {
+                val t = col.toFloat() / maxCol
                 val baseLevel = when {
                     t < 0.33f -> bass * (1f - t * 3f) + mid * (t * 3f)
                     t < 0.66f -> mid * (1f - (t - 0.33f) * 3f) + treble * ((t - 0.33f) * 3f)
@@ -177,7 +190,7 @@ class WaveformTheme(
      * Smooth bar heights with exponential interpolation.
      */
     private fun updateBarHeights(deltaFactor: Float) {
-        for (col in 0 until COLUMNS) {
+        for (col in 0 until columns) {
             val minLevel = if (targetLevels[col] > 0f) MIN_BAR_LEVEL else 0f
             val target = targetLevels[col].coerceAtLeast(minLevel)
             val current = barHeights[col]
@@ -201,17 +214,21 @@ class WaveformTheme(
      * Bars extend symmetrically up and down with gradient.
      */
     private fun drawBars(frame: IntArray) {
-        for (col in 0 until COLUMNS) {
-            // Always draw center pixel at full brightness
-            frame[CENTER_Y * 25 + col] = max(frame[CENTER_Y * 25 + col], brightness)
+        val gs = columns
+        val cy = centerY
+        val mhh = maxHalfHeight
 
-            val halfHeight = (barHeights[col] * MAX_HALF_HEIGHT).toInt()
+        for (col in 0 until gs) {
+            // Always draw center pixel at full brightness
+            frame[cy * gs + col] = max(frame[cy * gs + col], brightness)
+
+            val halfHeight = (barHeights[col] * mhh).toInt()
             if (halfHeight < 1) continue
 
             for (offset in -halfHeight..halfHeight) {
                 if (offset == 0) continue // Already drew center
-                val y = CENTER_Y + offset
-                if (y !in 0..24) continue
+                val y = cy + offset
+                if (y !in 0 until gs) continue
 
                 val dist = abs(offset).toFloat() / max(1, halfHeight)
 
@@ -224,7 +241,7 @@ class WaveformTheme(
                 val pixelBrightness = (brightness * gradientFactor * intensityBoost)
                     .toInt().coerceIn(0, 255)
 
-                frame[y * 25 + col] = max(frame[y * 25 + col], pixelBrightness)
+                frame[y * gs + col] = max(frame[y * gs + col], pixelBrightness)
             }
         }
     }

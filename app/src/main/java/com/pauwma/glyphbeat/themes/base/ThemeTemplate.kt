@@ -669,35 +669,35 @@ open class ThemeTemplate() : AnimationTheme() {
         }
 
         // Validate each frame has reasonable size based on format
+        // Accept both Phone 3 (625 flat, 489 shaped) and Phone 4a Pro (169 flat, 137 shaped)
+        val validFlatSizes = setOf(625, 169)
         when (frameDataFormat) {
             "flat" -> {
                 frames.forEachIndexed { index, frame ->
-                    require(frame.size == 625) {
-                        "Frame $index has ${frame.size} pixels, expected 625 for flat format (25x25 matrix)"
+                    require(frame.size in validFlatSizes) {
+                        "Frame $index has ${frame.size} pixels, expected 625 (Phone 3) or 169 (Phone 4a) for flat format"
                     }
                 }
             }
             "shaped" -> {
-                // Shaped format can vary in size depending on the circular layout
-                // Accept common sizes: 489 (DancingDuck), 512 (VinylTheme), or other reasonable circular sizes
+                // Shaped format: 480-520 for Phone 3, 130-145 for Phone 4a Pro
                 frames.forEachIndexed { index, frame ->
-                    require(frame.size in 480..520) {
-                        "Frame $index has ${frame.size} pixels, expected 480-520 for shaped format (circular matrix)"
+                    require(frame.size in 130..520) {
+                        "Frame $index has ${frame.size} pixels, expected 130-520 for shaped format (circular matrix)"
                     }
                 }
             }
             "hybrid" -> {
                 frames.forEachIndexed { index, frame ->
-                    require(frame.size == 625) {
-                        "Frame $index has ${frame.size} pixels, expected 625 for hybrid format (25x25 matrix)"
+                    require(frame.size in validFlatSizes) {
+                        "Frame $index has ${frame.size} pixels, expected 625 (Phone 3) or 169 (Phone 4a) for hybrid format"
                     }
                 }
             }
             else -> {
-                // Default to flat format validation
                 frames.forEachIndexed { index, frame ->
-                    require(frame.size == 625) {
-                        "Frame $index has ${frame.size} pixels, expected 625 for default format (25x25 matrix)"
+                    require(frame.size in validFlatSizes) {
+                        "Frame $index has ${frame.size} pixels, expected 625 (Phone 3) or 169 (Phone 4a)"
                     }
                 }
             }

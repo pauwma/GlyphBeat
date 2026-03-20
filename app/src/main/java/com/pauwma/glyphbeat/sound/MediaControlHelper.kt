@@ -740,17 +740,14 @@ class MediaControlHelper(private val context: Context) {
     }
     
     /**
-     * Resize bitmap to 25x25 pixels for the Glyph Matrix display.
+     * Resize bitmap to grid size pixels for the Glyph Matrix display.
      * @param originalBitmap Source bitmap to resize
-     * @return 25x25 bitmap or null if processing fails
+     * @return Resized bitmap or null if processing fails
      */
     private fun resizeBitmapToMatrix(originalBitmap: Bitmap): Bitmap? {
         return try {
-            // Create a 25x25 bitmap with the same config as original, defaulting to ARGB_8888
-            val config = originalBitmap.config ?: Bitmap.Config.ARGB_8888
-            val resized = Bitmap.createScaledBitmap(originalBitmap, 25, 25, true)
-            
-            // Log.v(LOG_TAG, "Album art resized from ${originalBitmap.width}x${originalBitmap.height} to 25x25")
+            val gs = com.pauwma.glyphbeat.core.DeviceManager.resolution.gridSize
+            val resized = Bitmap.createScaledBitmap(originalBitmap, gs, gs, true)
             resized
         } catch (e: Exception) {
             Log.w(LOG_TAG, "Error resizing album art: ${e.message}")
@@ -799,11 +796,12 @@ class MediaControlHelper(private val context: Context) {
      * @return IntArray of 625 elements with intensity values (0-255)
      */
     fun bitmapToMatrixArray(bitmap: Bitmap?, brightnessMultiplier: Float = 1f, enhanceContrast: Boolean = true, rotationAngle: Float = 0f): IntArray {
-        if (bitmap == null || bitmap.width != 25 || bitmap.height != 25) {
+        val gs = com.pauwma.glyphbeat.core.DeviceManager.resolution.gridSize
+        if (bitmap == null || bitmap.width != gs || bitmap.height != gs) {
             Log.w(LOG_TAG, "Invalid bitmap for matrix conversion, using fallback pattern")
             return createFallbackPattern()
         }
-        
+
         return try {
             // Apply rotation if specified
             val processedBitmap = if (rotationAngle != 0f) {
@@ -811,24 +809,24 @@ class MediaControlHelper(private val context: Context) {
             } else {
                 bitmap
             }
-            
-            val rawArray = IntArray(625) // 25x25 = 625
-            
+
+            val rawArray = IntArray(gs * gs)
+
             // First pass: Convert to grayscale and store raw luminance values
-            for (row in 0 until 25) {
-                for (col in 0 until 25) {
+            for (row in 0 until gs) {
+                for (col in 0 until gs) {
                     val pixel = processedBitmap.getPixel(col, row)
-                    
+
                     // Extract RGB components
                     val red = (pixel shr 16) and 0xFF
                     val green = (pixel shr 8) and 0xFF
                     val blue = pixel and 0xFF
-                    
+
                     // Convert to grayscale using luminance formula
                     val luminance = (0.299 * red + 0.587 * green + 0.114 * blue).toInt()
-                    
+
                     // Store raw luminance value
-                    rawArray[row * 25 + col] = luminance
+                    rawArray[row * gs + col] = luminance
                 }
             }
             
@@ -907,28 +905,42 @@ class MediaControlHelper(private val context: Context) {
      * @return IntArray of 625 elements representing a music note
      */
     private fun createFallbackPattern(): IntArray {
-        // Simple fallback pattern - music note shape
-        val pattern = IntArray(625) { 0 } // Start with all pixels off
-        
-        // Create a simple music note pattern in the center
-        val notePixels = listOf(
-            // Vertical line (stem)
-            12 to 5, 12 to 6, 12 to 7, 12 to 8, 12 to 9, 12 to 10, 12 to 11, 12 to 12, 12 to 13, 12 to 14,
-            // Note head (oval)
-            10 to 15, 11 to 15, 12 to 15, 13 to 15, 14 to 15,
-            10 to 16, 14 to 16,
-            10 to 17, 11 to 17, 12 to 17, 13 to 17, 14 to 17,
-            // Flag
-            13 to 5, 14 to 6, 15 to 7, 16 to 8, 15 to 9, 14 to 10
-        )
-        
-        // Set music note pixels to medium brightness
-        notePixels.forEach { (col, row) ->
-            if (row in 0 until 25 && col in 0 until 25) {
-                pattern[row * 25 + col] = 180 // Medium brightness
+        val res = com.pauwma.glyphbeat.core.DeviceManager.resolution
+        val gs = res.gridSize
+        val cx = res.center
+        val pattern = IntArray(res.flatSize) { 0 }
+
+        // Create a simple music note pattern in the center, scaled to resolution
+        // Stem: vertical line from center
+        val stemTop = (cx * 5 + 12) / 25
+        val stemBottom = (cx * 14 + 12) / 25
+        for (row in stemTop..stemBottom) {
+            if (row in 0 until gs && cx in 0 until gs) {
+                pattern[row * gs + cx] = 180
             }
         }
-        
+        // Note head: small oval below stem
+        val headY = (cx * 15 + 12) / 25
+        val headRadius = kotlin.math.max(1, (2 * gs + 12) / 25)
+        for (dy in -1..1) {
+            for (dx in -headRadius..headRadius) {
+                val r = headY + dy
+                val c = cx + dx
+                if (r in 0 until gs && c in 0 until gs) {
+                    pattern[r * gs + c] = 180
+                }
+            }
+        }
+        // Flag: diagonal from top of stem
+        val flagLen = kotlin.math.max(2, (4 * gs + 12) / 25)
+        for (i in 0 until flagLen) {
+            val r = stemTop + i
+            val c = cx + 1 + i / 2
+            if (r in 0 until gs && c in 0 until gs) {
+                pattern[r * gs + c] = 180
+            }
+        }
+
         return pattern
     }
     

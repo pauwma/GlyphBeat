@@ -171,31 +171,27 @@ class MinimalArrowTheme : TrackControlTheme(), TrackControlThemeSettingsProvider
     }
     
     private fun convertShapedToFlat(shapedData: IntArray): IntArray {
-        val flatArray = IntArray(625) { 0 } // 25x25 flat array
-        
-        // Map shaped data to flat array positions
+        val res = com.pauwma.glyphbeat.core.DeviceManager.resolution
+        val gs = res.gridSize
+        val shape = res.shape
+        val flatArray = IntArray(res.flatSize) { 0 }
+
         var shapedIndex = 0
-        val glyphShape = intArrayOf(
-            7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
-            25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
-            19, 17, 15, 11, 7
-        )
-        
-        for (row in 0 until 25) {
-            val pixelsInRow = glyphShape[row]
-            val startCol = (25 - pixelsInRow) / 2
-            
+        for (row in 0 until gs) {
+            val pixelsInRow = shape[row]
+            val startCol = (gs - pixelsInRow) / 2
+
             for (colInRow in 0 until pixelsInRow) {
                 val col = startCol + colInRow
-                val flatIndex = row * 25 + col
-                
+                val flatIndex = row * gs + col
+
                 if (shapedIndex < shapedData.size) {
                     flatArray[flatIndex] = shapedData[shapedIndex]
                     shapedIndex++
                 }
             }
         }
-        
+
         return flatArray
     }
     

@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
+import com.pauwma.glyphbeat.core.DeviceManager
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -52,9 +52,9 @@ fun MiniThemePreview(
     // Generate frame
     val pixels = remember(theme, currentFrame) {
         try {
-            theme?.generateFrame(currentFrame) ?: IntArray(625) { 0 }
+            theme?.generateFrame(currentFrame) ?: IntArray(DeviceManager.resolution.flatSize) { 0 }
         } catch (e: Exception) {
-            IntArray(625) { 0 }
+            IntArray(DeviceManager.resolution.flatSize) { 0 }
         }
     }
     
@@ -71,27 +71,30 @@ fun MiniThemePreview(
  * Draw a miniature version of the Glyph Matrix.
  */
 private fun DrawScope.drawMiniGlyphMatrix(pixels: IntArray) {
-    if (pixels.size != 625) return
-    
-    val matrixSize = 25
-    val cellSize = minOf(size.width, size.height) / matrixSize
-    val offsetX = (size.width - cellSize * matrixSize) / 2
-    val offsetY = (size.height - cellSize * matrixSize) / 2
-    
-    // Draw simplified version - just show active pixels
-    val shapedGrid = GlyphMatrixRenderer.flatArrayToShapedGrid(pixels)
-    
-    for (row in 0 until matrixSize) {
-        val pixelsInRow = GlyphMatrixRenderer.getPixelsInRow(row)
-        val startCol = GlyphMatrixRenderer.getStartColumnForRow(row)
-        
-        for (col in 0 until pixelsInRow) {
-            val brightness = shapedGrid[row][col]
+    val res = DeviceManager.resolution
+    val gs = res.gridSize
+    if (pixels.size != res.flatSize) return
+
+    val cellSize = minOf(size.width, size.height) / gs
+    val offsetX = (size.width - cellSize * gs) / 2
+    val offsetY = (size.height - cellSize * gs) / 2
+
+    // Draw simplified version - just show active pixels using device shape
+    val glyphShape = res.shape
+
+    for (row in 0 until gs) {
+        val pixelsInRow = glyphShape[row]
+        val startCol = (gs - pixelsInRow) / 2
+
+        for (c in 0 until pixelsInRow) {
+            val col = startCol + c
+            val index = row * gs + col
+            val brightness = if (index < pixels.size) pixels[index] else 0
             if (brightness > 0) {
                 val alpha = brightness / 255f
-                val x = offsetX + (startCol + col) * cellSize + cellSize / 2
+                val x = offsetX + col * cellSize + cellSize / 2
                 val y = offsetY + row * cellSize + cellSize / 2
-                
+
                 drawCircle(
                     color = Color.Red.copy(alpha = alpha),
                     radius = cellSize * 0.3f,

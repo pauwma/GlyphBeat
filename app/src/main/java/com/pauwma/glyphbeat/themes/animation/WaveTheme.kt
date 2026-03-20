@@ -44,7 +44,8 @@ class WaveTheme(
             frameCount = frameCount,
             amplitude = maxAmplitude / 2, // Reduced amplitude for fallback
             brightness = (brightness * 0.6).toInt(), // Dimmer for fallback
-            wavelength = 1.5f
+            wavelength = 1.5f,
+            resolution = resolution
         )
     }
     
@@ -64,12 +65,12 @@ class WaveTheme(
      */
     override fun generateAudioReactiveFrame(frameIndex: Int, audioData: AudioData): IntArray {
         val frame = createEmptyFrame()
-        
+
         // Ensure frameIndex is properly used for wave animation consistency
         val normalizedFrameIndex = frameIndex % frameCount
-        
+
         if (enableSpectrum) {
-            // Draw separate frequency band waves using the enhanced renderer
+            // Draw separate frequency band waves using the resolution-aware renderer
             GlyphMatrixRenderer.drawAudioSpectrumWaves(
                 grid = frame,
                 bassLevel = audioData.bassLevel,
@@ -77,15 +78,16 @@ class WaveTheme(
                 trebleLevel = audioData.trebleLevel,
                 frameIndex = normalizedFrameIndex,
                 frameCount = frameCount,
-                maxBrightness = brightness
+                maxBrightness = brightness,
+                resolution = resolution
             )
         } else {
             // Single combined wave based on overall audio intensity
-            val combinedIntensity = (audioData.beatIntensity + audioData.bassLevel + 
+            val combinedIntensity = (audioData.beatIntensity + audioData.bassLevel +
                                    audioData.midLevel + audioData.trebleLevel) / 4.0
             val dynamicAmplitude = (combinedIntensity * maxAmplitude).toInt().coerceIn(1, maxAmplitude)
             val dynamicBrightness = (brightness * combinedIntensity).toInt()
-            
+
             GlyphMatrixRenderer.drawHorizontalWave(
                 grid = frame,
                 frameIndex = normalizedFrameIndex,
@@ -93,15 +95,16 @@ class WaveTheme(
                 amplitude = dynamicAmplitude,
                 brightness = dynamicBrightness,
                 wavelength = 2.0f,
-                thickness = if (combinedIntensity > 0.7) 2 else 1
+                thickness = if (combinedIntensity > 0.7) 2 else 1,
+                resolution = resolution
             )
         }
-        
+
         // Add beat emphasis dots on strong beats
         if (audioData.beatIntensity > 0.8) {
             drawBeatEmphasisDots(frame, audioData)
         }
-        
+
         return frame
     }
     
@@ -110,23 +113,29 @@ class WaveTheme(
      */
     private fun drawBeatEmphasisDots(frame: IntArray, audioData: AudioData) {
         val dotBrightness = (brightness * audioData.beatIntensity).toInt()
-        
+        val gs = gridSize
+        val cx = centerPixel
+
+        // Scale positions proportionally to grid size
+        val trebleY = (gs * 6 + 12) / 25   // ~6 for 25x25, ~3 for 13x13
+        val bassY = (gs * 18 + 12) / 25    // ~18 for 25x25, ~9 for 13x13
+
         // Add dots at wave intersection points during strong beats
         val emphasisPositions = listOf(
-            Pair(6, 4),   // Treble region
-            Pair(6, 12),  // Treble center
-            Pair(6, 20),  // Treble region
-            Pair(12, 2),  // Mid region
-            Pair(12, 22), // Mid region
-            Pair(18, 8),  // Bass region
-            Pair(18, 16)  // Bass region
+            Pair(trebleY, (gs * 4 + 12) / 25),   // Treble region
+            Pair(trebleY, cx),                     // Treble center
+            Pair(trebleY, (gs * 20 + 12) / 25),  // Treble region
+            Pair(cx, (gs * 2 + 12) / 25),         // Mid region
+            Pair(cx, (gs * 22 + 12) / 25),        // Mid region
+            Pair(bassY, (gs * 8 + 12) / 25),      // Bass region
+            Pair(bassY, (gs * 16 + 12) / 25)      // Bass region
         )
-        
+
         emphasisPositions.forEach { (row, col) ->
             // Only show dots randomly for flickering effect
             if (kotlin.random.Random.nextFloat() < 0.6f) {
-                val pixelIndex = row * 25 + col
-                if (pixelIndex in 0 until 625) {
+                val pixelIndex = row * gs + col
+                if (pixelIndex in 0 until flatSize) {
                     frame[pixelIndex] = kotlin.math.max(frame[pixelIndex], dotBrightness)
                 }
             }

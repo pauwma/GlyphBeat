@@ -511,28 +511,343 @@ class GlyphMatrixRenderer {
         
         /**
          * Creates a GlyphMatrixFrame with proper brightness control using the object API.
-         * 
+         *
          * @param context Android context required for building the frame
          * @param pixelArray IntArray of 625 elements representing the frame
          * @param brightness Brightness level (0-255) to apply to the entire frame
          * @return GlyphMatrixFrame ready to be sent to the matrix
          */
         fun createMatrixFrameWithBrightness(context: android.content.Context, pixelArray: IntArray, brightness: Int): GlyphMatrixFrame {
-            // Convert pixel array to bitmap
-            val bitmap = pixelArrayToBitmap(pixelArray)
-            
+            // When debug-forcing a different resolution, embed the smaller frame
+            // centered in the hardware grid so it displays at native pixel size
+            val res = DeviceManager.resolution
+            val hwRes = DeviceManager.hardwareResolution
+            val bitmap = if (DeviceManager.isDebugResolutionOverride && res.gridSize < hwRes.gridSize) {
+                embedInHardwareBitmap(pixelArray, res, hwRes)
+            } else {
+                pixelArrayToBitmap(pixelArray, res)
+            }
+
             // Create GlyphMatrixObject with the specified brightness
             val matrixObject = GlyphMatrixObject.Builder()
                 .setImageSource(bitmap)
                 .setBrightness(brightness.coerceIn(0, 255))
                 .setPosition(0, 0)
                 .build()
-            
+
             // Create frame with the object
             val frameBuilder = GlyphMatrixFrame.Builder()
             frameBuilder.addTop(matrixObject)
-            
+
             return frameBuilder.build(context)
+        }
+
+        // =====================================================================
+        // RESOLUTION-AWARE METHODS
+        // =====================================================================
+
+        /**
+         * Gets the current device resolution dimensions.
+         */
+        val currentGridSize: Int get() = DeviceManager.resolution.gridSize
+        val currentFlatSize: Int get() = DeviceManager.resolution.flatSize
+        val currentCenter: Int get() = DeviceManager.resolution.center
+        val currentShape: IntArray get() = DeviceManager.resolution.shape
+
+        /**
+         * Creates an empty flat array sized for the given resolution.
+         */
+        fun createEmptyFlatArray(resolution: GlyphResolution): IntArray {
+            return IntArray(resolution.flatSize) { 0 }
+        }
+
+        /**
+         * Creates an empty flat array sized for the current device.
+         */
+        fun createDeviceEmptyFlatArray(): IntArray {
+            return IntArray(DeviceManager.resolution.flatSize) { 0 }
+        }
+
+        /**
+         * Converts shaped pixel data to flat array for a given resolution.
+         */
+        fun shapedToFlat(shapedData: IntArray, resolution: GlyphResolution): IntArray {
+            val flatArray = IntArray(resolution.flatSize) { 0 }
+            val shape = resolution.shape
+            val gridSize = resolution.gridSize
+            var shapedIndex = 0
+
+            for (row in 0 until gridSize) {
+                if (row >= shape.size) break
+                val pixelsInRow = shape[row]
+                val startCol = (gridSize - pixelsInRow) / 2
+
+                for (col in 0 until pixelsInRow) {
+                    if (shapedIndex >= shapedData.size) break
+                    val flatIndex = row * gridSize + (startCol + col)
+                    if (flatIndex < flatArray.size) {
+                        flatArray[flatIndex] = shapedData[shapedIndex]
+                    }
+                    shapedIndex++
+                }
+            }
+
+            return flatArray
+        }
+
+        /**
+         * Converts flat array to shaped pixel data for a given resolution.
+         */
+        fun flatToShaped(flatArray: IntArray, resolution: GlyphResolution): IntArray {
+            val shape = resolution.shape
+            val gridSize = resolution.gridSize
+            val shapedData = IntArray(resolution.pixelCount) { 0 }
+            var shapedIndex = 0
+
+            for (row in 0 until gridSize) {
+                if (row >= shape.size) break
+                val pixelsInRow = shape[row]
+                val startCol = (gridSize - pixelsInRow) / 2
+
+                for (col in 0 until pixelsInRow) {
+                    val flatIndex = row * gridSize + (startCol + col)
+                    if (flatIndex < flatArray.size && shapedIndex < shapedData.size) {
+                        shapedData[shapedIndex] = flatArray[flatIndex]
+                    }
+                    shapedIndex++
+                }
+            }
+
+            return shapedData
+        }
+
+        /**
+         * Converts pixel data to bitmap, auto-detecting resolution from array size.
+         */
+        fun pixelArrayToBitmap(pixelArray: IntArray, resolution: GlyphResolution): Bitmap {
+            val gridSize = resolution.gridSize
+            val bitmap = Bitmap.createBitmap(gridSize, gridSize, Bitmap.Config.ARGB_8888)
+
+            for (y in 0 until gridSize) {
+                for (x in 0 until gridSize) {
+                    val index = y * gridSize + x
+                    val brightness = if (index < pixelArray.size) pixelArray[index] else 0
+                    val color = if (brightness > 0) {
+                        Color.rgb(brightness, brightness, brightness)
+                    } else {
+                        Color.TRANSPARENT
+                    }
+                    bitmap.setPixel(x, y, color)
+                }
+            }
+
+            return bitmap
+        }
+
+        /**
+         * Embeds a smaller resolution frame centered in the hardware resolution bitmap.
+         * Used for debug testing — e.g. displaying 13x13 Phone 4a content on 25x25 Phone 3 hardware
+         * at native pixel size (no upscaling).
+         */
+        private fun embedInHardwareBitmap(pixelArray: IntArray, srcRes: GlyphResolution, hwRes: GlyphResolution): Bitmap {
+            val hwGs = hwRes.gridSize
+            val srcGs = srcRes.gridSize
+            val bitmap = Bitmap.createBitmap(hwGs, hwGs, Bitmap.Config.ARGB_8888)
+
+            // Center offset to place the smaller grid in the middle of the larger one
+            val offsetX = (hwGs - srcGs) / 2
+            val offsetY = (hwGs - srcGs) / 2
+
+            for (y in 0 until srcGs) {
+                for (x in 0 until srcGs) {
+                    val index = y * srcGs + x
+                    val brightness = if (index < pixelArray.size) pixelArray[index] else 0
+                    val color = if (brightness > 0) {
+                        Color.rgb(brightness, brightness, brightness)
+                    } else {
+                        Color.TRANSPARENT
+                    }
+                    bitmap.setPixel(offsetX + x, offsetY + y, color)
+                }
+            }
+
+            return bitmap
+        }
+
+        /**
+         * Resolution-aware line drawing.
+         */
+        fun drawLine(grid: IntArray, x1: Int, y1: Int, x2: Int, y2: Int, brightness: Int, resolution: GlyphResolution) {
+            val gs = resolution.gridSize
+            val clampedBrightness = clampBrightness(brightness)
+            val steps = maxOf(kotlin.math.abs(x2 - x1), kotlin.math.abs(y2 - y1), 1)
+
+            for (i in 0..steps) {
+                val t = i.toFloat() / steps
+                val x = (x1 + (x2 - x1) * t).toInt()
+                val y = (y1 + (y2 - y1) * t).toInt()
+
+                if (x in 0 until gs && y in 0 until gs) {
+                    grid[y * gs + x] = clampedBrightness
+                }
+            }
+        }
+
+        /**
+         * Resolution-aware circle drawing.
+         */
+        fun drawCircle(grid: IntArray, centerX: Int, centerY: Int, radius: Int, brightness: Int, resolution: GlyphResolution) {
+            val gs = resolution.gridSize
+            val clampedBrightness = clampBrightness(brightness)
+            val angleStep = (360.0 / (radius * 8)).coerceAtLeast(1.0)
+
+            var angle = 0.0
+            while (angle < 360.0) {
+                val radians = Math.toRadians(angle)
+                val x = centerX + (kotlin.math.cos(radians) * radius).toInt()
+                val y = centerY + (kotlin.math.sin(radians) * radius).toInt()
+
+                if (x in 0 until gs && y in 0 until gs) {
+                    grid[y * gs + x] = clampedBrightness
+                }
+                angle += angleStep
+            }
+        }
+
+        /**
+         * Resolution-aware filled dot drawing.
+         */
+        fun drawDot(grid: IntArray, centerX: Int, centerY: Int, radius: Int, brightness: Int, resolution: GlyphResolution) {
+            val gs = resolution.gridSize
+            val clampedBrightness = clampBrightness(brightness)
+
+            for (y in (centerY - radius)..(centerY + radius)) {
+                for (x in (centerX - radius)..(centerX + radius)) {
+                    val distance = kotlin.math.sqrt(((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY)).toDouble())
+                    if (distance <= radius && x in 0 until gs && y in 0 until gs) {
+                        grid[y * gs + x] = clampedBrightness
+                    }
+                }
+            }
+        }
+
+        /**
+         * Resolution-aware horizontal wave drawing.
+         */
+        fun drawHorizontalWave(
+            grid: IntArray,
+            frameIndex: Int = 0,
+            frameCount: Int = 1,
+            amplitude: Int = 5,
+            brightness: Int = 255,
+            wavelength: Float = 2.0f,
+            thickness: Int = 1,
+            resolution: GlyphResolution
+        ) {
+            val gs = resolution.gridSize
+            val clampedBrightness = clampBrightness(brightness)
+            val clampedAmplitude = amplitude.coerceIn(1, (gs / 3))
+            val clampedThickness = thickness.coerceIn(1, 3)
+
+            val centerY = gs / 2
+            val phaseOffset = if (frameCount > 1) {
+                frameIndex * 2 * Math.PI / frameCount
+            } else {
+                0.0
+            }
+
+            for (x in 0 until gs) {
+                val waveY = centerY + (kotlin.math.sin(x * wavelength * Math.PI / gs + phaseOffset) * clampedAmplitude).toInt()
+
+                for (thicknessOffset in -(clampedThickness / 2)..(clampedThickness / 2)) {
+                    val pixelY = waveY + thicknessOffset
+                    if (pixelY in 0 until gs) {
+                        val distanceFromCenter = kotlin.math.abs(thicknessOffset).toFloat() / (clampedThickness / 2).coerceAtLeast(1)
+                        val adjustedBrightness = (clampedBrightness * (1.0 - distanceFromCenter * 0.4)).toInt()
+                        grid[pixelY * gs + x] = adjustedBrightness
+                    }
+                }
+            }
+        }
+
+        /**
+         * Resolution-aware audio spectrum wave drawing.
+         * Wave Y positions are scaled proportionally to gridSize.
+         */
+        fun drawAudioSpectrumWaves(
+            grid: IntArray,
+            bassLevel: Double,
+            midLevel: Double,
+            trebleLevel: Double,
+            frameIndex: Int = 0,
+            frameCount: Int = 1,
+            maxBrightness: Int = 255,
+            resolution: GlyphResolution
+        ) {
+            val gs = resolution.gridSize
+            val phaseOffset = if (frameCount > 1) {
+                frameIndex * 2 * Math.PI / frameCount
+            } else {
+                0.0
+            }
+
+            // Scale positions proportionally: Phone 3 uses 6/12/18 out of 25
+            val trebleY = (gs * 6.0 / 25.0).toInt()
+            val midY = gs / 2
+            val bassY = (gs * 18.0 / 25.0).toInt()
+
+            // Scale amplitudes proportionally
+            val ampScale = gs / 25.0
+
+            if (bassLevel > 0.05) {
+                val bassAmplitude = (bassLevel * 6 * ampScale).toInt().coerceIn(1, (gs / 4))
+                val bassBrightness = (maxBrightness * bassLevel * 0.9).toInt()
+                for (x in 0 until gs) {
+                    val waveY = bassY + (kotlin.math.sin(x * 0.8 * Math.PI / gs + phaseOffset) * bassAmplitude).toInt()
+                    if (waveY in 0 until gs) {
+                        grid[waveY * gs + x] = clampBrightness(bassBrightness)
+                    }
+                }
+            }
+
+            if (midLevel > 0.05) {
+                val midAmplitude = (midLevel * 4 * ampScale).toInt().coerceIn(1, (gs / 6))
+                val midBrightness = (maxBrightness * midLevel * 0.8).toInt()
+                for (x in 0 until gs) {
+                    val waveY = midY + (kotlin.math.sin(x * 1.5 * Math.PI / gs + phaseOffset) * midAmplitude).toInt()
+                    if (waveY in 0 until gs) {
+                        grid[waveY * gs + x] = clampBrightness(midBrightness)
+                    }
+                }
+            }
+
+            if (trebleLevel > 0.05) {
+                val trebleAmplitude = (trebleLevel * 3 * ampScale).toInt().coerceIn(1, (gs / 8).coerceAtLeast(1))
+                val trebleBrightness = (maxBrightness * trebleLevel * 0.7).toInt()
+                for (x in 0 until gs) {
+                    val waveY = trebleY + (kotlin.math.sin(x * 2.5 * Math.PI / gs + phaseOffset) * trebleAmplitude).toInt()
+                    if (waveY in 0 until gs) {
+                        grid[waveY * gs + x] = clampBrightness(trebleBrightness)
+                    }
+                }
+            }
+        }
+
+        /**
+         * Resolution-aware horizontal wave frame generation.
+         */
+        fun createHorizontalWaveFrames(
+            frameCount: Int,
+            amplitude: Int = 5,
+            brightness: Int = 255,
+            wavelength: Float = 2.0f,
+            resolution: GlyphResolution
+        ): Array<IntArray> {
+            return Array(frameCount) { frameIndex ->
+                val grid = createEmptyFlatArray(resolution)
+                drawHorizontalWave(grid, frameIndex, frameCount, amplitude, brightness, wavelength, resolution = resolution)
+                grid
+            }
         }
     }
 }

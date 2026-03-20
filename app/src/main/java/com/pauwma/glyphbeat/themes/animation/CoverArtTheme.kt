@@ -358,108 +358,31 @@ class CoverArtTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsPr
         }
 
     /**
-     * Offline frame shows clean minimal pattern like MinimalTheme with circular masking.
+     * Offline frame shows music note pixel art.
+     * Uses pre-made shaped pixel data per resolution, converted to flat.
      */
     override val offlineFrame: IntArray by lazy {
-        // Start with the exact MinimalTheme offline frame pattern (shaped format)
-        val minimalOfflineFrameShaped = intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-
-        // Convert shaped data to flat 25x25 array with circular masking (same as MinimalTheme.generateFrame)
-        val flatArray = IntArray(625) { 0 }
-        val centerX = 12.0
-        val centerY = 12.0
-        var shapedIndex = 0
-
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                // Check if this pixel is within the circular matrix shape
-                if (distance <= 12.5 && shapedIndex < minimalOfflineFrameShaped.size) {
-                    flatArray[flatIndex] = minimalOfflineFrameShaped[shapedIndex]
-                    shapedIndex++
-                }
-            }
+        val res = com.pauwma.glyphbeat.core.DeviceManager.resolution
+        val shaped = if (res == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) {
+            intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,0,0,0,0,0,0,0,255,0,0,0,0,255,0,0,0,0,0,0,0,255,0,0,0,0,255,0,0,0,0,0,0,0,255,0,0,0,0,255,0,0,0,0,0,0,255,255,0,0,0,255,255,0,0,0,0,0,255,255,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+        } else {
+            intArrayOf(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
         }
-
-        flatArray
+        com.pauwma.glyphbeat.core.GlyphMatrixRenderer.shapedToFlat(shaped, res)
     }
 
     /**
-     * Loading frame shows medium brightness music note pattern with circular masking.
+     * Loading frame — dimmer version of offline frame (128 brightness).
      */
     override val loadingFrame: IntArray by lazy {
-        val frame = IntArray(625) { 0 } // 25x25 flat array
-        val centerX = 12.0
-        val centerY = 12.0
-
-        // Create loading pattern with circular masking - dimmer than offline
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                // Only draw within the circular display area
-                if (distance <= 12.5) {
-                    // Same music note pattern but dimmer (128 instead of 255)
-                    when {
-                        // Top horizontal bar
-                        row == 7 && col in 12..18 -> frame[flatIndex] = 128
-                        // Vertical bars
-                        col == 12 && row in 8..14 -> frame[flatIndex] = 128
-                        col == 18 && row in 8..14 -> frame[flatIndex] = 128
-                        // Bottom connecting elements
-                        row == 15 && col in 11..13 -> frame[flatIndex] = 128
-                        row == 16 && col in 10..14 -> frame[flatIndex] = 128
-                        row == 15 && col in 17..19 -> frame[flatIndex] = 128
-                        row == 16 && col in 16..20 -> frame[flatIndex] = 128
-                        row == 17 && col in 11..13 -> frame[flatIndex] = 128
-                        row == 17 && col in 17..19 -> frame[flatIndex] = 128
-                    }
-                }
-            }
-        }
-
-        frame
+        offlineFrame.map { if (it > 0) (it * 128 / 255).coerceIn(0, 128) else 0 }.toIntArray()
     }
 
     /**
-     * Error frame shows very dim pattern with circular masking.
+     * Error frame — very dim version of offline frame (64 brightness).
      */
     override val errorFrame: IntArray by lazy {
-        val frame = IntArray(625) { 0 } // 25x25 flat array
-        val centerX = 12.0
-        val centerY = 12.0
-
-        // Create error pattern with circular masking - very dim
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                // Only draw within the circular display area
-                if (distance <= 12.5) {
-                    // Same music note pattern but very dim (64 instead of 255)
-                    when {
-                        // Top horizontal bar
-                        row == 7 && col in 12..18 -> frame[flatIndex] = 64
-                        // Vertical bars
-                        col == 12 && row in 8..14 -> frame[flatIndex] = 64
-                        col == 18 && row in 8..14 -> frame[flatIndex] = 64
-                        // Bottom connecting elements
-                        row == 15 && col in 11..13 -> frame[flatIndex] = 64
-                        row == 16 && col in 10..14 -> frame[flatIndex] = 64
-                        row == 15 && col in 17..19 -> frame[flatIndex] = 64
-                        row == 16 && col in 16..20 -> frame[flatIndex] = 64
-                        row == 17 && col in 11..13 -> frame[flatIndex] = 64
-                        row == 17 && col in 17..19 -> frame[flatIndex] = 64
-                    }
-                }
-            }
-        }
-
-        frame
+        offlineFrame.map { if (it > 0) (it * 64 / 255).coerceIn(0, 64) else 0 }.toIntArray()
     }
 
     // =================================================================================
@@ -623,7 +546,7 @@ class CoverArtTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsPr
         return try {
             val processedBitmap = previewRenderer.processAlbumArtForPreview(
                 albumArt = trackInfo.albumArt,
-                targetSize = 25,
+                targetSize = com.pauwma.glyphbeat.core.DeviceManager.resolution.gridSize,
                 settings = settings
             )
 

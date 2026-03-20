@@ -192,26 +192,23 @@ private fun DrawScope.drawCoverArtPreview(
     val startX = (size.width - inner) / 2f
     val startY = (size.height - inner) / 2f
 
-    val cell = inner / 25f
+    val res = com.pauwma.glyphbeat.core.DeviceManager.resolution
+    val gs = res.gridSize
+    val glyphShape = res.shape
+
+    val cell = inner / gs.toFloat()
     val gap = cell * gapRatio
     val side = cell - gap
     val cr = side * cornerRatio
 
-    // Glyph Matrix shape definition
-    val glyphShape = intArrayOf(
-        7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
-        25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
-        19, 17, 15, 11, 7
-    )
-
     // Draw each pixel
-    for (row in 0 until 25) {
+    for (row in 0 until gs) {
         val pixelsInRow = glyphShape[row]
-        val startCol = (25 - pixelsInRow) / 2
+        val startCol = (gs - pixelsInRow) / 2
 
         for (colInRow in 0 until pixelsInRow) {
             val col = startCol + colInRow
-            val index = row * 25 + col
+            val index = row * gs + col
 
             if (index < frameData.size) {
                 val value = frameData[index]

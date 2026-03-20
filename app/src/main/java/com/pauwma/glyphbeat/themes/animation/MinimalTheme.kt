@@ -91,12 +91,27 @@ class MinimalTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsPro
     private val mainFrameNoBorder = intArrayOf(
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0    )
 
+    // Phone 4a Pro: Main frame - pause bars (||)
+    private val phone4aMainFrame = intArrayOf(
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,255,255,255,0,0,0,0,0,255,255,255,0,255,255,255,0,0,0,0,0,0,255,255,255,0,255,255,255,0,0,0,0,0,0,255,255,255,0,255,255,255,0,0,0,0,0,0,255,255,255,0,255,255,255,0,0,0,0,0,0,255,255,255,0,255,255,255,0,0,0,0,0,255,255,255,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    )
+
+    // Phone 4a Pro: Paused frame - play triangle (▶)
+    private val phone4aPausedFrame = intArrayOf(
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,255,255,255,255,255,0,0,0,0,0,0,0,0,255,255,255,255,255,255,255,0,0,0,0,0,0,255,255,255,255,255,255,255,255,0,0,0,0,0,255,255,255,255,255,255,255,0,0,0,0,0,0,255,255,255,255,255,0,0,0,0,0,0,0,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    )
+
     /**
-     * Single static frame that switches based on border setting and applies current brightness
+     * Single static frame that switches based on border setting and applies current brightness.
+     * Uses device-specific frame data for Phone 4a Pro.
      */
     override val frames: Array<IntArray>
         get() {
-            val baseFrame = if (showBorder) mainFrameWithBorder else mainFrameNoBorder
+            val baseFrame = if (resolution == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) {
+                phone4aMainFrame
+            } else {
+                if (showBorder) mainFrameWithBorder else mainFrameNoBorder
+            }
             // Return original values - brightness is now handled by GlyphMatrixObject
             return arrayOf(baseFrame)
         }
@@ -119,7 +134,11 @@ class MinimalTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsPro
 
     override val pausedFrame: IntArray
         get() {
-            val baseFrame = if (showBorder) pausedFrameWithBorder else pausedFrameNoBorder
+            val baseFrame = if (resolution == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) {
+                phone4aPausedFrame
+            } else {
+                if (showBorder) pausedFrameWithBorder else pausedFrameNoBorder
+            }
             // Apply paused opacity to the base frame data before conversion
             val dimmedFrame = baseFrame.map { value ->
                 if (value > 0) {
@@ -132,7 +151,11 @@ class MinimalTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsPro
 
     override val offlineFrame: IntArray
         get() {
-            val baseFrame = if (showBorder) offlineFrameWithBorder else offlineFrameNoBorder
+            val baseFrame = if (resolution == com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) {
+                phone4aPausedFrame
+            } else {
+                if (showBorder) offlineFrameWithBorder else offlineFrameNoBorder
+            }
             // Convert shaped to flat - brightness is handled by GlyphMatrixObject
             return convertShapedToFlat(baseFrame)
         }
@@ -164,26 +187,22 @@ class MinimalTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsPro
     }
 
     /**
-     * Converts shaped frame data (489 elements) to flat array format (625 elements)
+     * Converts shaped frame data to flat array format for the current device resolution.
+     * Resolution-aware: uses gridSize, center, and maxRadius from current resolution.
      */
     private fun convertShapedToFlat(shapedData: IntArray): IntArray {
         val flatArray = createEmptyFrame()
-
-        // The shaped data represents the circular matrix layout
-        // We need to map it to the proper positions in a 25x25 grid
+        val gs = gridSize
+        val cx = centerPixel.toDouble()
+        val maxDist = resolution.maxRadius.toDouble()
         var shapedIndex = 0
 
-        for (row in 0 until 25) {
-            for (col in 0 until 25) {
-                val flatIndex = row * 25 + col
+        for (row in 0 until gs) {
+            for (col in 0 until gs) {
+                val flatIndex = row * gs + col
+                val distance = kotlin.math.sqrt((col - cx) * (col - cx) + (row - cx) * (row - cx))
 
-                // Check if this pixel is within the circular matrix shape
-                val centerX = 12.0
-                val centerY = 12.0
-                val distance = kotlin.math.sqrt((col - centerX) * (col - centerX) + (row - centerY) * (row - centerY))
-
-                if (distance <= 12.5 && shapedIndex < shapedData.size) {
-                    // Apply brightness directly to pixel values using the unified model
+                if (distance <= maxDist && shapedIndex < shapedData.size) {
                     val basePixelValue = shapedData[shapedIndex]
                     flatArray[flatIndex] = com.pauwma.glyphbeat.core.GlyphMatrixBrightnessModel.calculateFinalBrightness(
                         basePixelValue,
@@ -198,15 +217,18 @@ class MinimalTheme(private val ctx: Context) : ThemeTemplate(), ThemeSettingsPro
     }
 
     override fun getSettingsSchema(): ThemeSettings {
-        return ThemeSettingsBuilder(getSettingsId())
-            .addToggleSetting(
+        val builder = ThemeSettingsBuilder(getSettingsId())
+        // Border setting only available on Phone 3 (no border variants for Phone 4a Pro)
+        if (resolution != com.pauwma.glyphbeat.core.GlyphResolution.PHONE_4A) {
+            builder.addToggleSetting(
                 id = "outside_border",
                 displayName = ctx.getString(R.string.set_min_border_title),
                 description = ctx.getString(R.string.set_min_border_desc),
                 defaultValue = false,
                 category = SettingCategories.LAYOUT
             )
-            .addSliderSetting(
+        }
+        return builder.addSliderSetting(
                 id = "minimal_brightness",
                 displayName = ctx.getString(R.string.set_brightness_title),
                 description = ctx.getString(R.string.set_brightness_desc),

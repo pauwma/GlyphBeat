@@ -214,25 +214,22 @@ private fun TrackControlThemeCard(
                                 TrackControlTheme.Direction.NEXT
                             )
                         }
-                        // Glyph Matrix shape: pixels per row (circular pattern)
-                        val glyphShape = intArrayOf(
-                            7, 11, 15, 17, 19, 21, 21, 23, 23, 25,
-                            25, 25, 25, 25, 25, 25, 23, 23, 21, 21,
-                            19, 17, 15, 11, 7
-                        )
+                        val res = com.pauwma.glyphbeat.core.DeviceManager.resolution
+                        val gs = res.gridSize
+                        val glyphShape = res.shape
                         val containerSize = kotlin.math.min(size.width, size.height)
-                        val dotSize = containerSize / 25f
+                        val dotSize = containerSize / gs.toFloat()
                         val actualDotSize = dotSize * 0.8f
                         val startX = (size.width - containerSize) / 2f
                         val startY = (size.height - containerSize) / 2f
 
-                        for (row in 0 until 25) {
+                        for (row in 0 until gs) {
                             val pixelsInRow = glyphShape[row]
-                            val startColForRow = (25 - pixelsInRow) / 2
+                            val startColForRow = (gs - pixelsInRow) / 2
 
                             for (colInRow in 0 until pixelsInRow) {
                                 val col = startColForRow + colInRow
-                                val index = row * 25 + col
+                                val index = row * gs + col
                                 val value = if (index < pixels.size) pixels[index].coerceIn(0, 255) else 0
                                 val brightness = value / 255f
 
