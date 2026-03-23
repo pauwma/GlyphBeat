@@ -989,16 +989,21 @@ fun SettingsScreen(
                             // Main Manage Glyph Toys button
                             Button(
                                 onClick = {
+                                    val activityName = if (com.pauwma.glyphbeat.core.DeviceManager.isPhone4aPro) {
+                                        "com.nothing.thirdparty.matrix.toys.manager.AodToySelectActivity"
+                                    } else {
+                                        "com.nothing.thirdparty.matrix.toys.manager.ToysManagerActivity"
+                                    }
                                     try {
                                         val intent = Intent().apply {
                                             component = android.content.ComponentName(
                                                 "com.nothing.thirdparty",
-                                                "com.nothing.thirdparty.matrix.toys.manager.ToysManagerActivity"
+                                                activityName
                                             )
                                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         }
                                         context.startActivity(intent)
-                                        Log.d("SettingsScreen", "Opened Glyph Toys manager")
+                                        Log.d("SettingsScreen", "Opened Glyph Toys manager: $activityName")
                                     } catch (e: Exception) {
                                         Log.e("SettingsScreen", "Failed to open Glyph Toys: ${e.message}")
                                         try {

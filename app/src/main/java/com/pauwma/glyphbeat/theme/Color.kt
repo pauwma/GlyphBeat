@@ -8,7 +8,7 @@ val NothingDarkGrey = Color(0xFF1A1A1A)
 val NothingMediumGrey = Color(0xFF808080)
 val NothingLightGrey = Color(0xFFF5F5F5)
 val NothingWhite = Color(0xFFFFFFFF)
-val NothingRed = Color(0xFFFF0000)
+val NothingRed = Color(0xFFD71921)
 
 // Surface colors for different elevations
 val SurfaceDark = Color(0xFF121212)
