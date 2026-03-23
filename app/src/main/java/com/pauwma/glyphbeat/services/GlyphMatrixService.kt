@@ -48,6 +48,14 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
     var glyphMatrixManager: GlyphMatrixManager? = null
         private set
 
+    // Track active binding sources so we only tear down GMM when ALL bindings are gone.
+    // Android calls onBind/onUnbind per unique intent type:
+    //   - Toy system binds with "com.nothing.glyph.TOY" action intent
+    //   - MusicDetectionService binds with component intent (programmatic)
+    // Without tracking, the toy's onUnbind destroys the shared GMM singleton,
+    // killing the programmatic animation that's still running.
+    private val activeBindings = mutableSetOf<String>()
+
     private val gmmCallback = object : GlyphMatrixManager.Callback {
         override fun onServiceConnected(p0: ComponentName?) {
             glyphMatrixManager?.let { gmm ->
@@ -64,14 +72,22 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
         }
     }
 
+    private fun getBindingKey(intent: Intent?): String {
+        // Distinguish toy system binding from programmatic binding
+        return intent?.action ?: intent?.component?.className ?: "unknown"
+    }
+
     final override fun startService(intent: Intent?): ComponentName? {
         Log.d(LOG_TAG, "$tag: startService")
         return super.startService(intent)
     }
 
     final override fun onBind(intent: Intent?): IBinder? {
-        Log.d(LOG_TAG, "$tag: onBind")
-        DebugLogger.log("$tag: onBind")
+        val bindingKey = getBindingKey(intent)
+        activeBindings.add(bindingKey)
+        Log.d(LOG_TAG, "$tag: onBind (source: $bindingKey, active bindings: ${activeBindings.size})")
+        DebugLogger.log("$tag: onBind (source: $bindingKey, total: ${activeBindings.size})")
+
         GlyphMatrixManager.getInstance(applicationContext)?.let { gmm ->
             glyphMatrixManager = gmm
             gmm.init(gmmCallback)
@@ -81,22 +97,33 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
     }
 
     final override fun onUnbind(intent: Intent?): Boolean {
-        Log.d(LOG_TAG, "$tag: onUnbind")
-        DebugLogger.log("$tag: onUnbind")
-        
-        // Notify MusicDetectionService that this service is stopping
-        val stopIntent = Intent("com.pauwma.glyphbeat.SERVICE_STOPPED")
-        stopIntent.putExtra("service_name", tag)
-        sendBroadcast(stopIntent)
-        Log.d(LOG_TAG, "$tag: Sent service stopped broadcast")
-        
-        glyphMatrixManager?.let {
-            Log.d(LOG_TAG, "$tag: onServiceDisconnected")
-            performOnServiceDisconnected(applicationContext)
+        val bindingKey = getBindingKey(intent)
+        activeBindings.remove(bindingKey)
+        Log.d(LOG_TAG, "$tag: onUnbind (source: $bindingKey, remaining bindings: ${activeBindings.size})")
+        DebugLogger.log("$tag: onUnbind (source: $bindingKey, remaining: ${activeBindings.size})")
+
+        if (activeBindings.isEmpty()) {
+            // Last binding gone — fully tear down
+            Log.d(LOG_TAG, "$tag: Last binding released, tearing down GlyphMatrixManager")
+
+            // Notify MusicDetectionService that this service is fully stopping
+            val stopIntent = Intent("com.pauwma.glyphbeat.SERVICE_STOPPED")
+            stopIntent.putExtra("service_name", tag)
+            sendBroadcast(stopIntent)
+            Log.d(LOG_TAG, "$tag: Sent service stopped broadcast")
+
+            glyphMatrixManager?.let {
+                Log.d(LOG_TAG, "$tag: onServiceDisconnected")
+                performOnServiceDisconnected(applicationContext)
+            }
+            glyphMatrixManager?.turnOff()
+            glyphMatrixManager?.unInit()
+            glyphMatrixManager = null
+        } else {
+            Log.d(LOG_TAG, "$tag: Other bindings still active ($activeBindings), keeping GlyphMatrixManager alive")
+            DebugLogger.log("$tag: Toy unbound but programmatic binding still active, GMM preserved")
         }
-        glyphMatrixManager?.turnOff()
-        glyphMatrixManager?.unInit()
-        glyphMatrixManager = null
+
         return false
     }
 
