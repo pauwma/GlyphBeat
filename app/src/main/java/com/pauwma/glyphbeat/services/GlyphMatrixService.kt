@@ -13,6 +13,7 @@ import android.util.Log
 import com.nothing.ketchum.Glyph
 import com.nothing.ketchum.GlyphMatrixManager
 import com.nothing.ketchum.GlyphToy
+import com.pauwma.glyphbeat.services.coordination.GlyphMatrixStateProvider
 import com.pauwma.glyphbeat.utils.DebugLogger
 
 abstract class GlyphMatrixService(private val tag: String) : Service() {
@@ -56,6 +57,11 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
     // killing the programmatic animation that's still running.
     private val activeBindings = mutableSetOf<String>()
 
+    // Cross-app coordination: when a non-MediaPlayer toy activates (e.g. NextTrack, PreviousTrack),
+    // pause the MediaPlayerToyService's programmatic rendering via the shared isPauseRequested flag.
+    private var didPauseForToy = false
+    private val isMediaPlayerService get() = tag == "MediaPlayer-Demo"
+
     private val gmmCallback = object : GlyphMatrixManager.Callback {
         override fun onServiceConnected(p0: ComponentName?) {
             glyphMatrixManager?.let { gmm ->
@@ -88,6 +94,14 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
         Log.d(LOG_TAG, "$tag: onBind (source: $bindingKey, active bindings: ${activeBindings.size})")
         DebugLogger.log("$tag: onBind (source: $bindingKey, total: ${activeBindings.size})")
 
+        // Cross-app coordination: when a non-MediaPlayer toy is activated by the toy button,
+        // pause MediaPlayerToyService's programmatic rendering so they don't collide
+        if (!isMediaPlayerService && bindingKey == "com.nothing.glyph.TOY" && GlyphMatrixStateProvider.isCurrentlyActive()) {
+            Log.i(LOG_TAG, "$tag: Pausing MediaPlayerToyService for toy activation")
+            GlyphMatrixStateProvider.requestPause()
+            didPauseForToy = true
+        }
+
         GlyphMatrixManager.getInstance(applicationContext)?.let { gmm ->
             glyphMatrixManager = gmm
             gmm.init(gmmCallback)
@@ -101,6 +115,13 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
         activeBindings.remove(bindingKey)
         Log.d(LOG_TAG, "$tag: onUnbind (source: $bindingKey, remaining bindings: ${activeBindings.size})")
         DebugLogger.log("$tag: onUnbind (source: $bindingKey, remaining: ${activeBindings.size})")
+
+        // Cross-app coordination: resume MediaPlayerToyService when our toy deactivates
+        if (didPauseForToy) {
+            Log.i(LOG_TAG, "$tag: Resuming MediaPlayerToyService after toy deactivation")
+            GlyphMatrixStateProvider.clearPauseRequest()
+            didPauseForToy = false
+        }
 
         if (activeBindings.isEmpty()) {
             // Last binding gone — fully tear down

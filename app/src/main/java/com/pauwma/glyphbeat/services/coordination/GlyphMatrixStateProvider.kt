@@ -87,6 +87,13 @@ class GlyphMatrixStateProvider : ContentProvider() {
         fun isCurrentlyActive(): Boolean = isActive
 
         /**
+         * Request a pause (called internally by non-MediaPlayer toy services).
+         */
+        fun requestPause() {
+            isPauseRequested = true
+        }
+
+        /**
          * Clear the pause request (called by MediaPlayerToyService on RESUME or disconnect).
          */
         fun clearPauseRequest() {
