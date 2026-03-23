@@ -4,6 +4,7 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Handler
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
 import com.pauwma.glyphbeat.core.GlyphMatrixRenderer
@@ -13,6 +14,7 @@ import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import com.pauwma.glyphbeat.sound.AudioAnalyzer
 import com.pauwma.glyphbeat.sound.AudioData
 import com.pauwma.glyphbeat.sound.MediaControlHelper
+import com.pauwma.glyphbeat.services.coordination.GlyphMatrixStateProvider
 import com.pauwma.glyphbeat.utils.DebugLogger
 import com.pauwma.glyphbeat.themes.animation.ScrollTheme
 import com.pauwma.glyphbeat.themes.base.AnimationTheme
@@ -80,6 +82,45 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private var frameTransitionSequence: FrameTransitionSequence? = null
     private var isUsingTransitions = false
     
+    // Cross-app coordination: pause/resume for external effects (Glyph Museum)
+    @Volatile private var isPausedForExternalEffect = false
+    private var externalPauseHandler: Handler? = null
+    private val externalPauseTimeoutMs = 30_000L // Safety timeout if RESUME never arrives
+
+    private val matrixPauseResumeReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: android.content.Intent) {
+            when (intent.action) {
+                "com.pauwma.glyph.MATRIX_PAUSE" -> {
+                    Log.i(LOG_TAG, "Received MATRIX_PAUSE from external app — pausing animation")
+                    DebugLogger.log("MediaPlayerToyService: paused for external effect")
+                    isPausedForExternalEffect = true
+                    // Note: do NOT call turnOff() here — the ContentProvider flag already
+                    // stops our rendering loop, and turnOff() would blank the matrix
+                    // including whatever the external app is now displaying.
+
+                    // Safety timeout: auto-resume after 30s if RESUME never arrives
+                    externalPauseHandler?.removeCallbacksAndMessages(null)
+                    externalPauseHandler = Handler(android.os.Looper.getMainLooper())
+                    externalPauseHandler?.postDelayed({
+                        if (isPausedForExternalEffect) {
+                            Log.w(LOG_TAG, "External pause safety timeout — auto-resuming")
+                            DebugLogger.log("MediaPlayerToyService: auto-resumed (timeout)")
+                            isPausedForExternalEffect = false
+                            GlyphMatrixStateProvider.clearPauseRequest()
+                        }
+                    }, externalPauseTimeoutMs)
+                }
+                "com.pauwma.glyph.MATRIX_RESUME" -> {
+                    Log.i(LOG_TAG, "Received MATRIX_RESUME from external app — resuming animation")
+                    DebugLogger.log("MediaPlayerToyService: resumed after external effect")
+                    externalPauseHandler?.removeCallbacksAndMessages(null)
+                    isPausedForExternalEffect = false
+                    GlyphMatrixStateProvider.clearPauseRequest()
+                }
+            }
+        }
+    }
+
     // Logging state management to avoid spam
     private var lastLoggedThemeName = ""
     private var lastLoggedFrameType = ""
@@ -159,6 +200,20 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         // The MusicDetectionService will determine if it should suspend based on its own state
         Log.i(LOG_TAG, "MediaPlayerToyService activated - sending Glyph activity notification")
         sendGlyphActivityBroadcast()
+
+        // Cross-app coordination: publish active state and register pause/resume receiver
+        GlyphMatrixStateProvider.setActive("MediaPlayerToyService")
+        isPausedForExternalEffect = false
+        val pauseResumeFilter = android.content.IntentFilter().apply {
+            addAction("com.pauwma.glyph.MATRIX_PAUSE")
+            addAction("com.pauwma.glyph.MATRIX_RESUME")
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(matrixPauseResumeReceiver, pauseResumeFilter, Context.RECEIVER_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(matrixPauseResumeReceiver, pauseResumeFilter)
+        }
         
         // Initialize components
         mediaHelper = MediaControlHelper(context)
@@ -205,11 +260,15 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             // Check if auto-start is paused
             val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
             val isPaused = prefs.getBoolean("auto_start_paused", false)
-            
+
             if (!isPaused) {
-                // Always use SDK brightness of 255 - themes now handle brightness in pixel values
-                val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, initialFrame, 255)
-                glyphMatrixManager.setMatrixFrame(matrixFrame.render())
+                try {
+                    // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                    val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, initialFrame, 255)
+                    glyphMatrixManager.setMatrixFrame(matrixFrame.render())
+                } catch (e: IllegalStateException) {
+                    Log.w(LOG_TAG, "Glyph service not registered during init: ${e.message}")
+                }
             }
         }
 
@@ -317,15 +376,24 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     }
                 }
 
+                // Cross-app coordination: heartbeat to keep state fresh
+                if (debugFrameCount % 50 == 0) {
+                    GlyphMatrixStateProvider.refreshTimestamp()
+                }
+
                 uiScope.launch(Dispatchers.Main.immediate) {
                     // Check if auto-start is paused
                     val prefs = applicationContext.getSharedPreferences("glyph_settings", Context.MODE_PRIVATE)
                     val isPaused = prefs.getBoolean("auto_start_paused", false)
-                    
-                    if (!isPaused) {
-                        // Always use SDK brightness of 255 - themes now handle brightness in pixel values
-                        val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
-                        glyphMatrixManager.setMatrixFrame(matrixFrame.render())
+
+                    if (!isPaused && !isPausedForExternalEffect && !GlyphMatrixStateProvider.isPauseRequested) {
+                        try {
+                            // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                            val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
+                            glyphMatrixManager.setMatrixFrame(matrixFrame.render())
+                        } catch (e: IllegalStateException) {
+                            Log.w(LOG_TAG, "Glyph service not registered, skipping frame: ${e.message}")
+                        }
                     }
                 }
 
@@ -384,7 +452,14 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     override fun performOnServiceDisconnected(context: Context) {
         Log.d(LOG_TAG, "MediaPlayerToyService disconnected")
         DebugLogger.log("MediaPlayerToyService: disconnected")
-        
+
+        // Cross-app coordination: clear state and unregister receiver
+        GlyphMatrixStateProvider.setInactive()
+        GlyphMatrixStateProvider.clearPauseRequest()
+        isPausedForExternalEffect = false
+        externalPauseHandler?.removeCallbacksAndMessages(null)
+        try { unregisterReceiver(matrixPauseResumeReceiver) } catch (_: Exception) {}
+
         // Cleanup resources
         mediaHelper.cleanup()
         audioAnalyzer.cleanup()
@@ -440,13 +515,17 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     val isPaused = prefs.getBoolean("auto_start_paused", false)
                     
                     if (!isPaused) {
-                        // Always use SDK brightness of 255 - themes now handle brightness in pixel values
-                        val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
-                        matrixManager?.setMatrixFrame(matrixFrame.render())
+                        try {
+                            // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                            val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
+                            matrixManager?.setMatrixFrame(matrixFrame.render())
+                        } catch (e: IllegalStateException) {
+                            Log.w(LOG_TAG, "Glyph service not registered: ${e.message}")
+                        }
                     }
                 }
             }
-            
+
             // Send the actual media command
             val success = mediaHelper.togglePlayPause()
             if (success) {
@@ -692,14 +771,18 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                 val isPaused = prefs.getBoolean("auto_start_paused", false)
                 
                 if (!isPaused) {
-                    // Always use SDK brightness of 255 - themes now handle brightness in pixel values
-                    val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
-                    matrixManager?.setMatrixFrame(matrixFrame.render())
+                    try {
+                        // Always use SDK brightness of 255 - themes now handle brightness in pixel values
+                        val matrixFrame = GlyphMatrixRenderer.createMatrixFrameWithBrightness(applicationContext, pixelArray, 255)
+                        matrixManager?.setMatrixFrame(matrixFrame.render())
+                    } catch (e: IllegalStateException) {
+                        Log.w(LOG_TAG, "Glyph service not registered: ${e.message}")
+                    }
                 }
             }
         }
     }
-    
+
     /**
      * Check if current prediction has timed out
      */
@@ -1135,7 +1218,11 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         
         if (paused) {
             // Stop the Glyph matrix animation by clearing the display
-            matrixManager?.setMatrixFrame(IntArray(com.pauwma.glyphbeat.core.DeviceManager.resolution.flatSize) { 0 }) // All LEDs off
+            try {
+                matrixManager?.setMatrixFrame(IntArray(com.pauwma.glyphbeat.core.DeviceManager.resolution.flatSize) { 0 }) // All LEDs off
+            } catch (e: IllegalStateException) {
+                Log.w(LOG_TAG, "Glyph service not registered during pause: ${e.message}")
+            }
             Log.i(LOG_TAG, "Auto-start service paused - Glyph matrix cleared")
         } else {
             Log.i(LOG_TAG, "Auto-start service resumed")

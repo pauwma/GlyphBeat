@@ -21,7 +21,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.nothing.ketchum.GlyphMatrixManager
+import com.pauwma.glyphbeat.services.coordination.GlyphMatrixStateProvider
 import com.pauwma.glyphbeat.MainActivity
 import com.pauwma.glyphbeat.R
 import com.pauwma.glyphbeat.services.notification.MediaNotificationListenerService
@@ -130,14 +130,14 @@ class MusicDetectionService : Service() {
                     
                     if (serviceName == "MediaPlayer-Demo" && isGlyphServiceActive) {
                         Log.w(LOG_TAG, "MediaPlayerToyService stopped - resetting state for potential restart")
-                        
+
                         // Reset state variables
                         isGlyphServiceActive = false
                         mediaPlayerServiceBound = false
                         isBindingInProgress = false
                         currentPlayingApp = null
                         mediaPlayerServiceConnection = null
-                        
+
                         // Update notification
                         updateNotification("Monitoring for music playback")
                     }
@@ -738,7 +738,10 @@ class MusicDetectionService : Service() {
         try {
             // Unbind from the MediaPlayerToyService to deactivate it
             unbindService(mediaPlayerServiceConnection!!)
-            
+
+            // Cross-app coordination: ensure state is cleared
+            GlyphMatrixStateProvider.setInactive()
+
             // Track that we've deactivated the service
             isGlyphServiceActive = false
             mediaPlayerServiceBound = false

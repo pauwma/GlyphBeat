@@ -32,6 +32,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
+    <!-- Cross-app coordination: signature-level permission for reading matrix state -->
+    <permission
+        android:name="com.pauwma.glyphbeat.permission.READ_MATRIX_STATE"
+        android:protectionLevel="signature" />
+
     <!-- Package queries for music app detection (Android 11+ requirement) -->
     <queries>
         <!-- Popular music streaming apps -->
@@ -120,6 +125,14 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Cross-app coordination: exposes matrix rendering state to Glyph Museum -->
+        <provider
+            android:name="com.pauwma.glyphbeat.services.coordination.GlyphMatrixStateProvider"
+            android:authorities="com.pauwma.glyphbeat.matrixstate"
+            android:exported="true"
+            android:readPermission="com.pauwma.glyphbeat.permission.READ_MATRIX_STATE"
+            android:writePermission="com.pauwma.glyphbeat.permission.READ_MATRIX_STATE" />
 
         <activity
             android:name="com.pauwma.glyphbeat.MainActivity"
