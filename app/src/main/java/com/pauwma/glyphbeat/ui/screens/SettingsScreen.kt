@@ -526,6 +526,7 @@ fun SettingsScreen(
     var autoStartPaused by remember { mutableStateOf(false) }
     var autoStartDelay by remember { mutableStateOf(1000L) }
     var autoStopDelay by remember { mutableStateOf(3000L) }
+    var musicAppsExpanded by rememberSaveable { mutableStateOf(false) }
     var autoStartControlsExpanded by rememberSaveable { mutableStateOf(false) }
     var batteryAwarenessEnabled by remember { mutableStateOf(false) }
     var batteryThreshold by remember { mutableStateOf(10) }
@@ -1054,6 +1055,277 @@ fun SettingsScreen(
                     }
                 }
 
+        // Music Apps Card (global setting for both toy and auto-start)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF1A1A1A)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Clickable header with expand/collapse icon
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { musicAppsExpanded = !musicAppsExpanded },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = context.getString(R.string.music_apps_title),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = customFont
+                            ),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text = context.getString(R.string.music_apps_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    val musicAppsExpandAngle by animateFloatAsState(
+                        targetValue = if (musicAppsExpanded) 180f else 0f,
+                        label = "musicAppsExpandIcon"
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ExpandMore,
+                        contentDescription = if (musicAppsExpanded) "Collapse" else "Expand",
+                        modifier = Modifier
+                            .size(24.dp)
+                            .rotate(musicAppsExpandAngle),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = musicAppsExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+
+                // Refresh button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    val refreshRotation by animateFloatAsState(
+                        targetValue = if (isLoadingMusicApps) 360f else 0f,
+                        animationSpec = tween(1000),
+                        label = "refreshRotation"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                if (!isLoadingMusicApps) {
+                                    loadMusicApps()
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Refresh music apps",
+                            modifier = Modifier
+                                .size(20.dp)
+                                .rotate(refreshRotation),
+                            tint = if (isLoadingMusicApps)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+
+                if (isLoadingMusicApps) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        musicApps.forEach { app ->
+                            val iconRotation by animateFloatAsState(
+                                targetValue = if (app.isWhitelisted) 45f else 0f,
+                                animationSpec = tween(300),
+                                label = "iconRotation"
+                            )
+
+                            val iconColor by animateColorAsState(
+                                targetValue = if (app.isWhitelisted) NothingRed else MaterialTheme.colorScheme.onSurfaceVariant,
+                                animationSpec = tween(300),
+                                label = "iconColor"
+                            )
+
+                            var appIcon by remember(app.packageName) { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+                            LaunchedEffect(app.packageName) {
+                                withContext(Dispatchers.IO) {
+                                    appIcon = getAppIcon(context, app.packageName)
+                                }
+                            }
+
+                            OutlinedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        val wasWhitelisted = app.isWhitelisted
+                                        whitelistManager.toggleWhitelist(app.packageName)
+
+                                        musicApps = musicApps.map { appInfo ->
+                                            if (appInfo.packageName == app.packageName) {
+                                                appInfo.copy(isWhitelisted = !appInfo.isWhitelisted)
+                                            } else {
+                                                appInfo
+                                            }
+                                        }
+
+                                        // Always send broadcast (affects both toy and auto-start)
+                                        val updateIntent = Intent("com.pauwma.glyphbeat.WHITELIST_CHANGED")
+                                        updateIntent.putExtra("changed_package", app.packageName)
+                                        updateIntent.putExtra("is_whitelisted", !wasWhitelisted)
+                                        context.sendBroadcast(updateIntent)
+                                    },
+                                colors = CardDefaults.outlinedCardColors(
+                                    containerColor = Color.Transparent
+                                ),
+                                border = BorderStroke(
+                                    width = if (app.isWhitelisted) 2.dp else 1.dp,
+                                    color = if (app.isWhitelisted) NothingRed else MaterialTheme.colorScheme.outline
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.size(40.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        appIcon?.let { icon ->
+                                            Image(
+                                                bitmap = icon.asImageBitmap(),
+                                                contentDescription = "${app.appName} icon",
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                            )
+                                        } ?: Icon(
+                                            imageVector = Icons.Default.MusicNote,
+                                            contentDescription = "Music app",
+                                            modifier = Modifier.size(32.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                        )
+                                    }
+
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = app.appName,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = app.packageName,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = if (app.isWhitelisted) "Remove from whitelist" else "Add to whitelist",
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .rotate(iconRotation),
+                                        tint = iconColor
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Add app button
+                    OutlinedButton(
+                        onClick = { showAppPickerDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = context.getString(R.string.add_app),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
+                } // End of AnimatedVisibility Column
+                } // End of AnimatedVisibility
+            }
+        }
+
+        // App picker dialog
+        if (showAppPickerDialog) {
+            AppPickerDialog(
+                onDismiss = { showAppPickerDialog = false },
+                onAppSelected = { selectedApp ->
+                    showAppPickerDialog = false
+                    whitelistManager.addToWhitelist(selectedApp.packageName)
+                    loadMusicApps()
+
+                    val updateIntent = Intent("com.pauwma.glyphbeat.WHITELIST_CHANGED")
+                    updateIntent.putExtra("changed_package", selectedApp.packageName)
+                    updateIntent.putExtra("is_whitelisted", true)
+                    context.sendBroadcast(updateIntent)
+                },
+                whitelistManager = whitelistManager
+            )
+        }
+
         // Auto-Start Service Card
         Card(
             modifier = Modifier
@@ -1225,248 +1497,7 @@ fun SettingsScreen(
                             useAlternateColors = false
                         )
 
-                        // Music Apps List
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Text(
-                                    text = context.getString(R.string.auto_start_apps_title),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-
-                                val refreshRotation by animateFloatAsState(
-                                    targetValue = if (isLoadingMusicApps) 360f else 0f,
-                                    animationSpec = tween(1000),
-                                    label = "refreshRotation"
-                                )
-
-                                Box(
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = null
-                                        ) {
-                                            if (!isLoadingMusicApps) {
-                                                loadMusicApps()
-                                            }
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Refresh,
-                                        contentDescription = "Refresh music apps",
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .rotate(refreshRotation),
-                                        tint = if (isLoadingMusicApps)
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                    )
-                                }
-                            }
-
-                            Text(
-                                text = context.getString(R.string.auto_start_apps_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                                modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
-                            )
-
-                            if (isLoadingMusicApps) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(60.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            } else {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    musicApps.forEach { app ->
-                                        val iconRotation by animateFloatAsState(
-                                            targetValue = if (app.isWhitelisted) 45f else 0f,
-                                            animationSpec = tween(300),
-                                            label = "iconRotation"
-                                        )
-
-                                        val iconColor by animateColorAsState(
-                                            targetValue = if (app.isWhitelisted) NothingRed else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            animationSpec = tween(300),
-                                            label = "iconColor"
-                                        )
-
-                                        var appIcon by remember(app.packageName) { mutableStateOf<android.graphics.Bitmap?>(null) }
-
-                                        // Load app icon asynchronously
-                                        LaunchedEffect(app.packageName) {
-                                            withContext(Dispatchers.IO) {
-                                                appIcon = getAppIcon(context, app.packageName)
-                                            }
-                                        }
-
-                                        OutlinedCard(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    val wasWhitelisted = app.isWhitelisted
-                                                    whitelistManager.toggleWhitelist(app.packageName)
-
-                                                    // Update only this item instead of refreshing entire list
-                                                    musicApps = musicApps.map { appInfo ->
-                                                        if (appInfo.packageName == app.packageName) {
-                                                            appInfo.copy(isWhitelisted = !appInfo.isWhitelisted)
-                                                        } else {
-                                                            appInfo
-                                                        }
-                                                    }
-
-                                                    // Live update: If app was whitelisted and now disabled,
-                                                    // and service is running, notify service to check if this app is currently active
-                                                    if (wasWhitelisted && !app.isWhitelisted && autoStartEnabled) {
-                                                        Log.d("SettingsScreen", "App ${app.appName} disabled - sending update to running service")
-
-                                                        // Send broadcast to notify service that whitelist changed
-                                                        val updateIntent = Intent("com.pauwma.glyphbeat.WHITELIST_CHANGED")
-                                                        updateIntent.putExtra("changed_package", app.packageName)
-                                                        updateIntent.putExtra("is_whitelisted", false)
-                                                        context.sendBroadcast(updateIntent)
-                                                    } else if (!wasWhitelisted && app.isWhitelisted && autoStartEnabled) {
-                                                        Log.d("SettingsScreen", "App ${app.appName} enabled - sending update to running service")
-
-                                                        // Send broadcast to notify service of new whitelisted app
-                                                        val updateIntent = Intent("com.pauwma.glyphbeat.WHITELIST_CHANGED")
-                                                        updateIntent.putExtra("changed_package", app.packageName)
-                                                        updateIntent.putExtra("is_whitelisted", true)
-                                                        context.sendBroadcast(updateIntent)
-                                                    }
-                                                },
-                                            colors = CardDefaults.outlinedCardColors(
-                                                containerColor = Color.Transparent
-                                            ),
-                                            border = BorderStroke(
-                                                width = if (app.isWhitelisted) 2.dp else 1.dp,
-                                                color = if (app.isWhitelisted) NothingRed else MaterialTheme.colorScheme.outline
-                                            )
-                                        ) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(16.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                            ) {
-                                                // App icon
-                                                Box(
-                                                    modifier = Modifier.size(40.dp),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    appIcon?.let { icon ->
-                                                        Image(
-                                                            bitmap = icon.asImageBitmap(),
-                                                            contentDescription = "${app.appName} icon",
-                                                            modifier = Modifier
-                                                                .size(32.dp)
-                                                                .clip(RoundedCornerShape(8.dp))
-                                                        )
-                                                    } ?: Icon(
-                                                        imageVector = Icons.Default.MusicNote,
-                                                        contentDescription = "Music app",
-                                                        modifier = Modifier.size(32.dp),
-                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                                    )
-                                                }
-
-                                                // App info
-                                                Column(
-                                                    modifier = Modifier.weight(1f)
-                                                ) {
-                                                    Text(
-                                                        text = app.appName,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        color = MaterialTheme.colorScheme.onSurface,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis
-                                                    )
-                                                    Text(
-                                                        text = app.packageName,
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis
-                                                    )
-                                                }
-
-                                                // Add/Remove icon with rotation animation
-                                                Icon(
-                                                    imageVector = Icons.Default.Add,
-                                                    contentDescription = if (app.isWhitelisted) "Remove from whitelist" else "Add to whitelist",
-                                                    modifier = Modifier
-                                                        .size(24.dp)
-                                                        .rotate(iconRotation),
-                                                    tint = iconColor
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Add app button
-                                OutlinedButton(
-                                    onClick = { showAppPickerDialog = true },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = context.getString(R.string.add_app),
-                                        style = MaterialTheme.typography.labelLarge
-                                    )
-                                }
-                            }
-                        }
                     } // End of AnimatedVisibility Column
-
-                    // App picker dialog
-                    if (showAppPickerDialog) {
-                        AppPickerDialog(
-                            onDismiss = { showAppPickerDialog = false },
-                            onAppSelected = { selectedApp ->
-                                showAppPickerDialog = false
-                                whitelistManager.addToWhitelist(selectedApp.packageName)
-                                // Reload the list to include the new app
-                                loadMusicApps()
-
-                                // Notify service
-                                if (autoStartEnabled) {
-                                    val updateIntent = Intent("com.pauwma.glyphbeat.WHITELIST_CHANGED")
-                                    updateIntent.putExtra("changed_package", selectedApp.packageName)
-                                    updateIntent.putExtra("is_whitelisted", true)
-                                    context.sendBroadcast(updateIntent)
-                                }
-                            },
-                            whitelistManager = whitelistManager
-                        )
-                    }
                 } // End of AnimatedVisibility
             }
         }

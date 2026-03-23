@@ -174,17 +174,8 @@ class MusicDetectionService : Service() {
         private const val NOTIFICATION_ID = 2001
         private const val CHANNEL_ID = "music_detection_channel"
         
-        // Packages to ignore for auto-start (system apps, games, etc.)
-        private val BLACKLISTED_PACKAGES = setOf(
-            "com.nothing.hearthstone",      // Nothing Phone system app/game
-            "com.android.systemui",         // Android system UI
-            "com.google.android.googlequicksearchbox", // Google search
-            "com.android.chrome",           // Chrome browser media sessions
-            "com.google.android.apps.maps", // Google Maps navigation sounds
-            "com.android.phone",            // Phone app call sounds
-            "com.android.bluetooth",        // Bluetooth audio
-            "com.google.android.dialer"     // Dialer app
-        )
+        // Use shared blacklist from MusicAppWhitelistManager
+        private val BLACKLISTED_PACKAGES = MusicAppWhitelistManager.BLACKLISTED_PACKAGES
         
         fun start(context: Context) {
             val intent = Intent(context, MusicDetectionService::class.java)

@@ -14,6 +14,7 @@ import com.pauwma.glyphbeat.services.shake.ShakeDetector
 import com.pauwma.glyphbeat.sound.AudioAnalyzer
 import com.pauwma.glyphbeat.sound.AudioData
 import com.pauwma.glyphbeat.sound.MediaControlHelper
+import com.pauwma.glyphbeat.services.autostart.MusicAppWhitelistManager
 import com.pauwma.glyphbeat.services.coordination.GlyphMatrixStateProvider
 import com.pauwma.glyphbeat.utils.DebugLogger
 import com.pauwma.glyphbeat.themes.animation.ScrollTheme
@@ -129,6 +130,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
     private lateinit var mediaHelper: MediaControlHelper
     private lateinit var themeRepository: ThemeRepository
     private lateinit var audioAnalyzer: AudioAnalyzer
+    private lateinit var whitelistManager: MusicAppWhitelistManager
     private var matrixManager: GlyphMatrixManager? = null
     
     // Enhanced shake detection with behavior system
@@ -219,6 +221,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
         mediaHelper = MediaControlHelper(context)
         themeRepository = ThemeRepository.getInstance(context)
         audioAnalyzer = AudioAnalyzer(context)
+        whitelistManager = MusicAppWhitelistManager.getInstance(context)
         currentTheme = themeRepository.selectedTheme
         initializeThemeTransitions(currentTheme)
         
@@ -240,17 +243,25 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             registerShakePreferencesListener(context)
         }
 
-        // Get initial state
+        // Get initial state with whitelist check (toy activation only)
         val initialController = mediaHelper.getActiveMediaController()
-        Log.d(LOG_TAG, "Initial controller: ${initialController?.packageName}, state: ${initialController?.playbackState?.state}")
+        val initPkg = initialController?.packageName
+        val initBlacklisted = initPkg != null && MusicAppWhitelistManager.BLACKLISTED_PACKAGES.contains(initPkg)
+        val initWhitelisted = if (isToyActivated()) {
+            initPkg != null && !initBlacklisted && whitelistManager.isAppWhitelisted(initPkg)
+        } else {
+            true // Auto-start: trust MusicDetectionService's filtering
+        }
+        val initPlaying = initialController?.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING
+        Log.d(LOG_TAG, "Initial controller: $initPkg, state: ${initialController?.playbackState?.state}, whitelisted: $initWhitelisted, toyActivated: ${isToyActivated()}")
         val initialPlayerState = when {
-            initialController?.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING -> PlayerState.PLAYING
-            initialController != null -> PlayerState.PAUSED
+            initPlaying && initWhitelisted -> PlayerState.PLAYING
+            !initPlaying && initWhitelisted && initialController != null -> PlayerState.PAUSED
             else -> PlayerState.OFFLINE
         }
         currentPlayerState = initialPlayerState
-        isPlaying = initialController?.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING
-        hasActiveMedia = initialController != null
+        isPlaying = initPlaying && initWhitelisted
+        hasActiveMedia = initialController != null && !initBlacklisted && initWhitelisted
         
         // Start with proper initial frame based on actual media state
         val shouldAnimate = initialPlayerState == PlayerState.PLAYING
@@ -276,13 +287,25 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             while (isActive) {
                 // Very fast polling for immediate state detection
                 val controller = mediaHelper.getActiveMediaController()
+                val controllerPackage = controller?.packageName
+                val isBlacklisted = controllerPackage != null && MusicAppWhitelistManager.BLACKLISTED_PACKAGES.contains(controllerPackage)
                 val currentlyPlaying = controller?.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING
-                val mediaAvailable = controller != null
-                
-                // Determine current state
+                val mediaAvailable = controller != null && !isBlacklisted
+
+                // Whitelist only enforced for toy button activation.
+                // Auto-start already filters by whitelist via MusicDetectionService
+                // before binding this service — no need to double-check.
+                val isWhitelisted = if (isToyActivated()) {
+                    controllerPackage != null && !isBlacklisted && whitelistManager.isAppWhitelisted(controllerPackage)
+                } else {
+                    true // Auto-start: trust MusicDetectionService's filtering
+                }
+
+                // Determine current state — treat non-whitelisted apps as OFFLINE (toy only)
                 val newPlayerState = when {
-                    mediaAvailable && currentlyPlaying -> PlayerState.PLAYING
-                    mediaAvailable && !currentlyPlaying -> PlayerState.PAUSED
+                    mediaAvailable && currentlyPlaying && isWhitelisted -> PlayerState.PLAYING
+                    mediaAvailable && !currentlyPlaying && isWhitelisted -> PlayerState.PAUSED
+                    mediaAvailable && !isWhitelisted -> PlayerState.OFFLINE
                     !mediaAvailable -> PlayerState.OFFLINE
                     else -> PlayerState.PAUSED
                 }

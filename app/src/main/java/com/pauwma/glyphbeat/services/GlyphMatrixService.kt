@@ -127,6 +127,9 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
         return false
     }
 
+    /** Returns true if the toy system (glyph button) is one of the active bindings. */
+    fun isToyActivated(): Boolean = activeBindings.contains("com.nothing.glyph.TOY")
+
     open fun performOnServiceConnected(context: Context, glyphMatrixManager: GlyphMatrixManager) {}
 
     open fun performOnServiceDisconnected(context: Context) {}

@@ -207,6 +207,10 @@
     <string name="glyph_interface_button">Manage Toys</string>
 
 
+    <!-- ───── Music Apps ───── -->
+    <string name="music_apps_title">Music Apps</string>
+    <string name="music_apps_desc">Select which apps can activate Glyph Beat visualizations</string>
+
     <!-- ───── Auto Start ───── -->
     <string name="auto_start_title">Auto-Start</string>
     <string name="auto_start_desc">Automatically activate when music starts playing</string>

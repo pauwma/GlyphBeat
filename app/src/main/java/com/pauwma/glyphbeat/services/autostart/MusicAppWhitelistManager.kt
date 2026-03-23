@@ -40,6 +40,18 @@ class MusicAppWhitelistManager private constructor(private val context: Context)
             }
         }
         
+        // System packages to always ignore (not real music apps)
+        val BLACKLISTED_PACKAGES = setOf(
+            "com.nothing.hearthstone",
+            "com.android.systemui",
+            "com.google.android.googlequicksearchbox",
+            "com.android.chrome",
+            "com.google.android.apps.maps",
+            "com.android.phone",
+            "com.android.bluetooth",
+            "com.google.android.dialer"
+        )
+
         // Default list of known music app package names
         val DEFAULT_MUSIC_APPS = mapOf(
             "com.spotify.music" to "Spotify",
