@@ -487,7 +487,7 @@ private fun ThemeSettingsContent(
     ) {
         categoryEntries.forEachIndexed { categoryIndex, (_, settings) ->
             // Settings in this category
-            items(settings) { setting ->
+            items(settings, key = { it.id }) { setting ->
                 SettingItem(
                     setting = setting,
                     currentValue = themeSettings.getValue(setting.id),
@@ -520,11 +520,19 @@ private fun SettingItem(
     onValueChanged: (Any) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Use coerceValue() for type-safe conversion to prevent ClassCastException
+    // when Gson deserializes userValues with different types (e.g., Int → Double)
+    val safeValue = try {
+        setting.coerceValue(currentValue)
+    } catch (e: Exception) {
+        setting.defaultValue
+    }
+
     when (setting) {
         is SliderSetting -> {
             SettingsSlider(
                 setting = setting,
-                currentValue = currentValue as? Number ?: setting.defaultValue,
+                currentValue = safeValue as? Number ?: setting.defaultValue,
                 onValueChange = onValueChanged,
                 modifier = modifier.fillMaxWidth()
             )
@@ -533,7 +541,7 @@ private fun SettingItem(
         is ToggleSetting -> {
             SettingsToggle(
                 setting = setting,
-                currentValue = currentValue as? Boolean ?: setting.defaultValue,
+                currentValue = safeValue as? Boolean ?: setting.defaultValue,
                 onValueChange = onValueChanged,
                 modifier = modifier.fillMaxWidth()
             )
@@ -543,14 +551,14 @@ private fun SettingItem(
             if (setting.options.size <= 4) {
                 SettingsToggleButtons(
                     setting = setting,
-                    currentValue = currentValue as? String ?: setting.defaultValue,
+                    currentValue = safeValue as? String ?: setting.defaultValue,
                     onValueChange = onValueChanged,
                     modifier = modifier.fillMaxWidth()
                 )
             } else {
                 SettingsDropdown(
                     setting = setting,
-                    currentValue = currentValue as? String ?: setting.defaultValue,
+                    currentValue = safeValue as? String ?: setting.defaultValue,
                     onValueChange = onValueChanged,
                     modifier = modifier.fillMaxWidth()
                 )

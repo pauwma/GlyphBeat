@@ -29,7 +29,7 @@ android {
         applicationId = "com.pauwma.glyphbeat"
         minSdk = 34
         targetSdk = 35
-        versionCode = 17
+        versionCode = 18
         versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
