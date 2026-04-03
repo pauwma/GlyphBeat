@@ -14,14 +14,18 @@ object DebugLogger {
 
     private const val TAG = "DebugLogger"
     private const val LOG_FILE = "glyph_beat_debug.log"
+    private const val COMBINED_LOG_FILE = "glyph_beat_full_log.log"
     private const val MAX_LINES = 1000
+    private const val LOGCAT_LINES = 3000
 
     private var logFile: File? = null
+    private var logsDir: File? = null
 
     fun init(context: Context) {
-        val logsDir = File(context.cacheDir, "logs")
-        logsDir.mkdirs()
-        logFile = File(logsDir, LOG_FILE)
+        val dir = File(context.cacheDir, "logs")
+        dir.mkdirs()
+        logsDir = dir
+        logFile = File(dir, LOG_FILE)
 
         log("--- Session started ---")
         log("App: ${AppConfig.APP_VERSION}")
@@ -41,20 +45,34 @@ object DebugLogger {
     }
 
     fun shareLog(context: Context) {
-        val file = logFile ?: return
-
-        if (!file.exists() || file.length() == 0L) {
-            Log.w(TAG, "No log file to share")
-            return
-        }
-
         try {
-            trimIfNeeded()
+            val dir = logsDir ?: return
+            val combinedFile = File(dir, COMBINED_LOG_FILE)
+
+            val appLog = buildAppLogSection()
+            val logcatOutput = captureLogcat()
+
+            combinedFile.writeText(buildString {
+                appendLine("═══════════════════════════════════════════")
+                appendLine("  GlyphBeat Debug Log - ${AppConfig.APP_VERSION}")
+                appendLine("  Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+                appendLine("  Android: ${android.os.Build.VERSION.RELEASE} (SDK ${android.os.Build.VERSION.SDK_INT})")
+                appendLine("  Generated: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())}")
+                appendLine("═══════════════════════════════════════════")
+                appendLine()
+                appendLine("──────────── APP EVENTS ────────────")
+                appendLine()
+                append(appLog)
+                appendLine()
+                appendLine("──────────── LOGCAT ────────────")
+                appendLine()
+                append(logcatOutput)
+            })
 
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
-                file
+                combinedFile
             )
 
             val intent = Intent(Intent.ACTION_SEND).apply {
@@ -71,16 +89,26 @@ object DebugLogger {
         }
     }
 
-    private fun trimIfNeeded() {
-        val file = logFile ?: return
-        try {
-            val lines = file.readLines()
-            if (lines.size > MAX_LINES) {
-                val trimmed = lines.takeLast(MAX_LINES)
-                file.writeText(trimmed.joinToString("\n") + "\n")
-            }
+    private fun buildAppLogSection(): String {
+        val file = logFile ?: return "(no app log file)\n"
+        if (!file.exists() || file.length() == 0L) return "(empty app log)\n"
+
+        val lines = file.readLines()
+        val trimmed = if (lines.size > MAX_LINES) lines.takeLast(MAX_LINES) else lines
+        return trimmed.joinToString("\n") + "\n"
+    }
+
+    private fun captureLogcat(): String {
+        return try {
+            val pid = android.os.Process.myPid()
+            val process = Runtime.getRuntime().exec(
+                arrayOf("logcat", "-d", "-t", LOGCAT_LINES.toString(), "--pid=$pid")
+            )
+            val output = process.inputStream.bufferedReader().readText()
+            process.waitFor()
+            if (output.isBlank()) "(logcat empty for pid $pid)\n" else output
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to trim log", e)
+            "(failed to capture logcat: ${e.message})\n"
         }
     }
 }
