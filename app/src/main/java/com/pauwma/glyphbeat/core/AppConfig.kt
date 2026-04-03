@@ -12,13 +12,13 @@ object AppConfig {
      * Current application version.
      * Update this value when releasing a new version.
      */
-    const val APP_VERSION = "1.2.4"
+    const val APP_VERSION = "1.3.1"
 
     /**
      * Version code matching the build.gradle.kts versionCode.
      * Used for internal version tracking.
      */
-    const val VERSION_CODE = 16
+    const val VERSION_CODE = 19
 
     /**
      * Enable update dialog for new versions.
