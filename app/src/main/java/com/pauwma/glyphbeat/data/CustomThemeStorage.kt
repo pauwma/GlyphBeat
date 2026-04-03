@@ -127,13 +127,15 @@ data class CustomThemeData(
     val resolution: String? = null // "3" or "4a", null = legacy Phone 3
 ) {
     fun toCustomTheme(): CustomTheme {
+        val srcRes = resolution?.let { GlyphResolution.fromDbValue(it) }
         return CustomTheme(
             postId = postId,
             title = title,
             author = author,
-            frames = frames.map { it.toIntArray() },
+            rawFrames = frames.map { it.toIntArray() },
             durations = durations.toLongArray(),
-            importDate = importDate
+            importDate = importDate,
+            sourceResolution = srcRes
         )
     }
 
