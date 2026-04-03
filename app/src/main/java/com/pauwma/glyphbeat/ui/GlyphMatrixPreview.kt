@@ -107,7 +107,7 @@ fun GlyphMatrixPreview(
                             transitions != null -> transitions.getCurrentDuration()
                             theme is CustomTheme -> {
                                 val base = theme.getFrameDuration(currentFrame)
-                                (base / theme.speedMultiplier).toLong().coerceAtLeast(50L)
+                                (base / theme.speedMultiplier).toLong().coerceAtLeast(25L)
                             }
                             theme is ThemeTemplate && theme.hasIndividualFrameDurations() ->
                                 theme.getFrameDuration(currentFrame).coerceAtLeast(50L)

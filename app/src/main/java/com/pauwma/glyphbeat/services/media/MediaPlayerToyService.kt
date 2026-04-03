@@ -588,7 +588,7 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
             is CustomTheme -> {
                 // Custom themes always have per-frame durations, apply speed multiplier
                 val baseDuration = theme.getFrameDuration(currentFrameIndex)
-                (baseDuration / theme.speedMultiplier).toLong().coerceAtLeast(50L)
+                (baseDuration / theme.speedMultiplier).toLong().coerceAtLeast(25L)
             }
             else -> theme.getAnimationSpeed()
         }
@@ -627,8 +627,13 @@ class MediaPlayerToyService : GlyphMatrixService("MediaPlayer-Demo") {
                     }
                     "ping_pong" -> {
                         currentFrameIndex += pingPongDirection
-                        if (currentFrameIndex >= frameCount - 1) pingPongDirection = -1
-                        else if (currentFrameIndex <= 0) pingPongDirection = 1
+                        if (currentFrameIndex >= frameCount - 1) {
+                            currentFrameIndex = frameCount - 1
+                            pingPongDirection = -1
+                        } else if (currentFrameIndex <= 0) {
+                            currentFrameIndex = 0
+                            pingPongDirection = 1
+                        }
                     }
                     else -> {
                         currentFrameIndex = (currentFrameIndex + 1) % frameCount
