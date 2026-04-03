@@ -69,10 +69,18 @@ class SupabaseImportRepository {
             }
 
             val post = array[0].asJsonObject
+            // The "data" field may be stored as a JSON string or a JSON object
+            // depending on when the post was created. Handle both cases.
+            val dataElement = post.get("data")
+            val dataJson = when {
+                dataElement == null || dataElement.isJsonNull -> ""
+                dataElement.isJsonPrimitive -> dataElement.asString
+                else -> dataElement.toString()
+            }
             val data = PostImportData(
                 id = post.get("id").asLong,
                 title = post.get("title")?.asString ?: "Untitled",
-                dataJson = post.get("data")?.asString ?: "",
+                dataJson = dataJson,
                 userUid = post.get("user_uid")?.asString
             )
             Result.success(data)
